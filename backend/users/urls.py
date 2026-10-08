@@ -10,6 +10,7 @@ from . import admin_report_views
 from . import backtesting_views
 from . import coaching_views
 from . import copy_trading_views
+from . import agent_views
 
 app_name = 'users'
 
@@ -130,4 +131,19 @@ urlpatterns = [
     path('copy-trading/process/', copy_trading_views.ProcessPendingView.as_view(), name='process-pending-copies'),
     path('copy-trading/followers/', copy_trading_views.MyFollowersView.as_view(), name='my-followers'),
     path('copy-trading/following/', copy_trading_views.MyFollowingView.as_view(), name='my-following'),
+
+    # ── AI Agent MCP + Benchmarking ──
+    # Public — no auth
+    path('agents/register/', agent_views.RegisterAgentView.as_view(), name='agent-register'),
+    path('benchmarks/', agent_views.list_benchmarks, name='benchmark-list'),
+    path('benchmarks/<str:key>/', agent_views.get_benchmark_detail, name='benchmark-detail'),
+    path('benchmarks/<str:key>/leaderboard/', agent_views.benchmark_leaderboard, name='benchmark-leaderboard'),
+
+    # API-key authenticated
+    path('agents/me/', agent_views.AgentMeView.as_view(), name='agent-me'),
+    path('agents/me/runs/', agent_views.MyRunsView.as_view(), name='agent-my-runs'),
+    path('benchmarks/<str:key>/runs/', agent_views.StartBenchmarkRunView.as_view(), name='benchmark-run-start'),
+    path('benchmark-runs/<uuid:run_id>/', agent_views.RunDetailView.as_view(), name='benchmark-run-detail'),
+    path('benchmark-runs/<uuid:run_id>/finalize/', agent_views.FinalizeRunView.as_view(), name='benchmark-run-finalize'),
+    path('benchmark-runs/<uuid:run_id>/notes/', agent_views.RunNotesView.as_view(), name='benchmark-run-notes'),
 ]

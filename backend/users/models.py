@@ -175,6 +175,16 @@ class UserProfile(models.Model):
     # Reset tracking (prevent abuse)
     last_reset_at = models.DateTimeField(blank=True, null=True)
 
+    # AI-agent sandbox accounts (MCP + benchmarking).
+    # When True, this account was created via /api/agents/register/ and
+    # represents an AI model instance being benchmarked. is_agent=True
+    # accounts are hidden from the public user leaderboard and show up
+    # only on the agent leaderboard (see users/agent_views.py).
+    is_agent = models.BooleanField(default=False)
+    # Free-text label the developer picks: "gpt-4o", "claude-3-5-sonnet",
+    # "my-custom-fine-tune". Used for grouping on the agent leaderboard.
+    agent_model = models.CharField(max_length=100, blank=True, default='')
+
     @property
     def is_authenticated(self):
         """Required by DRF when used as request.user."""
@@ -739,4 +749,146 @@ class Backtest(models.Model):
             'config_snapshot': self.config_snapshot,
             'results': self.results,
             'created_at': self.created_at.isoformat(),
+        }
+
+
+# ── AI Agent Benchmarking (MCP) ─────────────────────────────────
+
+class BenchmarkRun(models.Model):
+    """One attempt at a benchmark task by an AI agent.
+
+    The benchmark itself (rules, starting cash, duration, symbol universe,
+    scoring formula) is defined in `users/benchmarks/definitions.py` —
+    not in the database — so benchmarks are code-versioned. This model is
+    just the row that tracks a single agent's attempt at running one.
+
+    Lifecycle:
+        pending  → agent created the run but hasn't traded yet
+        running  → active, agent making trades
+        complete → deadline reached OR agent explicitly finalized
+        failed   → hit an error before scoring
+
+    Snapshot fields (`starting_cash`, `benchmark_snapshot`) freeze the
+    definition at run creation time so future edits to the benchmark
+    catalog can't retroactively change historical scores.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('running', 'Running'),
+        ('complete', 'Complete'),
+        ('failed', 'Failed'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    agent = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name='benchmark_runs',
+        help_text='The sandbox UserProfile (is_agent=True) running this benchmark.',
+    )
+    benchmark_key = models.CharField(
+        max_length=64,
+        help_text='Key into users.benchmarks.definitions.BENCHMARKS.',
+    )
+    # Snapshot of the definition at start time — safe to re-score later
+    # even if the benchmark spec is edited.
+    benchmark_snapshot = models.JSONField(default=dict)
+
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default='pending')
+    starting_cash = models.DecimalField(max_digits=20, decimal_places=2, default=100000.00)
+
+    started_at = models.DateTimeField(default=timezone.now)
+    ends_at = models.DateTimeField(
+        help_text='Deadline. Scoring uses portfolio state at this time '
+                  '(or earlier if the agent finalized early).',
+    )
+    finalized_at = models.DateTimeField(blank=True, null=True)
+
+    # Populated once at finalization by users.benchmarks.scoring.
+    final_portfolio_value = models.DecimalField(
+        max_digits=20, decimal_places=2, null=True, blank=True,
+    )
+    final_pnl = models.DecimalField(
+        max_digits=20, decimal_places=2, null=True, blank=True,
+    )
+    final_pnl_pct = models.FloatField(null=True, blank=True)
+    final_score = models.FloatField(
+        null=True, blank=True,
+        help_text='Composite score per the benchmark scoring function. '
+                  'Higher is better. May differ from raw P&L when the '
+                  'benchmark weights risk / drawdown / consistency.',
+    )
+    scoring_details = models.JSONField(
+        default=dict,
+        help_text='Breakdown of how final_score was computed — component '
+                  'scores, weights, penalties. Populated by scoring.py.',
+    )
+    error = models.TextField(blank=True, default='')
+
+    class Meta:
+        db_table = 'benchmark_runs'
+        ordering = ['-started_at']
+        indexes = [
+            models.Index(fields=['benchmark_key', '-final_score']),
+            models.Index(fields=['agent', '-started_at']),
+        ]
+
+    def __str__(self):
+        return f'BenchmarkRun {self.benchmark_key} · {self.agent.username} · {self.status}'
+
+    def to_dict(self):
+        return {
+            'id': str(self.id),
+            'agent': {
+                'username': self.agent.username,
+                'agent_model': self.agent.agent_model,
+            },
+            'benchmark_key': self.benchmark_key,
+            'benchmark_snapshot': self.benchmark_snapshot,
+            'status': self.status,
+            'starting_cash': float(self.starting_cash),
+            'started_at': self.started_at.isoformat(),
+            'ends_at': self.ends_at.isoformat(),
+            'finalized_at': self.finalized_at.isoformat() if self.finalized_at else None,
+            'final_portfolio_value': float(self.final_portfolio_value) if self.final_portfolio_value is not None else None,
+            'final_pnl': float(self.final_pnl) if self.final_pnl is not None else None,
+            'final_pnl_pct': self.final_pnl_pct,
+            'final_score': self.final_score,
+            'scoring_details': self.scoring_details,
+            'error': self.error,
+        }
+
+
+class AgentActionLog(models.Model):
+    """Optional structured journal an agent can append to during a run.
+
+    Used for post-hoc analysis of *why* an agent made the trades it did.
+    Not required for benchmarking — the trades themselves are the ground
+    truth — but useful for developers comparing model reasoning patterns.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    run = models.ForeignKey(
+        BenchmarkRun,
+        on_delete=models.CASCADE,
+        related_name='action_logs',
+    )
+    ts = models.DateTimeField(default=timezone.now)
+    kind = models.CharField(
+        max_length=32,
+        default='note',
+        help_text='e.g. "note", "thesis", "risk-check", "hypothesis"',
+    )
+    content = models.TextField()
+
+    class Meta:
+        db_table = 'agent_action_logs'
+        ordering = ['ts']
+        indexes = [models.Index(fields=['run', 'ts'])]
+
+    def to_dict(self):
+        return {
+            'id': str(self.id),
+            'ts': self.ts.isoformat(),
+            'kind': self.kind,
+            'content': self.content,
         }

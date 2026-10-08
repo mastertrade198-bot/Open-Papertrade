@@ -8,7 +8,7 @@ from .models import Company, Filing, IngestJob
 from .serializers import CompanySerializer, FilingSerializer
 from .services.retrieval import RetrievalFilters, search
 from .services.qa import answer_question
-from .services.agent import run_agent
+from .services.langgraph_agent import run_agent
 from .services.llm import available_providers
 from .services import edgar
 from .services.ingest_worker import enqueue as enqueue_ingest

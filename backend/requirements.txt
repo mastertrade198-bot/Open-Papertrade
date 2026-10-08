@@ -40,3 +40,22 @@ sentence-transformers==3.3.1
 rank-bm25==0.2.2
 anthropic==0.44.0
 openai==1.59.9
+
+# LangGraph agent + LangSmith tracing (Phase 8)
+# The agent uses LangGraph's StateGraph for the ReAct loop. Chat models come
+# from the langchain-<provider> packages so each provider's tool-call schema
+# is handled by battle-tested upstream code rather than reinvented here.
+#
+# Version policy: pin minimums (the ones we've tested against) and cap at
+# the next minor to protect against breaking-change releases. LangChain has
+# a history of shipping breaking changes on minor bumps, so caps matter more
+# here than in most Python packages. langchain-core is caret-less because
+# the per-provider packages carry their own minimum-core constraint, and
+# pip's resolver will pick the highest version satisfying all of them.
+langgraph>=0.2.61,<0.3
+langchain-core>=0.3.30,<0.4
+langchain-anthropic>=0.3.3,<0.4
+langchain-openai>=0.3.0,<0.4
+langchain-mistralai>=0.2.4,<0.3
+langchain-ollama>=0.2.2,<0.3
+langsmith>=0.2.10,<0.3

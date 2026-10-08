@@ -191,6 +191,27 @@ FILINGS_CHUNK_TOKENS = int(os.getenv('FILINGS_CHUNK_TOKENS', '400'))
 FILINGS_CHUNK_OVERLAP = int(os.getenv('FILINGS_CHUNK_OVERLAP', '50'))
 LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'anthropic')
 
+# LangGraph agent budget — hard cap on ReAct loop iterations. Guards against
+# a stuck loop (e.g., the model repeatedly calling a broken tool) from burning
+# tokens indefinitely. Raise for very complex multi-hop research; lower for
+# strict latency budgets.
+FILINGS_AGENT_MAX_ITERATIONS = int(os.getenv('FILINGS_AGENT_MAX_ITERATIONS', '12'))
+
+# LangSmith tracing — optional. When LANGSMITH_API_KEY is set, LangChain's
+# chat models automatically push a trace of every LLM call, tool invocation,
+# and state transition to smith.langchain.com under LANGSMITH_PROJECT. This
+# does phone home; leave the key unset for fully-offline deployments.
+LANGSMITH_API_KEY = os.getenv('LANGSMITH_API_KEY', '')
+LANGSMITH_PROJECT = os.getenv('LANGSMITH_PROJECT', 'open-papertrade-filings')
+LANGSMITH_TRACING = os.getenv('LANGSMITH_TRACING', '').lower() in ('true', '1', 'yes')
+if LANGSMITH_API_KEY:
+    # LangChain reads from the LANGCHAIN_* env vars, not the LANGSMITH_* ones.
+    # We normalize here so users only need to set the LANGSMITH_* names.
+    os.environ.setdefault('LANGCHAIN_API_KEY', LANGSMITH_API_KEY)
+    os.environ.setdefault('LANGCHAIN_PROJECT', LANGSMITH_PROJECT)
+    if LANGSMITH_TRACING:
+        os.environ.setdefault('LANGCHAIN_TRACING_V2', 'true')
+
 # Unfold Admin Configuration
 from django.templatetags.static import static
 from django.urls import reverse_lazy
