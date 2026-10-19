@@ -196,7 +196,7 @@ export default function WatchlistPage() {
         <Sidebar />
         <main className="flex-1 flex flex-col gap-7 py-8 px-10 overflow-auto">
           <PageHeader
-            title="Watchlist"
+            title="Lista de acompanhamento"
             subtitle="Acompanhe seus ativos favoritos e configure alertas de preço"
           />
 
@@ -279,7 +279,7 @@ export default function WatchlistPage() {
       <Sidebar />
       <main className="flex-1 flex flex-col gap-6 py-8 px-10 overflow-auto">
         <PageHeader
-          title="Watchlist"
+          title="Lista de acompanhamento"
           subtitle="Acompanhe seus ativos favoritos e configure alertas de preço"
           onPrimaryClick={() => router.push("/trade")}
         />
