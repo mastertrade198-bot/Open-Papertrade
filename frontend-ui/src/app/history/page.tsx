@@ -110,9 +110,9 @@ export default function HistoryPage() {
       <Sidebar />
       <main className="flex-1 flex flex-col gap-7 py-8 px-10 overflow-auto">
         <PageHeader
-          title="History"
+          title="Histórico"
           subtitle="Consulte todas as suas operações e transações"
-          primaryButtonText="Export"
+          primaryButtonText="Exportar"
           primaryButtonIcon="download"
           onPrimaryClick={exportCSV}
         />
