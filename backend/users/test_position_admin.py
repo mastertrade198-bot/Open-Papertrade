@@ -115,3 +115,45 @@ class PositionAdminTests(TestCase):
         response = self.client.get(reverse('admin:users_positionauditlog_change', args=[log.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, 'name="_save"')
+
+
+    def test_margin_based_position_creation_with_price_levels(self):
+        from rest_framework.test import APIRequestFactory
+        from .position_views import PositionsView
+
+        quote = SimpleNamespace(name="Apple Inc.")
+        request = APIRequestFactory().post("/api/users/positions/", {
+            "symbol": "AAPL", "side": "LONG", "margin": "125.37",
+            "leverage": "10", "stopLoss": "95", "takeProfit": "115",
+        }, format="json")
+        with patch("users.position_views.get_user", return_value=self.owner), patch(
+            "users.position_views.get_usd_quote", return_value=(quote, Decimal("100"))
+        ):
+            response = PositionsView.as_view()(request)
+        self.assertEqual(response.status_code, 201, response.data)
+        opened = Position.objects.get(pk=response.data["position"]["id"])
+        self.owner.refresh_from_db()
+        self.assertEqual(opened.margin, Decimal("125.37"))
+        self.assertEqual(opened.quantity, Decimal("12.53700000"))
+        self.assertEqual(opened.notional_value, Decimal("1253.70"))
+        self.assertEqual(opened.stop_loss, Decimal("95"))
+        self.assertEqual(opened.take_profit, Decimal("115"))
+        self.assertEqual(self.owner.buying_power, Decimal("774.63"))
+
+    def test_invalid_sl_tp_does_not_reserve_margin(self):
+        from rest_framework.test import APIRequestFactory
+        from .position_views import PositionsView
+
+        quote = SimpleNamespace(name="Apple Inc.")
+        request = APIRequestFactory().post("/api/users/positions/", {
+            "symbol": "AAPL", "side": "SHORT", "margin": "100",
+            "leverage": "5", "stopLoss": "90", "takeProfit": "110",
+        }, format="json")
+        with patch("users.position_views.get_user", return_value=self.owner), patch(
+            "users.position_views.get_usd_quote", return_value=(quote, Decimal("100"))
+        ):
+            response = PositionsView.as_view()(request)
+        self.assertEqual(response.status_code, 400)
+        self.owner.refresh_from_db()
+        self.assertEqual(self.owner.buying_power, Decimal("900"))
+        self.assertEqual(Position.objects.count(), 1)
