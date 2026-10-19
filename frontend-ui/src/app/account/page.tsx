@@ -48,12 +48,12 @@ import PageHeader from "@/components/PageHeader";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useAuth } from "@/context/AuthContext";
 import { APP_CONFIG } from "@/config/app";
-import { formatCurrency, formatPercent } from "@/lib/utils";
+import { formatMoeda, formatPercent } from "@/lib/utils";
 import {
   userAPI,
   API_HOST,
-  type UserProfile,
-  type UserSettings,
+  type UserPerfil,
+  type UserConfigurações,
   type UserStats,
   type Achievement,
   type APIKeyInfo,
@@ -100,7 +100,7 @@ const AVAILABLE_MARKETS = [
 ];
 
 export default function AccountPage() {
-  const { refreshPrices, refreshUserData: refreshPortfolio, currency, currencySymbol, setCurrency, market, setMarket, totalPortfolioValue, totalReturns, returnsPercent, buyingPower, applyTheme, updateTradingSettings, updateNotificationSettings } = usePortfolio();
+  const { refreshPrices, refreshUserData: refreshPortfolio, currency, currencySymbol, setMoeda, market, setMercado, totalPortfolioValue, totalReturns, returnsPercent, buyingPower, applyTema, updateTradingConfigurações, updateNotificationConfigurações } = usePortfolio();
   const { logout } = useAuth();
   const router = useRouter();
 
@@ -111,8 +111,8 @@ export default function AccountPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // User data from API
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [settings, setSettings] = useState<UserSettings | null>(null);
+  const [profile, setPerfil] = useState<UserPerfil | null>(null);
+  const [settings, setConfigurações] = useState<UserConfigurações | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [achievementStats, setAchievementStats] = useState({ unlockedCount: 0, totalCount: 0 });
@@ -127,7 +127,7 @@ export default function AccountPage() {
 
   // Modal states
   const [showSecurityModal, setShowSecurityModal] = useState(false);
-  const [showAppearanceModal, setShowAppearanceModal] = useState(false);
+  const [showAparênciaModal, setShowAparênciaModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
 
   // Security modal state
@@ -151,13 +151,13 @@ export default function AccountPage() {
     setError(null);
     try {
       const [profileRes, statsRes, achievementsRes] = await Promise.all([
-        userAPI.getProfile(),
+        userAPI.getPerfil(),
         userAPI.getStats(),
         userAPI.getAchievements(),
       ]);
 
-      setProfile(profileRes.profile);
-      setSettings(profileRes.settings);
+      setPerfil(profileRes.profile);
+      setConfigurações(profileRes.settings);
       setEditName(profileRes.profile.name);
       setEditUsername(profileRes.profile.username || '');
       setEditEmail(profileRes.profile.email);
@@ -185,7 +185,7 @@ export default function AccountPage() {
   };
 
   // Save profile changes
-  const handleSaveProfile = async () => {
+  const handleSavePerfil = async () => {
     if (!profile) return;
 
     // Validate username
@@ -197,14 +197,14 @@ export default function AccountPage() {
 
     setIsSaving(true);
     try {
-      const updated = await userAPI.updateProfile({
+      const updated = await userAPI.updatePerfil({
         name: editName,
         email: editEmail,
         ...(editUsername ? { username: editUsername } : {}),
       } as any);
-      setProfile({ ...profile, ...updated });
+      setPerfil({ ...profile, ...updated });
       setIsEditing(false);
-      showSuccess("Profile updated successfully");
+      showSuccess("Perfil updated successfully");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update profile");
     } finally {
@@ -224,9 +224,9 @@ export default function AccountPage() {
     setError(null);
     try {
       const result = await userAPI.uploadAvatar(file);
-      setProfile({ ...profile, avatarUrl: result.avatarUrl });
+      setPerfil({ ...profile, avatarUrl: result.avatarUrl });
       await refreshPortfolio();
-      showSuccess("Profile picture updated");
+      showSuccess("Perfil picture updated");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to upload image");
     } finally {
@@ -242,9 +242,9 @@ export default function AccountPage() {
     setError(null);
     try {
       await userAPI.removeAvatar();
-      setProfile({ ...profile, avatarUrl: null });
+      setPerfil({ ...profile, avatarUrl: null });
       await refreshPortfolio();
-      showSuccess("Profile picture removed");
+      showSuccess("Perfil picture removed");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to remove image");
     } finally {
@@ -252,25 +252,25 @@ export default function AccountPage() {
     }
   };
 
-  const handleNotificationToggle = async (key: keyof UserSettings["notifications"]) => {
+  const handleNotificationToggle = async (key: keyof UserConfigurações["notifications"]) => {
     if (!settings) return;
     const newValue = !settings.notifications[key];
-    const newSettings = {
+    const newConfigurações = {
       ...settings,
       notifications: { ...settings.notifications, [key]: newValue },
     };
 
     // Sync tradeConfirmations with confirmTrades preference
     if (key === 'tradeConfirmations') {
-      newSettings.preferences = { ...newSettings.preferences, confirmTrades: newValue };
+      newConfigurações.preferences = { ...newConfigurações.preferences, confirmTrades: newValue };
     }
 
-    setSettings(newSettings);
-    updateNotificationSettings({ [key]: newValue });
+    setConfigurações(newConfigurações);
+    updateNotificationConfigurações({ [key]: newValue });
 
     // Also sync confirmTrades preference when tradeConfirmations changes
     if (key === 'tradeConfirmations') {
-      updateTradingSettings({ confirmTrades: newValue });
+      updateTradingConfigurações({ confirmTrades: newValue });
     }
 
     try {
@@ -278,36 +278,36 @@ export default function AccountPage() {
       if (key === 'tradeConfirmations') {
         updates.preferences = { confirmTrades: newValue };
       }
-      await userAPI.updateSettings(updates as any);
+      await userAPI.updateConfigurações(updates as any);
     } catch (err) {
-      setSettings(settings);
-      updateNotificationSettings({ [key]: settings.notifications[key] });
+      setConfigurações(settings);
+      updateNotificationConfigurações({ [key]: settings.notifications[key] });
       if (key === 'tradeConfirmations') {
-        updateTradingSettings({ confirmTrades: settings.preferences.confirmTrades });
+        updateTradingConfigurações({ confirmTrades: settings.preferences.confirmTrades });
       }
       setError(err instanceof Error ? err.message : "Failed to update settings");
     }
   };
 
   // Update preference settings
-  const handlePreferenceToggle = async (key: keyof UserSettings["preferences"]) => {
+  const handlePreferenceToggle = async (key: keyof UserConfigurações["preferences"]) => {
     if (!settings) return;
     const newValue = !settings.preferences[key];
-    const newSettings = {
+    const newConfigurações = {
       ...settings,
       preferences: { ...settings.preferences, [key]: newValue },
     };
 
     // Sync confirmTrades with tradeConfirmations notification
     if (key === 'confirmTrades') {
-      newSettings.notifications = { ...newSettings.notifications, tradeConfirmations: newValue as boolean };
+      newConfigurações.notifications = { ...newConfigurações.notifications, tradeConfirmations: newValue as boolean };
     }
 
-    setSettings(newSettings);
-    updateTradingSettings({ [key]: newValue });
+    setConfigurações(newConfigurações);
+    updateTradingConfigurações({ [key]: newValue });
 
     if (key === 'confirmTrades') {
-      updateNotificationSettings({ tradeConfirmations: newValue as boolean });
+      updateNotificationConfigurações({ tradeConfirmations: newValue as boolean });
     }
 
     try {
@@ -315,12 +315,12 @@ export default function AccountPage() {
       if (key === 'confirmTrades') {
         updates.notifications = { tradeConfirmations: newValue };
       }
-      await userAPI.updateSettings(updates as any);
+      await userAPI.updateConfigurações(updates as any);
     } catch (err) {
-      setSettings(settings);
-      updateTradingSettings({ [key]: settings.preferences[key] });
+      setConfigurações(settings);
+      updateTradingConfigurações({ [key]: settings.preferences[key] });
       if (key === 'confirmTrades') {
-        updateNotificationSettings({ tradeConfirmations: settings.notifications.tradeConfirmations });
+        updateNotificationConfigurações({ tradeConfirmations: settings.notifications.tradeConfirmations });
       }
       setError(err instanceof Error ? err.message : "Failed to update settings");
     }
@@ -329,18 +329,18 @@ export default function AccountPage() {
   // Update default order type
   const handleOrderTypeChange = async (type: string) => {
     if (!settings) return;
-    const newSettings = {
+    const newConfigurações = {
       ...settings,
       preferences: { ...settings.preferences, defaultOrderType: type },
     };
-    setSettings(newSettings);
-    updateTradingSettings({ defaultOrderType: type });
+    setConfigurações(newConfigurações);
+    updateTradingConfigurações({ defaultOrderType: type });
 
     try {
-      await userAPI.updateSettings({ preferences: { defaultOrderType: type } } as any);
+      await userAPI.updateConfigurações({ preferences: { defaultOrderType: type } } as any);
     } catch (err) {
-      setSettings(settings);
-      updateTradingSettings({ defaultOrderType: settings.preferences.defaultOrderType });
+      setConfigurações(settings);
+      updateTradingConfigurações({ defaultOrderType: settings.preferences.defaultOrderType });
       setError(err instanceof Error ? err.message : "Failed to update settings");
     }
   };
@@ -363,63 +363,63 @@ export default function AccountPage() {
   };
 
   // Update theme
-  const handleThemeChange = async (theme: 'DARK' | 'LIGHT' | 'AUTO') => {
+  const handleTemaChange = async (theme: 'DARK' | 'LIGHT' | 'AUTO') => {
     if (!settings) return;
 
-    const newSettings = {
+    const newConfigurações = {
       ...settings,
       display: { ...settings.display, theme },
     };
-    setSettings(newSettings);
-    applyTheme(theme);
+    setConfigurações(newConfigurações);
+    applyTema(theme);
 
     try {
-      await userAPI.updateTheme(theme);
-      showSuccess(`Theme changed to ${theme.toLowerCase()}`);
+      await userAPI.updateTema(theme);
+      showSuccess(`Tema changed to ${theme.toLowerCase()}`);
     } catch (err) {
-      setSettings(settings);
+      setConfigurações(settings);
       setError(err instanceof Error ? err.message : "Failed to update theme");
     }
   };
 
   // Update currency
-  const handleCurrencyChange = async (newCurrency: string) => {
+  const handleMoedaChange = async (newMoeda: string) => {
     if (!settings) return;
 
-    const oldCurrency = settings.display.currency;
-    const newSettings = {
+    const oldMoeda = settings.display.currency;
+    const newConfigurações = {
       ...settings,
-      display: { ...settings.display, currency: newCurrency },
+      display: { ...settings.display, currency: newMoeda },
     };
-    setSettings(newSettings);
+    setConfigurações(newConfigurações);
 
     try {
-      await setCurrency(newCurrency);
-      const currencyInfo = AVAILABLE_CURRENCIES.find(c => c.code === newCurrency);
-      showSuccess(`Currency changed to ${currencyInfo?.name || newCurrency}`);
+      await setMoeda(newMoeda);
+      const currencyInfo = AVAILABLE_CURRENCIES.find(c => c.code === newMoeda);
+      showSuccess(`Moeda changed to ${currencyInfo?.name || newMoeda}`);
     } catch (err) {
-      setSettings({ ...settings, display: { ...settings.display, currency: oldCurrency } });
+      setConfigurações({ ...settings, display: { ...settings.display, currency: oldMoeda } });
       setError(err instanceof Error ? err.message : "Failed to update currency");
     }
   };
 
   // Update market
-  const handleMarketChange = async (newMarket: string) => {
+  const handleMercadoChange = async (newMercado: string) => {
     if (!settings) return;
 
-    const oldMarket = settings.display.market;
-    const newSettings = {
+    const oldMercado = settings.display.market;
+    const newConfigurações = {
       ...settings,
-      display: { ...settings.display, market: newMarket },
+      display: { ...settings.display, market: newMercado },
     };
-    setSettings(newSettings);
+    setConfigurações(newConfigurações);
 
     try {
-      await setMarket(newMarket);
-      const marketInfo = AVAILABLE_MARKETS.find(m => m.code === newMarket);
-      showSuccess(`Market changed to ${marketInfo?.name || newMarket}`);
+      await setMercado(newMercado);
+      const marketInfo = AVAILABLE_MARKETS.find(m => m.code === newMercado);
+      showSuccess(`Mercado changed to ${marketInfo?.name || newMercado}`);
     } catch (err) {
-      setSettings({ ...settings, display: { ...settings.display, market: oldMarket } });
+      setConfigurações({ ...settings, display: { ...settings.display, market: oldMercado } });
       setError(err instanceof Error ? err.message : "Failed to update market");
     }
   };
@@ -460,7 +460,7 @@ export default function AccountPage() {
     try {
       const result = await userAPI.changePassword(currentPassword, newPassword);
       if (profile) {
-        setProfile({ ...profile, passwordChangedAt: result.passwordChangedAt });
+        setPerfil({ ...profile, passwordChangedAt: result.passwordChangedAt });
       }
       setSecurityView('overview');
       setCurrentPassword("");
@@ -496,7 +496,7 @@ export default function AccountPage() {
       const result = await userAPI.verify2FA(totpCode);
       setBackupCodes(result.backupCodes);
       if (profile) {
-        setProfile({ ...profile, is2faEnabled: true });
+        setPerfil({ ...profile, is2faEnabled: true });
       }
       setTotpCode("");
     } catch (err) {
@@ -512,7 +512,7 @@ export default function AccountPage() {
     try {
       await userAPI.disable2FA(disablePassword);
       if (profile) {
-        setProfile({ ...profile, is2faEnabled: false });
+        setPerfil({ ...profile, is2faEnabled: false });
       }
       setSecurityView('overview');
       setDisablePassword("");
@@ -629,7 +629,7 @@ export default function AccountPage() {
       <main className="flex-1 flex flex-col gap-6 py-8 px-10 overflow-auto">
         <PageHeader
           title="Account"
-          subtitle="Manage your profile and preferences"
+          subtitle="Gerencie seu perfil e suas preferências"
         />
 
         {/* Success Message */}
@@ -649,13 +649,13 @@ export default function AccountPage() {
         )}
 
         <div className="flex gap-6">
-          {/* Left Column - Profile & Stats */}
+          {/* Left Column - Perfil & Stats */}
           <div className="flex-1 flex flex-col gap-5">
-            {/* Profile Card */}
+            {/* Perfil Card */}
             <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)]">
               <div className="flex items-start justify-between mb-6">
                 <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-                  Profile
+                  Perfil
                 </h2>
                 <button
                   onClick={() => {
@@ -670,7 +670,7 @@ export default function AccountPage() {
                   className="flex items-center gap-2 text-[11px] font-medium text-[var(--accent-primary)] hover:underline"
                 >
                   <Edit2 size={12} />
-                  {isEditing ? "Cancel" : "Edit"}
+                  {isEditing ? "Cancelar" : "Edit"}
                 </button>
               </div>
 
@@ -716,13 +716,13 @@ export default function AccountPage() {
                   )}
                 </div>
 
-                {/* Profile Info */}
+                {/* Perfil Info */}
                 <div className="flex-1">
                   {isEditing ? (
                     <div className="flex flex-col gap-4">
                       <div>
                         <label className="text-[11px] font-medium text-[var(--text-muted)] mb-1 block">
-                          Full Name
+                          Nome completo
                         </label>
                         <input
                           type="text"
@@ -764,7 +764,7 @@ export default function AccountPage() {
                         />
                       </div>
                       <button
-                        onClick={handleSaveProfile}
+                        onClick={handleSavePerfil}
                         disabled={isSaving}
                         className="self-start px-4 py-2 rounded-lg bg-[var(--accent-primary)] text-sm font-medium text-white hover:bg-[var(--accent-secondary)] transition-colors disabled:opacity-50"
                       >
@@ -848,7 +848,7 @@ export default function AccountPage() {
             {/* Account Stats */}
             <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)]">
               <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-5">
-                Account Overview
+                Visão geral da conta
               </h2>
 
               <div className="grid grid-cols-2 gap-4">
@@ -857,10 +857,10 @@ export default function AccountPage() {
                     <div className="w-10 h-10 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center">
                       <PieChart size={18} className="text-[var(--accent-primary)]" />
                     </div>
-                    <span className="text-xs text-[var(--text-muted)]">Portfolio Value</span>
+                    <span className="text-xs text-[var(--text-muted)]">Valor da carteira</span>
                   </div>
                   <span className="font-mono text-2xl font-bold text-[var(--text-primary)]">
-                    {formatCurrency(totalPortfolioValue)}
+                    {formatMoeda(totalPortfolioValue)}
                   </span>
                 </div>
 
@@ -869,10 +869,10 @@ export default function AccountPage() {
                     <div className="w-10 h-10 rounded-lg bg-[var(--accent-green)]/10 flex items-center justify-center">
                       <TrendingUp size={18} className="text-[var(--accent-green)]" />
                     </div>
-                    <span className="text-xs text-[var(--text-muted)]">Total Returns</span>
+                    <span className="text-xs text-[var(--text-muted)]">Retorno total</span>
                   </div>
                   <span className={`font-mono text-2xl font-bold ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                    {totalReturns >= 0 ? "+" : ""}{formatCurrency(totalReturns)}
+                    {totalReturns >= 0 ? "+" : ""}{formatMoeda(totalReturns)}
                   </span>
                   <span className="text-xs text-[var(--text-muted)] ml-2">
                     ({formatPercent(returnsPercent)})
@@ -884,10 +884,10 @@ export default function AccountPage() {
                     <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
                       <DollarSign size={18} className="text-blue-500" />
                     </div>
-                    <span className="text-xs text-[var(--text-muted)]">Buying Power</span>
+                    <span className="text-xs text-[var(--text-muted)]">Saldo disponível</span>
                   </div>
                   <span className="font-mono text-2xl font-bold text-[var(--text-primary)]">
-                    {formatCurrency(buyingPower, false, { convertFromUSD: false })}
+                    {formatMoeda(buyingPower, false, { convertFromUSD: false })}
                   </span>
                 </div>
 
@@ -896,7 +896,7 @@ export default function AccountPage() {
                     <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
                       <History size={18} className="text-purple-500" />
                     </div>
-                    <span className="text-xs text-[var(--text-muted)]">Total Trades</span>
+                    <span className="text-xs text-[var(--text-muted)]">Total de operações</span>
                   </div>
                   <span className="font-mono text-2xl font-bold text-[var(--text-primary)]">
                     {stats.totalTrades}
@@ -907,19 +907,19 @@ export default function AccountPage() {
               {/* Achievement Stats */}
               <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-[var(--border-primary)]">
                 <div className="text-center">
-                  <span className="text-xs text-[var(--text-muted)]">Holdings</span>
+                  <span className="text-xs text-[var(--text-muted)]">Ativos</span>
                   <div className="font-mono text-lg font-semibold text-[var(--text-primary)] mt-1">
                     {stats.holdingsCount}
                   </div>
                 </div>
                 <div className="text-center">
-                  <span className="text-xs text-[var(--text-muted)]">Account Age</span>
+                  <span className="text-xs text-[var(--text-muted)]">Tempo de conta</span>
                   <div className="font-mono text-lg font-semibold text-[var(--text-primary)] mt-1">
                     {formatAccountAge(stats.memberSince)}
                   </div>
                 </div>
                 <div className="text-center">
-                  <span className="text-xs text-[var(--text-muted)]">Win Rate</span>
+                  <span className="text-xs text-[var(--text-muted)]">Taxa de acerto</span>
                   <div className="font-mono text-lg font-semibold text-[var(--accent-green)] mt-1">
                     {stats.winRate}%
                   </div>
@@ -941,7 +941,7 @@ export default function AccountPage() {
                   [ACHIEVEMENTS]
                 </span>
                 <h2 className="text-xl font-bold tracking-[2px] text-[var(--text-primary)] uppercase">
-                  Trader Milestones
+                  Conquistas do trader
                 </h2>
                 <div className="w-16 h-[3px] rounded-full bg-[var(--accent-primary)]" />
                 <span className="text-[11px] font-mono text-[var(--text-dim)]">
@@ -1033,14 +1033,14 @@ export default function AccountPage() {
             </div>
           </div>
 
-          {/* Right Column - Settings */}
+          {/* Right Column - Configurações */}
           <div className="w-[380px] flex flex-col gap-5">
-            {/* Notifications */}
+            {/* Notificações */}
             <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)]">
               <div className="flex items-center gap-3 mb-5">
                 <Bell size={18} className="text-[var(--text-muted)]" />
                 <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-                  Notifications
+                  Notificações
                 </h2>
               </div>
 
@@ -1049,7 +1049,7 @@ export default function AccountPage() {
                   { key: "priceAlerts" as const, label: "Price Alerts", desc: "Get notified when prices hit your targets" },
                   { key: "tradeConfirmations" as const, label: "Trade Confirmations", desc: "Confirm before executing trades" },
                   { key: "weeklyReport" as const, label: "Weekly Report", desc: "Receive weekly performance summary" },
-                  { key: "marketNews" as const, label: "Market News", desc: "Breaking news and market updates" },
+                  { key: "marketNews" as const, label: "Mercado News", desc: "Breaking news and market updates" },
                 ].map((item) => (
                   <div key={item.key} className="flex items-center justify-between">
                     <div>
@@ -1077,19 +1077,19 @@ export default function AccountPage() {
               </div>
             </div>
 
-            {/* Trading Preferences */}
+            {/* Preferências de negociação */}
             <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)]">
               <div className="flex items-center gap-3 mb-5">
                 <TrendingUp size={18} className="text-[var(--text-muted)]" />
                 <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-                  Trading Preferences
+                  Preferências de negociação
                 </h2>
               </div>
 
               <div className="flex flex-col gap-4">
                 <div>
                   <span className="text-xs font-medium text-[var(--text-muted)] mb-2 block">
-                    Order Execution
+                    Execução de ordens
                   </span>
                   <p className="text-xs text-[var(--text-secondary)]">
                     All trades execute at the current market price.
@@ -1132,28 +1132,28 @@ export default function AccountPage() {
               >
                 <div className="flex items-center gap-3">
                   <Shield size={18} className="text-[var(--text-muted)]" />
-                  <span className="text-sm text-[var(--text-primary)]">Security Settings</span>
+                  <span className="text-sm text-[var(--text-primary)]">Configurações de segurança</span>
                 </div>
                 <ChevronRight size={16} className="text-[var(--text-muted)]" />
               </button>
 
               <button
-                onClick={() => setShowAppearanceModal(true)}
+                onClick={() => setShowAparênciaModal(true)}
                 className="w-full flex items-center justify-between px-5 py-4 hover:bg-[var(--bg-muted)] transition-colors border-b border-[var(--border-primary)]"
               >
                 <div className="flex items-center gap-3">
                   <Palette size={18} className="text-[var(--text-muted)]" />
-                  <span className="text-sm text-[var(--text-primary)]">Appearance</span>
+                  <span className="text-sm text-[var(--text-primary)]">Aparência</span>
                 </div>
                 <ChevronRight size={16} className="text-[var(--text-muted)]" />
               </button>
 
               </div>
 
-            {/* Danger Zone */}
+            {/* Zona de risco */}
             <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] overflow-hidden">
               <div className="px-5 pt-4 pb-3">
-                <span className="text-[10px] font-bold tracking-[1.5px] uppercase text-[var(--text-dim)]">Danger Zone</span>
+                <span className="text-[10px] font-bold tracking-[1.5px] uppercase text-[var(--text-dim)]">Zona de risco</span>
               </div>
 
               <button
@@ -1166,7 +1166,7 @@ export default function AccountPage() {
                 </div>
                 <div className="flex-1 text-left">
                   <span className="text-sm font-medium text-[var(--text-primary)] block">
-                    {isSaving ? "Resetting..." : "Reset Account"}
+                    {isSaving ? "Resetting..." : "Redefinir conta"}
                   </span>
                   <span className="text-[11px] text-[var(--text-dim)]">
                     Clear all trades, holdings, and alerts
@@ -1183,9 +1183,9 @@ export default function AccountPage() {
                   <LogOut size={16} className="text-[var(--accent-red)]" />
                 </div>
                 <div className="flex-1 text-left">
-                  <span className="text-sm font-medium text-[var(--text-primary)] block">Sign Out</span>
+                  <span className="text-sm font-medium text-[var(--text-primary)] block">Sair</span>
                   <span className="text-[11px] text-[var(--text-dim)]">
-                    End your current session
+                    Encerrar sua sessão atual
                   </span>
                 </div>
                 <ChevronRight size={16} className="text-[var(--text-dim)] group-hover:text-[var(--accent-red)] transition-colors" />
@@ -1195,14 +1195,14 @@ export default function AccountPage() {
         </div>
       </main>
 
-      {/* Security Settings Modal */}
+      {/* Configurações de segurança Modal */}
       <Modal
         isOpen={showSecurityModal}
         onClose={() => {
           setShowSecurityModal(false);
           resetSecurityState();
         }}
-        title="Security Settings"
+        title="Configurações de segurança"
       >
         <div className="flex flex-col gap-4">
           {securityView === 'overview' && (
@@ -1232,7 +1232,7 @@ export default function AccountPage() {
                   <Smartphone size={20} className="text-purple-500" />
                 </div>
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-[var(--text-primary)]">Two-Factor Auth</span>
+                  <span className="text-sm font-medium text-[var(--text-primary)]">Autenticação em dois fatores</span>
                   <p className="text-xs text-[var(--text-muted)]">
                     {profile?.is2faEnabled ? "Enabled" : "Not enabled"}
                   </p>
@@ -1260,8 +1260,8 @@ export default function AccountPage() {
                   <Key size={20} className="text-green-500" />
                 </div>
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-[var(--text-primary)]">API Keys</span>
-                  <p className="text-xs text-[var(--text-muted)]">Manage API access</p>
+                  <span className="text-sm font-medium text-[var(--text-primary)]">Chaves de API</span>
+                  <p className="text-xs text-[var(--text-muted)]">Gerenciar acesso à API</p>
                 </div>
                 <button
                   onClick={handleLoadAPIKeys}
@@ -1277,7 +1277,7 @@ export default function AccountPage() {
           {securityView === 'password' && (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-medium text-[var(--text-muted)]">Current Password</label>
+                <label className="text-xs font-medium text-[var(--text-muted)]">Senha atual</label>
                 <input
                   type="password"
                   value={currentPassword}
@@ -1286,7 +1286,7 @@ export default function AccountPage() {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-medium text-[var(--text-muted)]">New Password</label>
+                <label className="text-xs font-medium text-[var(--text-muted)]">Nova senha</label>
                 <input
                   type="password"
                   value={newPassword}
@@ -1296,7 +1296,7 @@ export default function AccountPage() {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-medium text-[var(--text-muted)]">Confirm New Password</label>
+                <label className="text-xs font-medium text-[var(--text-muted)]">Confirm Nova senha</label>
                 <input
                   type="password"
                   value={confirmPassword}
@@ -1358,7 +1358,7 @@ export default function AccountPage() {
                     onClick={() => { setSecurityView('overview'); setQrCode(""); setTotpSecret(""); setTotpCode(""); setError(null); }}
                     className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                   >
-                    Cancel
+                    Cancelar
                   </button>
                 </>
               ) : (
@@ -1418,7 +1418,7 @@ export default function AccountPage() {
                 onClick={() => { setSecurityView('overview'); setDisablePassword(""); setError(null); }}
                 className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
               >
-                Cancel
+                Cancelar
               </button>
             </div>
           )}
@@ -1521,24 +1521,24 @@ export default function AccountPage() {
         </div>
       </Modal>
 
-      {/* Appearance Modal */}
+      {/* Aparência Modal */}
       <Modal
-        isOpen={showAppearanceModal}
-        onClose={() => setShowAppearanceModal(false)}
-        title="Settings"
+        isOpen={showAparênciaModal}
+        onClose={() => setShowAparênciaModal(false)}
+        title="Configurações"
       >
         <div className="flex flex-col gap-4">
-          {/* Market Selection */}
+          {/* Mercado Selection */}
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Globe size={16} className="text-[var(--text-muted)]" />
-              <span className="text-xs font-medium text-[var(--text-muted)]">Market</span>
+              <span className="text-xs font-medium text-[var(--text-muted)]">Mercado</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {AVAILABLE_MARKETS.map((mkt) => (
                 <button
                   key={mkt.code}
-                  onClick={() => handleMarketChange(mkt.code)}
+                  onClick={() => handleMercadoChange(mkt.code)}
                   className={`flex flex-col items-start gap-1 p-4 rounded-lg border transition-all text-left ${
                     (settings.display.market || market) === mkt.code
                       ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/10"
@@ -1567,7 +1567,7 @@ export default function AccountPage() {
           </div>
 
           <div className="border-t border-[var(--border-primary)] pt-4">
-            <span className="text-xs font-medium text-[var(--text-muted)]">Theme</span>
+            <span className="text-xs font-medium text-[var(--text-muted)]">Tema</span>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[
@@ -1577,7 +1577,7 @@ export default function AccountPage() {
             ].map((theme) => (
               <button
                 key={theme.value}
-                onClick={() => handleThemeChange(theme.value)}
+                onClick={() => handleTemaChange(theme.value)}
                 className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-all ${
                   settings.display.theme === theme.value
                     ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/10"
@@ -1608,13 +1608,13 @@ export default function AccountPage() {
           <div className="mt-4 pt-4 border-t border-[var(--border-primary)]">
             <div className="flex items-center gap-2 mb-3">
               <Coins size={16} className="text-[var(--text-muted)]" />
-              <span className="text-xs font-medium text-[var(--text-muted)]">Currency</span>
+              <span className="text-xs font-medium text-[var(--text-muted)]">Moeda</span>
             </div>
             <div className="grid grid-cols-2 gap-2 max-h-[180px] overflow-y-auto pr-1">
               {AVAILABLE_CURRENCIES.map((curr) => (
                 <button
                   key={curr.code}
-                  onClick={() => handleCurrencyChange(curr.code)}
+                  onClick={() => handleMoedaChange(curr.code)}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all ${
                     (settings.display.currency || currency) === curr.code
                       ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/10"
@@ -1649,7 +1649,7 @@ export default function AccountPage() {
         </div>
       </Modal>
 
-      {/* Reset Account Confirmation Modal */}
+      {/* Redefinir conta Confirmation Modal */}
       {showResetModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowResetModal(false)} />
@@ -1658,7 +1658,7 @@ export default function AccountPage() {
               <div className="w-14 h-14 rounded-full bg-yellow-500/10 flex items-center justify-center mx-auto mb-4">
                 <AlertTriangle size={28} className="text-yellow-500" />
               </div>
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Reset Account?</h3>
+              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Redefinir conta?</h3>
               <p className="text-sm text-[var(--text-muted)] mb-5">
                 This action cannot be undone. The following will be permanently deleted:
               </p>
@@ -1692,13 +1692,13 @@ export default function AccountPage() {
                   onClick={() => setShowResetModal(false)}
                   className="flex-1 px-4 py-2.5 rounded-lg border border-[var(--border-primary)] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors"
                 >
-                  Cancel
+                  Cancelar
                 </button>
                 <button
                   onClick={handleResetAccount}
                   className="flex-1 px-4 py-2.5 rounded-lg bg-yellow-500 text-black text-sm font-medium hover:bg-yellow-400 transition-colors"
                 >
-                  Reset Account
+                  Redefinir conta
                 </button>
               </div>
             </div>
