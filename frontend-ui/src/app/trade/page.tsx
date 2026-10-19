@@ -106,6 +106,9 @@ function TradePageContent() {
     return Array.from(bySymbol.values()).sort((a, b) => a.category.localeCompare(b.category, "pt-BR") || a.symbol.localeCompare(b.symbol));
   }, [catalogAssets, stocks, crypto]);
 
+  const displaySymbol = (symbol: string) =>
+    catalogAssets.find(asset => asset.symbol === symbol)?.displaySymbol || symbol;
+
   const assetCategories = useMemo(() => {
     const groups = new Map<string, typeof availableAssets>();
     for (const asset of availableAssets) {
@@ -399,7 +402,7 @@ function TradePageContent() {
               >
                 <span className="min-w-0">
                   <span className="block text-[10px] text-[var(--text-muted)]">Selecionar ativo</span>
-                  <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">{selectedSymbol} — {selectedQuote?.name || "Ativo selecionado"}</span>
+                  <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">{displaySymbol(selectedSymbol)} — {selectedQuote?.name || "Ativo selecionado"}</span>
                 </span>
                 <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
               </button>
@@ -438,7 +441,7 @@ function TradePageContent() {
                               className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-[var(--bg-muted)] transition-colors ${selectedSymbol === asset.symbol ? "text-[var(--accent-primary)]" : "text-[var(--text-primary)]"}`}
                             >
                               <span className="min-w-0">
-                                <span className="block font-mono text-xs font-semibold">{asset.symbol}</span>
+                                <span className="block font-mono text-xs font-semibold">{asset.displaySymbol || asset.symbol}</span>
                                 <span className="block truncate text-[11px] text-[var(--text-muted)]">{asset.name}</span>
                               </span>
                               {selectedSymbol === asset.symbol && <span className="shrink-0 text-[10px] text-[var(--accent-primary)]">Selecionado</span>}
@@ -538,7 +541,7 @@ function TradePageContent() {
                 <div>
                   <div className="flex items-center gap-3">
                     <span className="font-mono text-xl font-bold text-[var(--text-primary)]">
-                      {selectedSymbol}
+                      {displaySymbol(selectedSymbol)}
                     </span>
                     {isLoadingQuote && (
                       <Loader2 size={18} className="text-[var(--accent-primary)] animate-spin" />
