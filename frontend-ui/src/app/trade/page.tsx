@@ -273,10 +273,10 @@ function TradePageContent() {
 
   const getButtonText = () => {
     if (!marketStatus.isOpen) return `${marketStatus.marketName} Market Closed`;
-    if (sourceCurrency !== "USD") return "Only USD assets supported";
-    if (marginBalance === null) return "Loading margin balance";
-    if (!validStopLoss || !validTakeProfit) return "Invalid SL / TP price";
-    if (margin > marginBalance) return "Insufficient Margin";
+    if (sourceCurrency !== "USD") return "Apenas ativos em USD";
+    if (marginBalance === null) return "Carregando saldo disponível";
+    if (!validStopLoss || !validTakeProfit) return "Preço inválido de SL / TP";
+    if (margin > marginBalance) return "Margem insuficiente";
     return `${orderType} ${selectedSymbol} · $${Number.isFinite(margin) ? margin.toFixed(2) : "0.00"} margin · ${leverage}x`;
   };
 
@@ -285,8 +285,8 @@ function TradePageContent() {
       <Sidebar />
       <main className="flex-1 flex flex-col gap-6 py-8 px-10 overflow-auto">
         <PageHeader
-          title="Trade"
-          subtitle="Search any stock or crypto to start trading"
+          title="Negociar"
+          subtitle="Pesquise ações ou criptomoedas para negociar com saldo fictício"
         />
 
         {/* Success/Error Message */}
@@ -319,7 +319,7 @@ function TradePageContent() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
-                  placeholder="Search by name or symbol (e.g., AAPL, Tesla, BTC)..."
+                  placeholder="Pesquise por nome ou símbolo (ex.: AAPL, Tesla, BTC)..."
                   className="flex-1 bg-transparent text-base text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
                 />
                 {searchQuery && (
@@ -489,13 +489,13 @@ function TradePageContent() {
               {/* Prominent available balance above order direction */}
               <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)] p-4" aria-live="polite">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-[var(--text-muted)]">Available Balance (USD)</span>
-                  <button type="button" onClick={() => void refreshPositions()} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]" title="Refresh available balance">Refresh</button>
+                  <span className="text-xs font-medium text-[var(--text-muted)]">Saldo disponível (USD)</span>
+                  <button type="button" onClick={() => void refreshPositions()} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]" title="Refresh available balance">Atualizar</button>
                 </div>
                 <div className="mt-2 font-mono text-2xl font-bold text-[var(--text-primary)] tabular-nums">
                   {marginBalance === null ? "Loading…" : formatCurrency(marginBalance, false, { convertFromUSD: false })}
                 </div>
-                <p className="mt-1 text-xs text-[var(--text-muted)]">Funds available to reserve as margin for simulated positions</p>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">Saldo fictício disponível para margem das operações</p>
               </div>
 
               {/* Buy/Sell Toggle */}
@@ -508,7 +508,7 @@ function TradePageContent() {
                       : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   }`}
                 >
-                  Buy
+                  Comprar
                 </button>
                 <button
                   onClick={() => setOrderType("SELL")}
@@ -518,7 +518,7 @@ function TradePageContent() {
                       : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   }`}
                 >
-                  Sell
+                  Vender
                 </button>
               </div>
 
@@ -536,12 +536,12 @@ function TradePageContent() {
               {/* Exact margin, leverage and optional exit price levels */}
               <div className="flex flex-col gap-3">
                 <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
-                  Margin (USD)
+                  Margem (USD)
                   <input type="number" min="0.01" step="0.01" value={marginInput} onChange={(e) => setMarginInput(e.target.value)}
                     className="w-full px-4 py-3 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-lg text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
                 </label>
                 <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
-                  Leverage (1–100x)
+                  Alavancagem (1–100x)
                   <select value={leverage} onChange={(e) => setLeverage(Number(e.target.value))}
                     className="p-3 rounded-lg border border-[var(--border-muted)] bg-[var(--bg-card)] text-[var(--text-primary)]">
                     {[1, 2, 5, 10, 20, 25, 50, 100].map(value => <option key={value} value={value}>{value}x</option>)}
@@ -549,17 +549,17 @@ function TradePageContent() {
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
-                    Stop Loss (price)
-                    <input type="number" min="0.000001" step="any" placeholder="Optional" value={stopLossInput} onChange={(e) => setStopLossInput(e.target.value)}
+                    Stop Loss (preço)
+                    <input type="number" min="0.000001" step="any" placeholder="Opcional" value={stopLossInput} onChange={(e) => setStopLossInput(e.target.value)}
                       className="min-w-0 w-full px-3 py-3 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-sm text-[var(--text-primary)]" />
                   </label>
                   <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
-                    Take Profit (price)
-                    <input type="number" min="0.000001" step="any" placeholder="Optional" value={takeProfitInput} onChange={(e) => setTakeProfitInput(e.target.value)}
+                    Take Profit (preço)
+                    <input type="number" min="0.000001" step="any" placeholder="Opcional" value={takeProfitInput} onChange={(e) => setTakeProfitInput(e.target.value)}
                       className="min-w-0 w-full px-3 py-3 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-sm text-[var(--text-primary)]" />
                   </label>
                 </div>
-                {(!validStopLoss || !validTakeProfit) && <p className="text-xs text-[var(--accent-red)]">BUY: SL below and TP above market price. SELL: SL above and TP below.</p>}
+                {(!validStopLoss || !validTakeProfit) && <p className="text-xs text-[var(--accent-red)]">Compra: SL abaixo e TP acima do preço atual. Venda: SL acima e TP abaixo.</p>}
                 <div className="flex gap-2">
                   {[0.25, 0.5, 0.75, 1].map(pct => <button key={pct} type="button" onClick={() => setMarginPercent(pct)}
                     className="flex-1 py-1.5 rounded-md text-[11px] bg-[var(--bg-card-inner)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]">{pct * 100}%</button>)}
@@ -570,14 +570,14 @@ function TradePageContent() {
               <div className="flex flex-col gap-3 p-4 rounded-lg bg-[var(--bg-card-inner)]">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-[var(--text-muted)]">
-                    Market Price
+                    Preço de mercado
                   </span>
                   <span className="font-mono text-sm text-[var(--text-primary)]">
                     {formatCurrency(effectivePrice, false, { sourceCurrency })}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--text-muted)]">Estimated Quantity</span>
+                  <span className="text-sm text-[var(--text-muted)]">Quantidade estimada</span>
                   <span className="font-mono text-sm text-[var(--text-primary)]">
                     {quantity > 0 ? quantity.toFixed(8) : "—"}
                   </span>
@@ -585,7 +585,7 @@ function TradePageContent() {
                 <div className="h-px bg-[var(--border-primary)]" />
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-[var(--text-primary)]">
-                    Estimated Margin
+                    Margem estimada
                   </span>
                   <span className="font-mono text-lg font-bold text-[var(--text-primary)]">
                     {formatCurrency(estimatedMargin, false, { sourceCurrency })}
@@ -596,7 +596,7 @@ function TradePageContent() {
               {/* Available Balance */}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-[var(--text-muted)]">
-                  Available Margin (USD)
+                  Available Margem (USD)
                 </span>
                 <span className="font-mono text-[var(--text-primary)]">
                   {marginBalance === null ? "—" : formatCurrency(marginBalance, false, { convertFromUSD: false })}
@@ -625,7 +625,7 @@ function TradePageContent() {
               <div className="flex items-center gap-2 mb-4">
                 <Clock size={14} className="text-[var(--text-muted)]" />
                 <span className="text-[10px] font-bold tracking-[1px] text-[var(--text-muted)]">
-                  RECENT TRADES
+                  OPERAÇÕES RECENTES
                 </span>
               </div>
               <div className="flex flex-col gap-2">
@@ -658,7 +658,7 @@ function TradePageContent() {
                   ))
                 ) : (
                   <div className="text-center py-4 text-sm text-[var(--text-muted)]">
-                    No recent trades
+                    Nenhuma operação recente
                   </div>
                 )}
               </div>
@@ -666,25 +666,25 @@ function TradePageContent() {
           </div>
         </div>
         <div className="w-full min-w-0 shrink-0 space-y-3">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Positions &amp; Trade History</h2>
+          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Posições e histórico de operações</h2>
             {/* Positions tab: the same positions opened by the Buy/Sell ticket. */}
             <section id="trade-positions" className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] overflow-hidden">
               <div className="flex items-center justify-between gap-3 border-b border-[var(--border-primary)] px-4 py-3">
                 <div className="flex items-center gap-4">
                   <button type="button" onClick={() => setPositionsTab("OPEN")} className={`text-sm font-semibold pb-1 ${positionsTab === "OPEN" ? "text-[var(--accent-primary)] border-b-2 border-[var(--accent-primary)]" : "text-[var(--text-muted)]"}`}>
-                    Positions ({positions.filter(p => p.status === "OPEN").length})
+                    Posições ({positions.filter(p => p.status === "OPEN").length})
                   </button>
                   <button type="button" onClick={() => setPositionsTab("CLOSED")} className={`text-sm font-semibold pb-1 ${positionsTab === "CLOSED" ? "text-[var(--accent-primary)] border-b-2 border-[var(--accent-primary)]" : "text-[var(--text-muted)]"}`}>
                     History
                   </button>
                 </div>
-                <button type="button" onClick={() => void refreshPositions()} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]">Refresh</button>
+                <button type="button" onClick={() => void refreshPositions()} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]">Atualizar</button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[740px] text-xs text-left">
                   <thead className="text-[var(--text-muted)] bg-[var(--bg-card-inner)]">
                     <tr>
-                      {["Symbol", "Side", "Quantity", "Entry", "Leverage", "Margin", "Market", "P&L", "Action"].map(h => <th key={h} className="px-3 py-3 font-medium">{h}</th>)}
+                      {["Ativo", "Direção", "Quantidade", "Entrada", "Alavancagem", "Margem", "Mercado", "Lucro/Prejuízo", "Ação"].map(h => <th key={h} className="px-3 py-3 font-medium">{h}</th>)}
                     </tr>
                   </thead>
                   <tbody>
@@ -701,14 +701,14 @@ function TradePageContent() {
                           <td className="px-3 py-3 font-mono">{p.marketPrice === undefined ? (p.exitPrice === null ? "—" : `${p.exitPrice.toFixed(2)}`) : `${p.marketPrice.toFixed(2)}`}</td>
                           <td className={`px-3 py-3 font-mono ${pnl === undefined || pnl === null ? "" : pnl >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{pnl === undefined || pnl === null ? "—" : `${pnl.toFixed(2)}`}</td>
                           <td className="px-3 py-3">
-                            {p.status === "OPEN" ? <button type="button" disabled={closingPositionId !== null} onClick={() => void closeSimulatedPosition(p.id)} className="rounded border border-[var(--border-primary)] px-2 py-1 hover:bg-[var(--bg-muted)] disabled:opacity-50">{closingPositionId === p.id ? "Closing…" : "Close"}</button> : <span className="text-[var(--text-muted)]">Closed</span>}
+                            {p.status === "OPEN" ? <button type="button" disabled={closingPositionId !== null} onClick={() => void closeSimulatedPosition(p.id)} className="rounded border border-[var(--border-primary)] px-2 py-1 hover:bg-[var(--bg-muted)] disabled:opacity-50">{closingPositionId === p.id ? "Encerrando…" : "Encerrar"}</button> : <span className="text-[var(--text-muted)]">Encerrada</span>}
                           </td>
                         </tr>
                       );
                     })}
                   </tbody>
                 </table>
-                {positions.filter(p => p.status === positionsTab).length === 0 && <p className="p-5 text-sm text-[var(--text-muted)]">No {positionsTab === "OPEN" ? "open positions" : "closed positions"}.</p>}
+                {positions.filter(p => p.status === positionsTab).length === 0 && <p className="p-5 text-sm text-[var(--text-muted)]">Nenhuma {positionsTab === "OPEN" ? "posição aberta" : "posição encerrada"}.</p>}
               </div>
             </section>
 
@@ -723,7 +723,7 @@ function TradePageContent() {
               <div className="flex items-center gap-2">
                 <AlertTriangle size={18} className="text-[var(--accent-primary)]" />
                 <span className="text-base font-semibold text-[var(--text-primary)]">
-                  Confirm Leveraged Trade
+                  Confirmar operação alavancada
                 </span>
               </div>
               <button
@@ -736,35 +736,35 @@ function TradePageContent() {
 
             <div className="flex flex-col gap-3 p-4 rounded-lg bg-[var(--bg-card-inner)] mb-5">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-[var(--text-muted)]">Action</span>
+                <span className="text-sm text-[var(--text-muted)]">Ação</span>
                 <span className={`text-sm font-semibold ${orderType === "BUY" ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
                   {orderType}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-[var(--text-muted)]">Symbol</span>
+                <span className="text-sm text-[var(--text-muted)]">Ativo</span>
                 <span className="font-mono text-sm font-semibold text-[var(--text-primary)]">{selectedSymbol}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-[var(--text-muted)]">Order Type</span>
+                <span className="text-sm text-[var(--text-muted)]">Tipo de ordem</span>
                 <span className="text-sm text-[var(--text-primary)]">LEVERAGED MARKET · {leverage}x</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-[var(--text-muted)]">
-                  Market Price
+                  Preço de mercado
                 </span>
                 <span className="font-mono text-sm text-[var(--text-primary)]">
                   {formatCurrency(effectivePrice, false, { sourceCurrency })}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-[var(--text-muted)]">Estimated Quantity</span>
+                <span className="text-sm text-[var(--text-muted)]">Quantidade estimada</span>
                 <span className="font-mono text-sm text-[var(--text-primary)]">{quantity.toFixed(8)}</span>
               </div>
               <div className="flex items-center justify-between"><span className="text-sm text-[var(--text-muted)]">Stop Loss / Take Profit</span><span className="font-mono text-xs text-[var(--text-primary)]">{stopLossInput || "—"} / {takeProfitInput || "—"}</span></div>
               <div className="h-px bg-[var(--border-primary)]" />
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[var(--text-primary)]">Estimated Margin</span>
+                <span className="text-sm font-medium text-[var(--text-primary)]">Margem estimada</span>
                 <span className="font-mono text-lg font-bold text-[var(--text-primary)]">
                   {formatCurrency(estimatedMargin, false, { sourceCurrency })}
                 </span>
@@ -787,7 +787,7 @@ function TradePageContent() {
                     : "bg-[var(--accent-red)] text-white hover:brightness-110"
                 }`}
               >
-                Confirm {orderType === "BUY" ? "Buy" : "Sell"} · {leverage}x
+                Confirmar {orderType === "BUY" ? "compra" : "venda"} · {leverage}x
               </button>
             </div>
           </div>
