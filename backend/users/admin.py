@@ -151,12 +151,12 @@ class UserProfileAdminForm(forms.ModelForm):
 @admin.register(UserProfile)
 class UserProfileAdmin(ModelAdmin):
     form = UserProfileAdminForm
-    list_display = ['name', 'email', 'display_buying_power', 'display_finance_link', 'display_admin', 'created_at']
-    search_fields = ['name', 'email', 'username']
+    list_display = ['name', 'email', 'display_buying_power', 'display_finance_link', 'phone', 'created_at']
+    search_fields = ['name', 'email', 'username', 'cpf', 'phone']
     list_filter = ['is_admin', 'created_at']
     readonly_fields = ['id', 'created_at', 'updated_at', 'password_changed_at', 'is_2fa_enabled']
     fieldsets = [
-        ("Profile", {"fields": ["id", "name", "username", "email", "avatar_url"]}),
+        ("Profile", {"fields": ["id", "name", "username", "email", "cpf", "date_of_birth", "phone", "avatar_url"]}),
         ("Email Verification", {"fields": ["is_email_verified"]}),
         ("Account", {"fields": ["buying_power", "initial_balance", "plan"]}),
         ("Admin", {"fields": ["is_admin"]}),
@@ -173,7 +173,7 @@ class UserProfileAdmin(ModelAdmin):
     def get_fieldsets(self, request, obj=None):
         if obj is None:
             return [
-                ("Novo usuário", {"fields": ("name", "username", "email", "password1", "password2")}),
+                ("Novo usuário", {"fields": ("name", "username", "email", "cpf", "date_of_birth", "phone", "password1", "password2")}),
                 ("Saldo simulado", {"fields": ("initial_balance", "buying_power")}),
                 ("Conta", {"fields": ("plan", "is_email_verified")}),
             ]
