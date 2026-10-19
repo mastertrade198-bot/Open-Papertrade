@@ -339,7 +339,7 @@ export default function SignupPage() {
               ) : username.length >= 3 ? (
                 <span className="text-xs text-[var(--accent-green)]">Nome de usuário disponível</span>
               ) : (
-                <span className="text-xs text-[var(--text-muted)]">3-30 characters, letters, numbers, and hyphens</span>
+                <span className="text-xs text-[var(--text-muted)]">De 3 a 30 caracteres: letras, números e hífens</span>
               )}
             </div>
 
