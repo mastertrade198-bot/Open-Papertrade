@@ -740,3 +740,115 @@ class Backtest(models.Model):
             'results': self.results,
             'created_at': self.created_at.isoformat(),
         }
+
+
+class Position(models.Model):
+    """Leveraged paper-trading position, separate from legacy Trade records."""
+
+    class Side(models.TextChoices):
+        LONG = "LONG", "Long"
+        SHORT = "SHORT", "Short"
+
+    class Status(models.TextChoices):
+        OPEN = "OPEN", "Open"
+        CLOSED = "CLOSED", "Closed"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="positions",
+    )
+
+    symbol = models.CharField(max_length=20, db_index=True)
+    name = models.CharField(max_length=200, blank=True)
+    side = models.CharField(max_length=5, choices=Side.choices)
+    quantity = models.DecimalField(max_digits=20, decimal_places=8)
+    entry_price = models.DecimalField(max_digits=20, decimal_places=6)
+    leverage = models.DecimalField(max_digits=8, decimal_places=2, default=1)
+    margin = models.DecimalField(max_digits=20, decimal_places=2)
+    notional_value = models.DecimalField(max_digits=20, decimal_places=2)
+    currency = models.CharField(max_length=3, default="USD")
+
+    status = models.CharField(
+        max_length=6,
+        choices=Status.choices,
+        default=Status.OPEN,
+        db_index=True,
+    )
+    exit_price = models.DecimalField(
+        max_digits=20, decimal_places=6, null=True, blank=True
+    )
+    realized_pnl = models.DecimalField(
+        max_digits=20, decimal_places=2, null=True, blank=True
+    )
+
+    opened_at = models.DateTimeField(default=timezone.now)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "trading_positions"
+        ordering = ["-opened_at"]
+        indexes = [
+            models.Index(fields=["user", "status"]),
+            models.Index(fields=["symbol", "status"]),
+        ]
+
+    def unrealized_pnl(self, market_price):
+        """Calculate open P/L from a supplied market price."""
+        market_price = Decimal(str(market_price))
+        if self.side == self.Side.LONG:
+            result = (market_price - self.entry_price) * self.quantity
+        else:
+            result = (self.entry_price - market_price) * self.quantity
+        return result.quantize(Decimal("0.01"))
+
+    def to_dict(self, market_price=None):
+        data = {
+            "id": str(self.id),
+            "symbol": self.symbol,
+            "name": self.name,
+            "side": self.side,
+            "quantity": float(self.quantity),
+            "entryPrice": float(self.entry_price),
+            "leverage": float(self.leverage),
+            "margin": float(self.margin),
+            "notionalValue": float(self.notional_value),
+            "currency": self.currency,
+            "status": self.status,
+            "exitPrice": float(self.exit_price) if self.exit_price is not None else None,
+            "realizedPnl": float(self.realized_pnl) if self.realized_pnl is not None else None,
+            "openedAt": self.opened_at.isoformat(),
+            "closedAt": self.closed_at.isoformat() if self.closed_at else None,
+        }
+        if market_price is not None and self.status == self.Status.OPEN:
+            data["marketPrice"] = float(market_price)
+            data["unrealizedPnl"] = float(self.unrealized_pnl(market_price))
+        return data
+
+
+class PositionAuditLog(models.Model):
+    """Audit trail for administrative changes to leveraged positions."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    position = models.ForeignKey(
+        Position,
+        on_delete=models.CASCADE,
+        related_name="audit_logs",
+    )
+    actor = models.ForeignKey(
+        UserProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="position_audit_actions",
+    )
+    action = models.CharField(max_length=30)
+    old_values = models.JSONField(default=dict, blank=True)
+    new_values = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = "position_audit_logs"
+        ordering = ["-created_at"]

@@ -91,15 +91,6 @@ function Modal({ isOpen, onClose, title, children }: {
 // Available currencies for selection
 const AVAILABLE_CURRENCIES = [
   { code: 'USD', name: 'US Dollar', symbol: '$' },
-  { code: 'EUR', name: 'Euro', symbol: '€' },
-  { code: 'GBP', name: 'British Pound', symbol: '£' },
-  { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
-  { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
-  { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' },
-  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$' },
-  { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF' },
-  { code: 'CNY', name: 'Chinese Yuan', symbol: '¥' },
-  { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$' },
 ];
 
 // Available markets for selection
@@ -1098,40 +1089,11 @@ export default function AccountPage() {
               <div className="flex flex-col gap-4">
                 <div>
                   <span className="text-xs font-medium text-[var(--text-muted)] mb-2 block">
-                    Default Order Type
+                    Order Execution
                   </span>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1 group/market">
-                      <button
-                        onClick={() => handleOrderTypeChange("MARKET")}
-                        className={`w-full py-2 rounded-lg text-xs font-medium transition-colors ${
-                          settings.preferences.defaultOrderType === "MARKET"
-                            ? "bg-[var(--accent-primary)] text-white"
-                            : "bg-[var(--bg-card-inner)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]"
-                        }`}
-                      >
-                        MARKET
-                      </button>
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 px-3 py-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-primary)] shadow-xl text-xs text-[var(--text-secondary)] opacity-0 invisible group-hover/market:opacity-100 group-hover/market:visible pointer-events-none transition-all duration-150 z-50">
-                        Executes immediately at the current market price. Guaranteed to fill.
-                      </div>
-                    </div>
-                    <div className="relative flex-1 group/limit">
-                      <button
-                        onClick={() => handleOrderTypeChange("LIMIT")}
-                        className={`w-full py-2 rounded-lg text-xs font-medium transition-colors ${
-                          settings.preferences.defaultOrderType === "LIMIT"
-                            ? "bg-[var(--accent-primary)] text-white"
-                            : "bg-[var(--bg-card-inner)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]"
-                        }`}
-                      >
-                        LIMIT
-                      </button>
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 px-3 py-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-primary)] shadow-xl text-xs text-[var(--text-secondary)] opacity-0 invisible group-hover/limit:opacity-100 group-hover/limit:visible pointer-events-none transition-all duration-150 z-50">
-                        Executes only when the price reaches your specified limit. May not fill if the price doesn&apos;t reach your target.
-                      </div>
-                    </div>
-                  </div>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    All trades execute at the current market price.
+                  </p>
                 </div>
 
                 {[

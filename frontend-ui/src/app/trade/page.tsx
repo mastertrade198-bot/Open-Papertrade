@@ -41,11 +41,8 @@ function TradePageContent() {
     holdings,
     buyingPower,
     transactions,
-    orders,
     settings,
     executeTrade,
-    createLimitOrder,
-    cancelLimitOrder,
     getStockBySymbol,
     market,
   } = usePortfolio();
@@ -64,19 +61,10 @@ function TradePageContent() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
 
-  // Market/Limit state
-  const [marketOrLimit, setMarketOrLimit] = useState<"MARKET" | "LIMIT">(
-    (settings.defaultOrderType === "LIMIT" ? "LIMIT" : "MARKET")
-  );
-  const [limitPrice, setLimitPrice] = useState<string>("");
+  // Todas as operações são executadas a mercado
 
   // Confirm dialog state
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-
-  // Update marketOrLimit when settings change
-  useEffect(() => {
-    setMarketOrLimit(settings.defaultOrderType === "LIMIT" ? "LIMIT" : "MARKET");
-  }, [settings.defaultOrderType]);
 
   // Re-check market status every 30 seconds
   const [marketTick, setMarketTick] = useState(0);
@@ -107,17 +95,15 @@ function TradePageContent() {
   // Get holding for selected symbol
   const selectedHolding = holdings.find((h) => h.symbol === selectedSymbol);
 
-  // Use selected quote price or fall back to context
+// Use selected quote price or fall back to context
   const currentPrice = selectedQuote?.price || getStockBySymbol(selectedSymbol)?.price || 0;
-  const effectivePrice = marketOrLimit === "LIMIT" && limitPrice ? parseFloat(limitPrice) : currentPrice;
+  const effectivePrice = currentPrice;
   const estimatedTotal = quantity * effectivePrice;
   const sourceCurrency = selectedQuote?.currency || getStockBySymbol(selectedSymbol)?.currency || 'USD';
 
   // Recent transactions
   const recentTrades = transactions.slice(0, 5);
 
-  // Pending orders
-  const pendingOrders = orders.filter(o => o.status === "PENDING");
 
   // Set symbol from URL query param
   useEffect(() => {
@@ -196,7 +182,6 @@ function TradePageContent() {
     setSearchQuery("");
     setShowSearchResults(false);
     setQuantity(1);
-    setLimitPrice("");
     fetchQuote(result.symbol);
   };
 
@@ -211,71 +196,67 @@ function TradePageContent() {
 
   // Actually execute the trade/order
   const executeTradeOrOrder = async () => {
-    setShowConfirmDialog(false);
-    const stockName = selectedQuote?.name || getStockBySymbol(selectedSymbol)?.name || selectedSymbol;
+  setShowConfirmDialog(false);
 
-    if (marketOrLimit === "LIMIT") {
-      const lp = parseFloat(limitPrice);
-      if (!lp || lp <= 0) return;
-      const success = await createLimitOrder(orderType, selectedSymbol, stockName, quantity, lp, sourceCurrency);
-      if (success) {
-        setMessage({
-          type: "success",
-          text: `Limit order placed: ${orderType} ${quantity} ${selectedSymbol} @ ${formatCurrency(lp)}`,
-        });
-        setQuantity(1);
-        setLimitPrice("");
-      } else {
-        setMessage({
-          type: "error",
-          text: orderType === "BUY" ? "Insufficient buying power" : "Insufficient shares",
-        });
-      }
-    } else {
-      if (!currentPrice) return;
-      const success = await executeTrade(orderType, selectedSymbol, stockName, quantity, currentPrice, sourceCurrency);
-      if (success) {
-        setMessage({
-          type: "success",
-          text: `${orderType === "BUY" ? "Bought" : "Sold"} ${quantity} ${selectedSymbol} @ ${formatCurrency(currentPrice)}`,
-        });
-        setQuantity(1);
-        fetchQuote(selectedSymbol);
-      } else {
-        setMessage({
-          type: "error",
-          text: orderType === "BUY" ? "Insufficient buying power" : "Insufficient shares",
-        });
-      }
-    }
+  if (!currentPrice) return;
 
-    setTimeout(() => setMessage(null), 4000);
-  };
+  const stockName =
+    selectedQuote?.name ||
+    getStockBySymbol(selectedSymbol)?.name ||
+    selectedSymbol;
+
+  const success = await executeTrade(
+    orderType,
+    selectedSymbol,
+    stockName,
+    quantity,
+    currentPrice,
+    sourceCurrency
+  );
+
+  if (success) {
+    setMessage({
+      type: "success",
+      text: `${orderType === "BUY" ? "Bought" : "Sold"} ${quantity} ${selectedSymbol} @ ${formatCurrency(currentPrice)}`,
+    });
+    setQuantity(1);
+    fetchQuote(selectedSymbol);
+  } else {
+    setMessage({
+      type: "error",
+      text: orderType === "BUY" ? "Insufficient buying power" : "Insufficient shares",
+    });
+  }
+
+  setTimeout(() => setMessage(null), 4000);
+};
+
 
   // Can trade validation
   const canTrade = useMemo(() => {
-    // Limit orders don't require market to be open
-    if (marketOrLimit === "MARKET" && !marketStatus.isOpen) return false;
+    if (!marketStatus.isOpen) return false;
     if (quantity < 1) return false;
+    if (!currentPrice) return false;
 
-    if (marketOrLimit === "LIMIT") {
-      const lp = parseFloat(limitPrice);
-      if (!lp || lp <= 0) return false;
-      const total = quantity * lp;
-      if (orderType === "BUY") return total <= buyingPower;
-      return !!(selectedHolding && selectedHolding.shares >= quantity);
+    if (orderType === "BUY") {
+      return estimatedTotal <= buyingPower;
     }
 
-    if (!currentPrice) return false;
-    if (orderType === "BUY") return estimatedTotal <= buyingPower;
     return !!(selectedHolding && selectedHolding.shares >= quantity);
-  }, [orderType, estimatedTotal, buyingPower, selectedHolding, quantity, currentPrice, marketStatus.isOpen, marketOrLimit, limitPrice]);
+  }, [
+    orderType,
+    estimatedTotal,
+    buyingPower,
+    selectedHolding,
+    quantity,
+    currentPrice,
+    marketStatus.isOpen,
+  ]);
 
   // Quick quantity buttons
   const setQuantityPercent = (percent: number) => {
-    const price = marketOrLimit === "LIMIT" && limitPrice ? parseFloat(limitPrice) : currentPrice;
-    if (orderType === "BUY" && price > 0) {
-      const maxShares = Math.floor((buyingPower * percent) / price);
+    if (orderType === "BUY" && currentPrice > 0) {
+      const maxShares = Math.floor((buyingPower * percent) / currentPrice);
       setQuantity(Math.max(1, maxShares));
     } else if (orderType === "SELL" && selectedHolding) {
       const shares = Math.floor(selectedHolding.shares * percent);
@@ -285,18 +266,14 @@ function TradePageContent() {
 
   // Button text
   const getButtonText = () => {
-    if (marketOrLimit === "MARKET" && !marketStatus.isOpen) {
+    if (!marketStatus.isOpen) {
       return `${marketStatus.marketName} Market Closed`;
     }
-    if (marketOrLimit === "LIMIT" && (!limitPrice || parseFloat(limitPrice) <= 0)) {
-      return "Enter Limit Price";
-    }
+
     if (!canTrade) {
       return orderType === "BUY" ? "Insufficient Funds" : "Insufficient Shares";
     }
-    if (marketOrLimit === "LIMIT") {
-      return `Place Limit Order`;
-    }
+
     return `${orderType === "BUY" ? "Buy" : "Sell"} ${quantity} ${selectedSymbol}`;
   };
 
@@ -532,83 +509,14 @@ function TradePageContent() {
                 </button>
               </div>
 
-              {/* Market/Limit Selector with Tooltips */}
-              <div className="flex p-1 rounded-lg bg-[var(--bg-card-inner)] overflow-visible relative">
-                <div className="relative flex-1 group/market">
-                  <button
-                    onClick={() => setMarketOrLimit("MARKET")}
-                    className={`w-full py-2.5 rounded-md text-xs font-semibold transition-all ${
-                      marketOrLimit === "MARKET"
-                        ? "bg-[var(--bg-card)] text-[var(--text-primary)] shadow"
-                        : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                    }`}
-                  >
-                    Market
-                  </button>
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 px-3 py-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-primary)] shadow-xl text-xs text-[var(--text-secondary)] opacity-0 invisible group-hover/market:opacity-100 group-hover/market:visible pointer-events-none transition-all duration-150 z-50">
-                    Executes immediately at the current market price. Guaranteed to fill.
-                  </div>
-                </div>
-                <div className="relative flex-1 group/limit">
-                  <button
-                    onClick={() => setMarketOrLimit("LIMIT")}
-                    className={`w-full py-2.5 rounded-md text-xs font-semibold transition-all ${
-                      marketOrLimit === "LIMIT"
-                        ? "bg-[var(--bg-card)] text-[var(--text-primary)] shadow"
-                        : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                    }`}
-                  >
-                    Limit
-                  </button>
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 px-3 py-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-primary)] shadow-xl text-xs text-[var(--text-secondary)] opacity-0 invisible group-hover/limit:opacity-100 group-hover/limit:visible pointer-events-none transition-all duration-150 z-50">
-                    Executes only when the price reaches your specified limit. May not fill if the price doesn&apos;t reach your target.
-                  </div>
-                </div>
-              </div>
-
               {/* Market Closed Banner (only for market orders) */}
-              {marketOrLimit === "MARKET" && !marketStatus.isOpen && (
+              {!marketStatus.isOpen && (
                 <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-[#F59E0B20] border border-[#F59E0B40]">
                   <Clock size={16} className="text-[#F59E0B] shrink-0" />
                   <div>
                     <span className="text-sm font-medium text-[#F59E0B]">Market Closed</span>
                     <p className="text-xs text-[#F59E0B]/80 mt-0.5">{marketStatus.reason}</p>
                   </div>
-                </div>
-              )}
-
-              {/* Limit Price Input */}
-              {marketOrLimit === "LIMIT" && (
-                <div className="flex flex-col gap-2">
-                  <span className="text-xs font-medium text-[var(--text-muted)]">
-                    Limit Price
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={limitPrice}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === "" || /^\d*\.?\d*$/.test(val)) {
-                        setLimitPrice(val);
-                      }
-                    }}
-                    placeholder={currentPrice ? currentPrice.toFixed(2) : "0.00"}
-                    className="w-full px-4 py-3 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-lg text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)] transition-colors"
-                  />
-                  {currentPrice > 0 && (
-                    <div className="flex gap-2">
-                      {[0.95, 0.98, 1.0, 1.02, 1.05].map((mult) => (
-                        <button
-                          key={mult}
-                          onClick={() => setLimitPrice((currentPrice * mult).toFixed(2))}
-                          className="flex-1 py-1 rounded-md text-[10px] font-medium bg-[var(--bg-card-inner)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)] transition-colors"
-                        >
-                          {mult === 1 ? "Current" : `${mult > 1 ? "+" : ""}${((mult - 1) * 100).toFixed(0)}%`}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -663,7 +571,7 @@ function TradePageContent() {
               <div className="flex flex-col gap-3 p-4 rounded-lg bg-[var(--bg-card-inner)]">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-[var(--text-muted)]">
-                    {marketOrLimit === "LIMIT" ? "Limit Price" : "Market Price"}
+                    Market Price
                   </span>
                   <span className="font-mono text-sm text-[var(--text-primary)]">
                     {formatCurrency(effectivePrice, false, { sourceCurrency })}
@@ -717,51 +625,6 @@ function TradePageContent() {
             </div>
 
             {/* Pending Orders */}
-            {pendingOrders.length > 0 && (
-              <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)]">
-                <div className="flex items-center gap-2 mb-4">
-                  <Clock size={14} className="text-[var(--accent-primary)]" />
-                  <span className="text-[10px] font-bold tracking-[1px] text-[var(--text-muted)]">
-                    PENDING ORDERS ({pendingOrders.length})
-                  </span>
-                </div>
-                <div className="flex flex-col gap-2">
-                  {pendingOrders.map((order) => (
-                    <div
-                      key={order.id}
-                      className="flex items-center justify-between py-2 border-b border-[var(--border-primary)] last:border-0"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                            order.type === "BUY"
-                              ? "bg-[#22C55E20] text-[var(--accent-green)]"
-                              : "bg-[#EF444420] text-[var(--accent-red)]"
-                          }`}
-                        >
-                          {order.type}
-                        </span>
-                        <div>
-                          <span className="font-mono text-sm text-[var(--text-primary)]">
-                            {order.symbol}
-                          </span>
-                          <div className="font-mono text-[10px] text-[var(--text-muted)]">
-                            {order.shares} @ {formatCurrency(order.price)}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => cancelLimitOrder(order.id)}
-                        className="px-2.5 py-1 rounded-md text-[10px] font-medium text-[var(--accent-red)] bg-[var(--accent-red)]/10 hover:bg-[var(--accent-red)]/20 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Recent Trades */}
             <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex-1">
               <div className="flex items-center gap-2 mb-4">
@@ -817,7 +680,7 @@ function TradePageContent() {
               <div className="flex items-center gap-2">
                 <AlertTriangle size={18} className="text-[var(--accent-primary)]" />
                 <span className="text-base font-semibold text-[var(--text-primary)]">
-                  Confirm {marketOrLimit === "LIMIT" ? "Limit Order" : "Trade"}
+                  Confirm Trade
                 </span>
               </div>
               <button
@@ -841,11 +704,11 @@ function TradePageContent() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-[var(--text-muted)]">Order Type</span>
-                <span className="text-sm text-[var(--text-primary)]">{marketOrLimit}</span>
+                <span className="text-sm text-[var(--text-primary)]">MARKET</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-[var(--text-muted)]">
-                  {marketOrLimit === "LIMIT" ? "Limit Price" : "Market Price"}
+                  Market Price
                 </span>
                 <span className="font-mono text-sm text-[var(--text-primary)]">
                   {formatCurrency(effectivePrice, false, { sourceCurrency })}

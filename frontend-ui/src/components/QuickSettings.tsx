@@ -7,15 +7,6 @@ import { CURRENCY_SYMBOLS } from "@/lib/utils";
 
 const CURRENCIES: { code: string; name: string }[] = [
   { code: "USD", name: "US Dollar" },
-  { code: "EUR", name: "Euro" },
-  { code: "GBP", name: "Pound Sterling" },
-  { code: "INR", name: "Indian Rupee" },
-  { code: "JPY", name: "Japanese Yen" },
-  { code: "CAD", name: "Canadian Dollar" },
-  { code: "AUD", name: "Australian Dollar" },
-  { code: "CHF", name: "Swiss Franc" },
-  { code: "CNY", name: "Chinese Yuan" },
-  { code: "SGD", name: "Singapore Dollar" },
 ];
 
 const MARKETS: { code: string; name: string; flag: string }[] = [

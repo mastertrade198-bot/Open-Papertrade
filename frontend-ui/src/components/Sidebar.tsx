@@ -8,17 +8,9 @@ import {
   Wallet,
   Repeat,
   History,
-  Star,
-  Trophy,
-  Users,
   Settings,
   LogOut,
-  FileBarChart,
-  FlaskConical,
-  Brain,
-  Copy,
   CandlestickChart,
-  FileSearch,
 } from "lucide-react";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useAuth } from "@/context/AuthContext";
@@ -61,17 +53,9 @@ const navItems = [
   { icon: <LayoutDashboard size={18} />, label: "Dashboard", href: "/" },
   { icon: <TrendingUp size={18} />, label: "Markets", href: "/markets" },
   { icon: <CandlestickChart size={18} />, label: "Charts", href: "/chart" },
-  { icon: <Wallet size={18} />, label: "Portfolio", href: "/portfolio" },
   { icon: <Repeat size={18} />, label: "Trade", href: "/trade" },
+  { icon: <Wallet size={18} />, label: "Portfolio", href: "/portfolio" },
   { icon: <History size={18} />, label: "History", href: "/history" },
-  { icon: <Star size={18} />, label: "Watchlist", href: "/watchlist" },
-  { icon: <FileBarChart size={18} />, label: "Reports", href: "/reports" },
-  { icon: <FlaskConical size={18} />, label: "Backtesting", href: "/backtesting" },
-  { icon: <Brain size={18} />, label: "AI Coach", href: "/coaching" },
-  { icon: <FileSearch size={18} />, label: "Filings Research", href: "/filings" },
-  { icon: <Copy size={18} />, label: "Copy Trading", href: "/copy-trading" },
-  { icon: <Trophy size={18} />, label: "Leaderboard", href: "/leaderboard" },
-  { icon: <Users size={18} />, label: "Friends", href: "/friends" },
   { icon: <Settings size={18} />, label: "Account", href: "/account" },
 ];
 

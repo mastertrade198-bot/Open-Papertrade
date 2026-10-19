@@ -4,6 +4,7 @@ URL routes for user API endpoints.
 
 from django.urls import path
 from . import views
+from . import position_views
 from . import security_views
 from . import report_views
 from . import admin_report_views
@@ -14,6 +15,10 @@ from . import copy_trading_views
 app_name = 'users'
 
 urlpatterns = [
+    # Leveraged paper-trading positions
+    path('positions/', position_views.PositionsView.as_view(), name='positions'),
+    path('positions/<uuid:position_id>/close/', position_views.ClosePositionView.as_view(), name='position-close'),
+
     # Profile
     path('profile/', views.UserProfileView.as_view(), name='profile'),
     path('profile/avatar/', views.AvatarUploadView.as_view(), name='avatar-upload'),
