@@ -16,7 +16,7 @@
       <ul class="divide-y">
       {% for entry in recent_actions %}
         <li class="py-3">
-          <div class="font-medium">{{ entry.object_repr }}</div>
+          <div class="font-medium">{% if entry.get_admin_url %}<a href="{{ entry.get_admin_url }}" class="text-primary-600 hover:underline">{{ entry.object_repr }}</a>{% else %}{{ entry.object_repr }}{% endif %}</div>
           <div class="text-sm opacity-70">{{ entry.user.get_username }} · {{ entry.action_time|date:"d/m/Y H:i" }} · {{ entry.content_type }}</div>
         </li>
       {% endfor %}
