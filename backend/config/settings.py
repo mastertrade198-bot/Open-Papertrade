@@ -236,7 +236,7 @@ UNFOLD = {
                 "separator": True,
                 "items": [
                     {"title": "Operações", "icon": "candlestick_chart", "link": reverse_lazy("admin:users_position_changelist")},
-                    {"title": "Extrato financeiro", "icon": "receipt_long", "link": reverse_lazy("admin:users_balancetransaction_changelist")},
+                    {"title": "Financeiro", "icon": "account_balance_wallet", "link": reverse_lazy("admin:users_balancetransaction_changelist")},
                     {"title": "Auditoria", "icon": "history", "link": reverse_lazy("admin:users_positionauditlog_changelist")},
                 ],
             },
