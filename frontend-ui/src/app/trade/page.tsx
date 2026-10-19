@@ -641,8 +641,8 @@ function TradePageContent() {
               </div>
 
               {/* Order Summary */}
-              <div className="flex flex-col gap-3 p-4 rounded-lg bg-[var(--bg-card-inner)]">
-                <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-0 border-y border-[var(--border-primary)]">
+                <div className="flex items-center justify-between py-3 border-b border-[var(--border-primary)]">
                   <span className="text-sm text-[var(--text-muted)]">
                     Preço de mercado
                   </span>
@@ -650,25 +650,21 @@ function TradePageContent() {
                     {formatCurrency(effectivePrice, false, { sourceCurrency })}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between py-3 border-b border-[var(--border-primary)]">
                   <span className="text-sm text-[var(--text-muted)]">Quantidade estimada</span>
                   <span className="font-mono text-sm text-[var(--text-primary)]">
                     {quantity > 0 ? quantity.toFixed(8) : "—"}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-lg border border-[var(--border-primary)] p-3">
-                    <p className="text-xs text-[var(--text-muted)]">Possível lucro ({hasProjectedProfitTarget ? "Take Profit" : "alta favorável de 1%"})</p>
-                    <p className="mt-1 font-mono text-base font-bold text-[var(--accent-green)]">+{formatCurrency(projectedProfit, false, { convertFromUSD: false })}</p>
-                  </div>
-                  <div className="rounded-lg border border-[var(--border-primary)] p-3">
-                    <p className="text-xs text-[var(--text-muted)]">Possível prejuízo ({hasProjectedLossTarget ? "Stop Loss" : "queda desfavorável de 1%"})</p>
-                    <p className="mt-1 font-mono text-base font-bold text-[var(--accent-red)]">-{formatCurrency(projectedLoss, false, { convertFromUSD: false })}</p>
-                  </div>
+                <div className="flex items-center justify-between gap-3 py-3 border-b border-[var(--border-primary)]">
+                  <span className="text-sm text-[var(--text-muted)]">Possível lucro ({hasProjectedProfitTarget ? "Take Profit" : "alta favorável de 1%"})</span>
+                  <span className="font-mono text-sm font-bold text-[var(--accent-green)]">+{formatCurrency(projectedProfit, false, { convertFromUSD: false })}</span>
                 </div>
-                <p className="text-[11px] text-[var(--text-muted)]">Projeção: margem × {leverage}x × variação do ativo. Sem SL/TP, cenário ilustrativo de 1% em cada direção. Valores em USD, sem taxas, slippage ou garantia de execução. A perda real pode exceder a margem.</p>
-                <div className="h-px bg-[var(--border-primary)]" />
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-3 py-3 border-b border-[var(--border-primary)]">
+                  <span className="text-sm text-[var(--text-muted)]">Possível prejuízo ({hasProjectedLossTarget ? "Stop Loss" : "queda desfavorável de 1%"})</span>
+                  <span className="font-mono text-sm font-bold text-[var(--accent-red)]">-{formatCurrency(projectedLoss, false, { convertFromUSD: false })}</span>
+                </div>
+                <div className="flex items-center justify-between py-3 border-b border-[var(--border-primary)]">
                   <span className="text-sm font-medium text-[var(--text-primary)]">
                     Margem estimada
                   </span>
