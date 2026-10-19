@@ -100,7 +100,6 @@ class SymbolSearchView(APIView):
 
     # Exchange mappings for filtering
     US_EXCHANGES = {'NMS', 'NYQ', 'NGM', 'NCM', 'PCX', 'ASE', 'BTS', 'NASDAQ', 'NYSE', 'AMEX'}
-    IN_EXCHANGES = {'NSI', 'BSE', 'NSE', 'BOM'}
 
     def get(self, request):
         query = request.query_params.get('q', '').strip()
@@ -121,19 +120,27 @@ class SymbolSearchView(APIView):
                     market = user.settings.market
             except:
                 pass
-        market = market or 'US'
+        market = 'US'
 
         service = get_stock_service()
         results = service.search(query)
 
         # Filter by market (always include crypto regardless of market)
         is_crypto = lambda r: r.get('type', '').upper() == 'CRYPTOCURRENCY' or r.get('symbol', '').endswith('-USD')
-        if market == 'US':
-            filtered = [r for r in results if r.get('exchange', '') in self.US_EXCHANGES or is_crypto(r)]
-        elif market == 'IN':
-            filtered = [r for r in results if r.get('exchange', '') in self.IN_EXCHANGES or r.get('yahooSymbol', '').endswith(('.NS', '.BO')) or is_crypto(r)]
-        else:
-            filtered = results
+        excluded_symbols = {
+            'RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK',
+            'HINDUNILVR', 'SBIN', 'BHARTIARTL', 'ITC', 'KOTAKBANK',
+        }
+        indian_exchanges = {'NSI', 'BSE', 'NSE', 'BOM'}
+        filtered = [
+            r for r in results
+            if (r.get('exchange', '').upper() in self.US_EXCHANGES or is_crypto(r))
+            and r.get('exchange', '').upper() not in indian_exchanges
+            and not str(r.get('symbol', '')).upper().endswith(('.NS', '.BO'))
+            and not str(r.get('yahooSymbol', '')).upper().endswith(('.NS', '.BO'))
+            and str(r.get('symbol', '')).upper() not in excluded_symbols
+        ]
+        market = 'US'
 
         return Response({
             "results": filtered,
@@ -202,11 +209,6 @@ class PopularStocksView(APIView):
         "META", "TSLA", "NFLX", "AMD", "INTC"
     ]
 
-    INDIAN_SYMBOLS = [
-        "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK",
-        "HINDUNILVR", "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK"
-    ]
-
     def get(self, request):
         # Get market preference from query param or user settings
         market = request.query_params.get('market', '').upper()
@@ -222,7 +224,7 @@ class PopularStocksView(APIView):
                 pass
 
         market = market or 'US'
-        symbols = self.INDIAN_SYMBOLS if market == 'IN' else self.US_SYMBOLS
+        symbols = self.US_SYMBOLS
 
         service = get_stock_service()
         results = service.get_quotes(symbols)
@@ -368,12 +370,6 @@ class MarketIndicesView(APIView):
         ("DOW JONES", "^DJI"),
     ]
 
-    IN_INDICES = [
-        ("NIFTY 50", "^NSEI"),
-        ("SENSEX", "^BSESN"),
-        ("BANK NIFTY", "^NSEBANK"),
-    ]
-
     def get(self, request):
         market = request.query_params.get('market', '').upper()
 
@@ -387,7 +383,7 @@ class MarketIndicesView(APIView):
                 pass
 
         market = market or 'US'
-        index_list = self.IN_INDICES if market == 'IN' else self.US_INDICES
+        index_list = self.US_INDICES
 
         service = get_stock_service()
         yahoo_symbols = [ys for _, ys in index_list]
