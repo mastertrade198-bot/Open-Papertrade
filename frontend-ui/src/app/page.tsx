@@ -200,10 +200,8 @@ export default function Dashboard() {
           if (!items.length) return null;
           return (
             <div className="shrink-0 min-h-[48px] flex items-center overflow-hidden bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] py-3" aria-label="Cotações de mercado">
-              <style>{`@keyframes dashboardTickerScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-                .dashboard-ticker-track { display: flex; width: max-content; animation: dashboardTickerScroll 65s linear infinite; }
-                .dashboard-ticker-track:hover { animation-play-state: paused; }
-                @media (prefers-reduced-motion: reduce) { .dashboard-ticker-track { animation: none; } }`}</style>
+              <style>{`@keyframes dashboardTickerScroll { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+                .dashboard-ticker-track { display: flex; flex: none; width: max-content; min-width: max-content; will-change: transform; animation: dashboardTickerScroll 45s linear infinite; }`}</style>
               <div className="dashboard-ticker-track items-center">
                 {[0, 1].map((copy) => (
                   <div key={copy} className="flex shrink-0 items-center gap-8 pr-8" aria-hidden={copy === 1}>
