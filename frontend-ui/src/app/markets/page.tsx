@@ -25,25 +25,25 @@ export default function MarketsPage() {
   const allAssets = [...stocks, ...crypto];
 
   // Sort by change percent for gainers/losers
-  const sortedByVariação = [...allAssets].sort((a, b) => b.changePercent - a.changePercent);
-  const gainers = sortedByVariação.slice(0, 3);
-  const losers = sortedByVariação.slice(-3).reverse();
+  const sortedByChange = [...allAssets].sort((a, b) => b.changePercent - a.changePercent);
+  const gainers = sortedByChange.slice(0, 3);
+  const losers = sortedByChange.slice(-3).reverse();
 
   const btcIndex = crypto.find((c) => c.symbol === "BTC");
 
   const isInWatchlist = (symbol: string) => watchlist.some((w) => w.symbol === symbol);
 
   return (
-    <div classNome="flex h-full bg-[var(--bg-primary)]">
+    <div className="flex h-full bg-[var(--bg-primary)]">
       <Sidebar />
-      <main classNome="flex-1 flex flex-col gap-7 py-8 px-10 overflow-auto">
+      <main className="flex-1 flex flex-col gap-7 py-8 px-10 overflow-auto">
         <PageHeader
           title="Markets"
-          subtitle="Acompanhe os mercados e descubra oportunidades de negociação"
+          subtitle="Track global markets and discover trading opportunities"
         />
 
         {/* Metrics Row */}
-        <div classNome="flex gap-4">
+        <div className="flex gap-4">
           {indices.map((idx) => (
             <MetricCard
               key={idx.symbol}
@@ -62,58 +62,58 @@ export default function MarketsPage() {
         </div>
 
         {/* Content Row */}
-        <div classNome="flex gap-4 flex-1 min-h-0">
-          {/* Ações populares Table */}
-          <div classNome="flex-1 bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)] flex flex-col gap-4">
-            <div classNome="flex items-center justify-between">
-              <span classNome="text-sm font-semibold text-[var(--text-primary)]">
-                Ações populares
+        <div className="flex gap-4 flex-1 min-h-0">
+          {/* Popular Stocks Table */}
+          <div className="flex-1 bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)] flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-[var(--text-primary)]">
+                Popular Stocks
               </span>
               <Link
                 href="/watchlist"
-                classNome="text-[11px] font-medium text-[var(--accent-primary)] hover:underline"
+                className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline"
               >
-                Ver todos
+                View all
               </Link>
             </div>
 
             {/* Table Header */}
-            <div classNome="flex gap-4 py-3">
-              <span classNome="flex-1 text-[11px] font-semibold tracking-[0.5px] text-[var(--text-muted)]">
-                Ativo
+            <div className="flex gap-4 py-3">
+              <span className="flex-1 text-[11px] font-semibold tracking-[0.5px] text-[var(--text-muted)]">
+                Symbol
               </span>
-              <span classNome="flex-1 text-[11px] font-semibold tracking-[0.5px] text-[var(--text-muted)]">
-                Nome
+              <span className="flex-1 text-[11px] font-semibold tracking-[0.5px] text-[var(--text-muted)]">
+                Name
               </span>
-              <span classNome="w-24 text-right text-[11px] font-semibold tracking-[0.5px] text-[var(--text-muted)]">
-                Preço
+              <span className="w-24 text-right text-[11px] font-semibold tracking-[0.5px] text-[var(--text-muted)]">
+                Price
               </span>
-              <span classNome="w-24 text-right text-[11px] font-semibold tracking-[0.5px] text-[var(--text-muted)]">
-                Variação
+              <span className="w-24 text-right text-[11px] font-semibold tracking-[0.5px] text-[var(--text-muted)]">
+                Change
               </span>
-              <span classNome="w-20 text-right text-[11px] font-semibold tracking-[0.5px] text-[var(--text-muted)]">
-                Ação
+              <span className="w-20 text-right text-[11px] font-semibold tracking-[0.5px] text-[var(--text-muted)]">
+                Action
               </span>
             </div>
 
             {/* Table Body */}
-            <div classNome="flex flex-col flex-1 overflow-auto">
+            <div className="flex flex-col flex-1 overflow-auto">
               {stocks.map((stock) => (
                 <div
                   key={stock.symbol}
-                  classNome="flex gap-4 py-4 border-t border-[var(--border-primary)] items-center"
+                  className="flex gap-4 py-4 border-t border-[var(--border-primary)] items-center"
                 >
-                  <span classNome="flex-1 font-mono text-[13px] font-semibold text-[var(--text-primary)]">
+                  <span className="flex-1 font-mono text-[13px] font-semibold text-[var(--text-primary)]">
                     {stock.symbol}
                   </span>
-                  <span classNome="flex-1 text-[13px] text-[var(--text-secondary)]">
+                  <span className="flex-1 text-[13px] text-[var(--text-secondary)]">
                     {stock.name}
                   </span>
-                  <span classNome="w-24 text-right font-mono text-[13px] text-[var(--text-primary)]">
+                  <span className="w-24 text-right font-mono text-[13px] text-[var(--text-primary)]">
                     {formatCurrency(stock.price, false, { sourceCurrency: stock.currency || 'USD' })}
                   </span>
                   <span
-                    classNome={`w-24 text-right font-mono text-[13px] ${
+                    className={`w-24 text-right font-mono text-[13px] ${
                       stock.changePercent >= 0
                         ? "text-[var(--accent-green)]"
                         : "text-[var(--accent-red)]"
@@ -121,17 +121,17 @@ export default function MarketsPage() {
                   >
                     {formatPercent(stock.changePercent)}
                   </span>
-                  <div classNome="w-20 flex justify-end gap-2">
+                  <div className="w-20 flex justify-end gap-2">
                     <Link
                       href="/trade"
-                      classNome="px-2 py-1 rounded text-[10px] font-semibold bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-secondary)]"
+                      className="px-2 py-1 rounded text-[10px] font-semibold bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-secondary)]"
                     >
-                      Negociar
+                      Trade
                     </Link>
                     {!isInWatchlist(stock.symbol) && (
                       <button
                         onClick={() => addToWatchlist(stock.symbol)}
-                        classNome="px-2 py-1 rounded text-[10px] font-medium border border-[var(--border-muted)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]"
+                        className="px-2 py-1 rounded text-[10px] font-medium border border-[var(--border-muted)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]"
                       >
                         +
                       </button>
@@ -142,34 +142,34 @@ export default function MarketsPage() {
             </div>
           </div>
 
-          {/* Maiores movimentos Panel */}
-          <div classNome="w-[360px] bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)] flex flex-col gap-5">
-            <div classNome="flex items-center justify-between">
-              <span classNome="text-sm font-semibold text-[var(--text-primary)]">
-                Maiores movimentos
+          {/* Top Movers Panel */}
+          <div className="w-[360px] bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)] flex flex-col gap-5">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-[var(--text-primary)]">
+                Top Movers
               </span>
-              <Link href="/watchlist" classNome="text-[11px] font-medium text-[var(--accent-primary)] hover:underline">
-                Ver todos
+              <Link href="/watchlist" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline">
+                View all
               </Link>
             </div>
 
-            <div classNome="flex flex-col gap-5 flex-1 overflow-auto">
+            <div className="flex flex-col gap-5 flex-1 overflow-auto">
               {/* Gainers */}
-              <div classNome="flex flex-col gap-3">
-                <span classNome="text-[10px] font-bold tracking-[1px] text-[var(--accent-green)]">
-                  ALTAS
+              <div className="flex flex-col gap-3">
+                <span className="text-[10px] font-bold tracking-[1px] text-[var(--accent-green)]">
+                  GAINERS
                 </span>
                 {gainers.map((item) => (
-                  <div key={item.symbol} classNome="flex items-center justify-between">
-                    <div classNome="flex flex-col gap-0.5">
-                      <span classNome="font-mono text-[13px] font-semibold text-[var(--text-primary)]">
+                  <div key={item.symbol} className="flex items-center justify-between">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-mono text-[13px] font-semibold text-[var(--text-primary)]">
                         {item.symbol}
                       </span>
-                      <span classNome="text-[11px] text-[var(--text-muted)]">
+                      <span className="text-[11px] text-[var(--text-muted)]">
                         {item.name}
                       </span>
                     </div>
-                    <span classNome="px-2.5 py-1.5 rounded-md bg-[#22C55E20] font-mono text-xs font-medium text-[var(--accent-green)]">
+                    <span className="px-2.5 py-1.5 rounded-md bg-[#22C55E20] font-mono text-xs font-medium text-[var(--accent-green)]">
                       {formatPercent(item.changePercent)}
                     </span>
                   </div>
@@ -177,21 +177,21 @@ export default function MarketsPage() {
               </div>
 
               {/* Losers */}
-              <div classNome="flex flex-col gap-3">
-                <span classNome="text-[10px] font-bold tracking-[1px] text-[var(--accent-red)]">
-                  QUEDAS
+              <div className="flex flex-col gap-3">
+                <span className="text-[10px] font-bold tracking-[1px] text-[var(--accent-red)]">
+                  LOSERS
                 </span>
                 {losers.map((item) => (
-                  <div key={item.symbol} classNome="flex items-center justify-between">
-                    <div classNome="flex flex-col gap-0.5">
-                      <span classNome="font-mono text-[13px] font-semibold text-[var(--text-primary)]">
+                  <div key={item.symbol} className="flex items-center justify-between">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-mono text-[13px] font-semibold text-[var(--text-primary)]">
                         {item.symbol}
                       </span>
-                      <span classNome="text-[11px] text-[var(--text-muted)]">
+                      <span className="text-[11px] text-[var(--text-muted)]">
                         {item.name}
                       </span>
                     </div>
-                    <span classNome="px-2.5 py-1.5 rounded-md bg-[#EF444420] font-mono text-xs font-medium text-[var(--accent-red)]">
+                    <span className="px-2.5 py-1.5 rounded-md bg-[#EF444420] font-mono text-xs font-medium text-[var(--accent-red)]">
                       {formatPercent(item.changePercent)}
                     </span>
                   </div>
