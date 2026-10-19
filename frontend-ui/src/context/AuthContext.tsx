@@ -5,6 +5,8 @@ import { useRouter, usePathname } from "next/navigation";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
+export interface SignupPersonalDetails { cpf: string; dateOfBirth: string; phone: string; }
+
 interface AuthUser {
   id: string;
   name: string;
@@ -17,7 +19,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ twoFactorRequired: boolean; tempToken?: string }>;
-  signup: (name: string, email: string, password: string, username?: string) => Promise<{ emailVerificationRequired: boolean; emailSent: boolean }>;
+  signup: (name: string, email: string, password: string, username?: string, personalDetails?: SignupPersonalDetails) => Promise<{ emailVerificationRequired: boolean; emailSent: boolean }>;
   logout: () => Promise<void>;
   verifyEmail: (token: string) => Promise<void>;
   resendVerification: (email: string) => Promise<string>;
@@ -124,12 +126,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { twoFactorRequired: false };
   }, []);
 
-  const signup = useCallback(async (name: string, email: string, password: string, username?: string): Promise<{ emailVerificationRequired: boolean; emailSent: boolean }> => {
+  const signup = useCallback(async (name: string, email: string, password: string, username?: string, personalDetails?: SignupPersonalDetails): Promise<{ emailVerificationRequired: boolean; emailSent: boolean }> => {
     const response = await fetch(`${API_BASE_URL}/auth/signup/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ name, email, password, ...(username ? { username } : {}) }),
+      body: JSON.stringify({ name, email, password, ...(username ? { username } : {}), ...(personalDetails || {}) }),
     });
 
     const data = await response.json();
