@@ -312,7 +312,7 @@ function TradePageContent() {
   return (
     <div className="flex h-full bg-[var(--bg-primary)]">
       <Sidebar />
-      <main className="flex-1 flex flex-col gap-6 py-8 px-10 overflow-auto">
+      <main className="flex-1 flex flex-col gap-5 py-6 px-6 xl:px-8 overflow-auto">
         <PageHeader
           title="Negociar"
           subtitle="Pesquise ações ou criptomoedas para negociar"
@@ -337,9 +337,9 @@ function TradePageContent() {
         )}
 
         {/* Main Trade Area */}
-        <div className="flex gap-6 items-start shrink-0 min-w-0">
+        <div className="flex gap-5 items-start shrink-0 min-w-0">
           {/* Left Panel - Stock Selection */}
-          <div className="flex-1 min-w-0 flex flex-col gap-5">
+          <div className="flex-1 min-w-0 flex flex-col gap-3">
             {/* Asset selection from currently loaded market catalog */}
             <div className="relative">
               <button
@@ -347,7 +347,7 @@ function TradePageContent() {
                 aria-expanded={showAssetMenu}
                 aria-haspopup="listbox"
                 onClick={() => setShowAssetMenu((open) => !open)}
-                className="w-full flex items-center justify-between gap-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-3 text-left hover:border-[var(--accent-primary)]"
+                className="w-full flex items-center justify-between gap-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-2.5 text-left hover:border-[var(--accent-primary)]"
               >
                 <span className="min-w-0">
                   <span className="block text-xs text-[var(--text-muted)]">Selecionar ativo</span>
@@ -379,14 +379,14 @@ function TradePageContent() {
 
             {/* Search Bar */}
             <div className="relative">
-              <div className="flex items-center gap-3 px-4 py-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-primary)] focus-within:border-[var(--accent-primary)] transition-colors">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-primary)] focus-within:border-[var(--accent-primary)] transition-colors">
                 <Search size={20} className="text-[var(--text-muted)]" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
                   placeholder="Pesquise por nome ou símbolo (ex.: AAPL, Tesla, BTC)..."
-                  className="flex-1 bg-transparent text-base text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
+                  className="min-w-0 flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
                 />
                 {searchQuery && (
                   <button
@@ -456,11 +456,11 @@ function TradePageContent() {
             </div>
 
             {/* Selected Stock Card */}
-            <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)]">
-              <div className="flex items-start justify-between mb-4">
+            <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)]">
+              <div className="flex items-start justify-between gap-4 mb-3">
                 <div>
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-2xl font-bold text-[var(--text-primary)]">
+                    <span className="font-mono text-xl font-bold text-[var(--text-primary)]">
                       {selectedSymbol}
                     </span>
                     {isLoadingQuote && (
@@ -472,7 +472,7 @@ function TradePageContent() {
                   </span>
                 </div>
                 <div className="text-right">
-                  <div className="font-mono text-3xl font-bold text-[var(--text-primary)]">
+                  <div className="font-mono text-2xl font-bold text-[var(--text-primary)]">
                     {formatCurrency(currentPrice, false, { sourceCurrency })}
                   </div>
                   {selectedQuote && (
@@ -496,7 +496,7 @@ function TradePageContent() {
 
               {/* Stock Stats */}
               {selectedQuote && (
-                <div className="grid grid-cols-4 gap-4 pt-4 border-t border-[var(--border-primary)]">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 pt-3 border-t border-[var(--border-primary)]">
                   <div>
                     <span className="text-[11px] text-[var(--text-muted)]">Abertura</span>
                     <div className="font-mono text-sm text-[var(--text-primary)]">
