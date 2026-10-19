@@ -504,8 +504,6 @@ function TradePageContent() {
                 <p className="mt-1 text-xs text-[var(--text-muted)]">Saldo disponível para margem das operações</p>
               </div>
 
-              <p className="text-[11px] text-[var(--text-muted)]">Ambiente de demonstração: operações sem movimentação de dinheiro real.</p>
-
               {/* Buy/Sell Toggle */}
               <div className="flex p-1 rounded-lg bg-[var(--bg-card-inner)]">
                 <button
