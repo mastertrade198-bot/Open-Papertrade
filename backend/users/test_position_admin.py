@@ -39,6 +39,7 @@ class PositionAdminTests(TestCase):
         log = PositionAuditLog.objects.get(position=self.position)
         self.assertEqual(log.old_values['entry_price'], '100.000000')
         self.assertEqual(log.old_values['buying_power'], '900.00')
+        self.assertIsNone(log.actor)  # Django operator is not a trading UserProfile
         self.assertEqual(log.new_values['_actor']['username'], 'operator')
         self.assertEqual(log.new_values['_reason'], 'Correção de operação simulada')
 
