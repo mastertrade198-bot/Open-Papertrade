@@ -36,6 +36,8 @@ class PositionEditForm(forms.ModelForm):
         if not all(key in data for key in EDIT_FIELDS):
             return data
         # The admin wraps POST change forms in an atomic transaction.
+        # Acquire locks in the same order as open/close: account, then position.
+        owner = UserProfile.objects.select_for_update().get(pk=self.instance.user_id)
         current = Position.objects.select_for_update().get(pk=self.instance.pk)
         if current.status != Position.Status.OPEN:
             raise ValidationError('Somente posições abertas podem ser alteradas.')
@@ -57,7 +59,8 @@ class PositionEditForm(forms.ModelForm):
         if data['margin'] < minimum:
             self.add_error('margin', 'A margem deve cobrir pelo menos USD ' + str(minimum))
             return data
-        owner = UserProfile.objects.select_for_update().get(pk=current.user_id)
+        if current.user_id != owner.pk:
+            raise ValidationError("O titular da posição foi alterado. Recarregue a página.")
         balance = owner.buying_power + current.margin - data['margin']
         if balance < 0 or balance >= Decimal('1000000000000000000'):
             raise ValidationError('Saldo disponível insuficiente ou fora dos limites para esta margem.')
