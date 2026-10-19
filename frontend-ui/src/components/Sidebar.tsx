@@ -50,13 +50,13 @@ function NavItem({ icon, label, href, active }: NavItemProps) {
 }
 
 const navItems = [
-  { icon: <LayoutDashboard size={18} />, label: "Dashboard", href: "/" },
-  { icon: <TrendingUp size={18} />, label: "Markets", href: "/markets" },
-  { icon: <CandlestickChart size={18} />, label: "Charts", href: "/chart" },
-  { icon: <Repeat size={18} />, label: "Trade", href: "/trade" },
-  { icon: <Wallet size={18} />, label: "Portfolio", href: "/portfolio" },
-  { icon: <History size={18} />, label: "History", href: "/history" },
-  { icon: <Settings size={18} />, label: "Account", href: "/account" },
+  { icon: <LayoutDashboard size={18} />, label: "Painel", href: "/" },
+  { icon: <TrendingUp size={18} />, label: "Mercados", href: "/markets" },
+  { icon: <CandlestickChart size={18} />, label: "Gráficos", href: "/chart" },
+  { icon: <Repeat size={18} />, label: "Negociar", href: "/trade" },
+  { icon: <Wallet size={18} />, label: "Carteira", href: "/portfolio" },
+  { icon: <History size={18} />, label: "Histórico", href: "/history" },
+  { icon: <Settings size={18} />, label: "Conta", href: "/account" },
 ];
 
 export default function Sidebar() {
@@ -131,7 +131,7 @@ export default function Sidebar() {
         </Link>
         <button
           onClick={handleLogout}
-          title="Sign out"
+          title="Sair"
           className="p-2 rounded-lg text-[var(--text-muted)] hover:text-[var(--accent-red)] hover:bg-[var(--accent-red)]/10 transition-colors shrink-0"
         >
           <LogOut size={16} />
