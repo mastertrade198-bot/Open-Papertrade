@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Sidebar from "@/components/Sidebar";
+import LeveragedTradeHistory from "@/components/LeveragedTradeHistory";
 import { userAPI, type BalanceTransaction } from "@/lib/api";
 
 const usd = (n: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD" }).format(n);
@@ -63,6 +64,7 @@ export default function BalanceHistoryPage() {
             </tbody>
           </table>
         </div>
+        <div className="mt-6"><LeveragedTradeHistory /></div>
         <p className="text-xs text-[var(--text-muted)] mt-4">O histórico registra alterações feitas após a ativação do recurso. Operações anteriores não são reconstruídas. Até 500 registros recentes são exibidos.</p>
       </main>
     </div>
