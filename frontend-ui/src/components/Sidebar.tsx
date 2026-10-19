@@ -57,7 +57,6 @@ const navItems = [
   { icon: <Repeat size={18} />, label: "Negociar", href: "/trade" },
   { icon: <Wallet size={18} />, label: "Carteira", href: "/portfolio" },
   { icon: <Star size={18} />, label: "Lista de acompanhamento", href: "/watchlist" },
-  { icon: <History size={18} />, label: "Histórico", href: "/history" },
   { icon: <History size={18} />, label: "Extrato", href: "/balance-history" },
   { icon: <Settings size={18} />, label: "Conta", href: "/account" },
 ];
