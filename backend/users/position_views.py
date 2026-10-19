@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import UserProfile, Position, PositionAuditLog
+from .balance_journal import balance_context
 from .views import get_user
 from stocks.services import get_stock_service
 
@@ -143,7 +144,11 @@ class PositionsView(APIView):
                     )
 
                 locked_user.buying_power = money(locked_user.buying_power - margin)
-                locked_user.save(update_fields=["buying_power", "updated_at"])
+                token = balance_context.set({"category": "POSITION_MARGIN", "description": f"Margem reservada: {symbol} {side} ({leverage}x)"})
+                try:
+                    locked_user.save(update_fields=["buying_power", "updated_at"])
+                finally:
+                    balance_context.reset(token)
 
                 position = Position.objects.create(
                     user=locked_user,
@@ -209,7 +214,11 @@ class ClosePositionView(APIView):
                 if locked_user.buying_power < 0:
                     raise ValueError("A liquidação produziria saldo negativo.")
 
-                locked_user.save(update_fields=["buying_power", "updated_at"])
+                token = balance_context.set({"category": "POSITION_SETTLEMENT", "description": f"Liquidação {position.symbol} ({position.side}); resultado {pnl:+.2f} USD"})
+                try:
+                    locked_user.save(update_fields=["buying_power", "updated_at"])
+                finally:
+                    balance_context.reset(token)
 
                 position.status = Position.Status.CLOSED
                 position.exit_price = exit_price.quantize(PRICE_STEP)
