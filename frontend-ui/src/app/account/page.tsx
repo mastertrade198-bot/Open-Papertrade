@@ -48,12 +48,12 @@ import PageHeader from "@/components/PageHeader";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useAuth } from "@/context/AuthContext";
 import { APP_CONFIG } from "@/config/app";
-import { formatMoeda, formatPercent } from "@/lib/utils";
+import { formatCurrency, formatPercent } from "@/lib/utils";
 import {
   userAPI,
   API_HOST,
-  type UserPerfil,
-  type UserConfigurações,
+  type UserProfile,
+  type UserSettings,
   type UserStats,
   type Achievement,
   type APIKeyInfo,
@@ -100,7 +100,7 @@ const AVAILABLE_MARKETS = [
 ];
 
 export default function AccountPage() {
-  const { refreshPrices, refreshUserData: refreshPortfolio, currency, currencySymbol, setMoeda, market, setMercado, totalPortfolioValue, totalReturns, returnsPercent, buyingPower, applyTema, updateTradingConfigurações, updateNotificationConfigurações } = usePortfolio();
+  const { refreshPrices, refreshUserData: refreshPortfolio, currency, currencySymbol, setCurrency, market, setMarket, totalPortfolioValue, totalReturns, returnsPercent, buyingPower, applyTheme, updateTradingSettings, updateNotificationSettings } = usePortfolio();
   const { logout } = useAuth();
   const router = useRouter();
 
@@ -111,8 +111,8 @@ export default function AccountPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // User data from API
-  const [profile, setPerfil] = useState<UserPerfil | null>(null);
-  const [settings, setConfigurações] = useState<UserConfigurações | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
   const [stats, setStats] = useState<UserStats | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [achievementStats, setAchievementStats] = useState({ unlockedCount: 0, totalCount: 0 });
@@ -151,13 +151,13 @@ export default function AccountPage() {
     setError(null);
     try {
       const [profileRes, statsRes, achievementsRes] = await Promise.all([
-        userAPI.getPerfil(),
+        userAPI.getProfile(),
         userAPI.getStats(),
         userAPI.getAchievements(),
       ]);
 
-      setPerfil(profileRes.profile);
-      setConfigurações(profileRes.settings);
+      setProfile(profileRes.profile);
+      setSettings(profileRes.settings);
       setEditName(profileRes.profile.name);
       setEditUsername(profileRes.profile.username || '');
       setEditEmail(profileRes.profile.email);
@@ -185,7 +185,7 @@ export default function AccountPage() {
   };
 
   // Save profile changes
-  const handleSavePerfil = async () => {
+  const handleSaveProfile = async () => {
     if (!profile) return;
 
     // Validate username
@@ -197,14 +197,14 @@ export default function AccountPage() {
 
     setIsSaving(true);
     try {
-      const updated = await userAPI.updatePerfil({
+      const updated = await userAPI.updateProfile({
         name: editName,
         email: editEmail,
         ...(editUsername ? { username: editUsername } : {}),
       } as any);
-      setPerfil({ ...profile, ...updated });
+      setProfile({ ...profile, ...updated });
       setIsEditing(false);
-      showSuccess("Perfil updated successfully");
+      showSuccess("Profile updated successfully");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update profile");
     } finally {
@@ -224,9 +224,9 @@ export default function AccountPage() {
     setError(null);
     try {
       const result = await userAPI.uploadAvatar(file);
-      setPerfil({ ...profile, avatarUrl: result.avatarUrl });
+      setProfile({ ...profile, avatarUrl: result.avatarUrl });
       await refreshPortfolio();
-      showSuccess("Perfil picture updated");
+      showSuccess("Profile picture updated");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to upload image");
     } finally {
@@ -242,9 +242,9 @@ export default function AccountPage() {
     setError(null);
     try {
       await userAPI.removeAvatar();
-      setPerfil({ ...profile, avatarUrl: null });
+      setProfile({ ...profile, avatarUrl: null });
       await refreshPortfolio();
-      showSuccess("Perfil picture removed");
+      showSuccess("Profile picture removed");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to remove image");
     } finally {
@@ -252,25 +252,25 @@ export default function AccountPage() {
     }
   };
 
-  const handleNotificationToggle = async (key: keyof UserConfigurações["notifications"]) => {
+  const handleNotificationToggle = async (key: keyof UserSettings["notifications"]) => {
     if (!settings) return;
     const newValue = !settings.notifications[key];
-    const newConfigurações = {
+    const newSettings = {
       ...settings,
       notifications: { ...settings.notifications, [key]: newValue },
     };
 
     // Sync tradeConfirmations with confirmTrades preference
     if (key === 'tradeConfirmations') {
-      newConfigurações.preferences = { ...newConfigurações.preferences, confirmTrades: newValue };
+      newSettings.preferences = { ...newSettings.preferences, confirmTrades: newValue };
     }
 
-    setConfigurações(newConfigurações);
-    updateNotificationConfigurações({ [key]: newValue });
+    setSettings(newSettings);
+    updateNotificationSettings({ [key]: newValue });
 
     // Also sync confirmTrades preference when tradeConfirmations changes
     if (key === 'tradeConfirmations') {
-      updateTradingConfigurações({ confirmTrades: newValue });
+      updateTradingSettings({ confirmTrades: newValue });
     }
 
     try {
@@ -278,36 +278,36 @@ export default function AccountPage() {
       if (key === 'tradeConfirmations') {
         updates.preferences = { confirmTrades: newValue };
       }
-      await userAPI.updateConfigurações(updates as any);
+      await userAPI.updateSettings(updates as any);
     } catch (err) {
-      setConfigurações(settings);
-      updateNotificationConfigurações({ [key]: settings.notifications[key] });
+      setSettings(settings);
+      updateNotificationSettings({ [key]: settings.notifications[key] });
       if (key === 'tradeConfirmations') {
-        updateTradingConfigurações({ confirmTrades: settings.preferences.confirmTrades });
+        updateTradingSettings({ confirmTrades: settings.preferences.confirmTrades });
       }
       setError(err instanceof Error ? err.message : "Failed to update settings");
     }
   };
 
   // Update preference settings
-  const handlePreferenceToggle = async (key: keyof UserConfigurações["preferences"]) => {
+  const handlePreferenceToggle = async (key: keyof UserSettings["preferences"]) => {
     if (!settings) return;
     const newValue = !settings.preferences[key];
-    const newConfigurações = {
+    const newSettings = {
       ...settings,
       preferences: { ...settings.preferences, [key]: newValue },
     };
 
     // Sync confirmTrades with tradeConfirmations notification
     if (key === 'confirmTrades') {
-      newConfigurações.notifications = { ...newConfigurações.notifications, tradeConfirmations: newValue as boolean };
+      newSettings.notifications = { ...newSettings.notifications, tradeConfirmations: newValue as boolean };
     }
 
-    setConfigurações(newConfigurações);
-    updateTradingConfigurações({ [key]: newValue });
+    setSettings(newSettings);
+    updateTradingSettings({ [key]: newValue });
 
     if (key === 'confirmTrades') {
-      updateNotificationConfigurações({ tradeConfirmations: newValue as boolean });
+      updateNotificationSettings({ tradeConfirmations: newValue as boolean });
     }
 
     try {
@@ -315,12 +315,12 @@ export default function AccountPage() {
       if (key === 'confirmTrades') {
         updates.notifications = { tradeConfirmations: newValue };
       }
-      await userAPI.updateConfigurações(updates as any);
+      await userAPI.updateSettings(updates as any);
     } catch (err) {
-      setConfigurações(settings);
-      updateTradingConfigurações({ [key]: settings.preferences[key] });
+      setSettings(settings);
+      updateTradingSettings({ [key]: settings.preferences[key] });
       if (key === 'confirmTrades') {
-        updateNotificationConfigurações({ tradeConfirmations: settings.notifications.tradeConfirmations });
+        updateNotificationSettings({ tradeConfirmations: settings.notifications.tradeConfirmations });
       }
       setError(err instanceof Error ? err.message : "Failed to update settings");
     }
@@ -329,18 +329,18 @@ export default function AccountPage() {
   // Update default order type
   const handleOrderTypeChange = async (type: string) => {
     if (!settings) return;
-    const newConfigurações = {
+    const newSettings = {
       ...settings,
       preferences: { ...settings.preferences, defaultOrderType: type },
     };
-    setConfigurações(newConfigurações);
-    updateTradingConfigurações({ defaultOrderType: type });
+    setSettings(newSettings);
+    updateTradingSettings({ defaultOrderType: type });
 
     try {
-      await userAPI.updateConfigurações({ preferences: { defaultOrderType: type } } as any);
+      await userAPI.updateSettings({ preferences: { defaultOrderType: type } } as any);
     } catch (err) {
-      setConfigurações(settings);
-      updateTradingConfigurações({ defaultOrderType: settings.preferences.defaultOrderType });
+      setSettings(settings);
+      updateTradingSettings({ defaultOrderType: settings.preferences.defaultOrderType });
       setError(err instanceof Error ? err.message : "Failed to update settings");
     }
   };
@@ -363,63 +363,63 @@ export default function AccountPage() {
   };
 
   // Update theme
-  const handleTemaChange = async (theme: 'DARK' | 'LIGHT' | 'AUTO') => {
+  const handleThemeChange = async (theme: 'DARK' | 'LIGHT' | 'AUTO') => {
     if (!settings) return;
 
-    const newConfigurações = {
+    const newSettings = {
       ...settings,
       display: { ...settings.display, theme },
     };
-    setConfigurações(newConfigurações);
-    applyTema(theme);
+    setSettings(newSettings);
+    applyTheme(theme);
 
     try {
-      await userAPI.updateTema(theme);
-      showSuccess(`Tema changed to ${theme.toLowerCase()}`);
+      await userAPI.updateTheme(theme);
+      showSuccess(`Theme changed to ${theme.toLowerCase()}`);
     } catch (err) {
-      setConfigurações(settings);
+      setSettings(settings);
       setError(err instanceof Error ? err.message : "Failed to update theme");
     }
   };
 
   // Update currency
-  const handleMoedaChange = async (newMoeda: string) => {
+  const handleCurrencyChange = async (newCurrency: string) => {
     if (!settings) return;
 
-    const oldMoeda = settings.display.currency;
-    const newConfigurações = {
+    const oldCurrency = settings.display.currency;
+    const newSettings = {
       ...settings,
-      display: { ...settings.display, currency: newMoeda },
+      display: { ...settings.display, currency: newCurrency },
     };
-    setConfigurações(newConfigurações);
+    setSettings(newSettings);
 
     try {
-      await setMoeda(newMoeda);
-      const currencyInfo = AVAILABLE_CURRENCIES.find(c => c.code === newMoeda);
-      showSuccess(`Moeda changed to ${currencyInfo?.name || newMoeda}`);
+      await setCurrency(newCurrency);
+      const currencyInfo = AVAILABLE_CURRENCIES.find(c => c.code === newCurrency);
+      showSuccess(`Currency changed to ${currencyInfo?.name || newCurrency}`);
     } catch (err) {
-      setConfigurações({ ...settings, display: { ...settings.display, currency: oldMoeda } });
+      setSettings({ ...settings, display: { ...settings.display, currency: oldCurrency } });
       setError(err instanceof Error ? err.message : "Failed to update currency");
     }
   };
 
   // Update market
-  const handleMercadoChange = async (newMercado: string) => {
+  const handleMarketChange = async (newMarket: string) => {
     if (!settings) return;
 
-    const oldMercado = settings.display.market;
-    const newConfigurações = {
+    const oldMarket = settings.display.market;
+    const newSettings = {
       ...settings,
-      display: { ...settings.display, market: newMercado },
+      display: { ...settings.display, market: newMarket },
     };
-    setConfigurações(newConfigurações);
+    setSettings(newSettings);
 
     try {
-      await setMercado(newMercado);
-      const marketInfo = AVAILABLE_MARKETS.find(m => m.code === newMercado);
-      showSuccess(`Mercado changed to ${marketInfo?.name || newMercado}`);
+      await setMarket(newMarket);
+      const marketInfo = AVAILABLE_MARKETS.find(m => m.code === newMarket);
+      showSuccess(`Market changed to ${marketInfo?.name || newMarket}`);
     } catch (err) {
-      setConfigurações({ ...settings, display: { ...settings.display, market: oldMercado } });
+      setSettings({ ...settings, display: { ...settings.display, market: oldMarket } });
       setError(err instanceof Error ? err.message : "Failed to update market");
     }
   };
@@ -460,7 +460,7 @@ export default function AccountPage() {
     try {
       const result = await userAPI.changePassword(currentPassword, newPassword);
       if (profile) {
-        setPerfil({ ...profile, passwordChangedAt: result.passwordChangedAt });
+        setProfile({ ...profile, passwordChangedAt: result.passwordChangedAt });
       }
       setSecurityView('overview');
       setCurrentPassword("");
@@ -496,7 +496,7 @@ export default function AccountPage() {
       const result = await userAPI.verify2FA(totpCode);
       setBackupCodes(result.backupCodes);
       if (profile) {
-        setPerfil({ ...profile, is2faEnabled: true });
+        setProfile({ ...profile, is2faEnabled: true });
       }
       setTotpCode("");
     } catch (err) {
@@ -512,7 +512,7 @@ export default function AccountPage() {
     try {
       await userAPI.disable2FA(disablePassword);
       if (profile) {
-        setPerfil({ ...profile, is2faEnabled: false });
+        setProfile({ ...profile, is2faEnabled: false });
       }
       setSecurityView('overview');
       setDisablePassword("");
@@ -649,13 +649,13 @@ export default function AccountPage() {
         )}
 
         <div className="flex gap-6">
-          {/* Left Column - Perfil & Stats */}
+          {/* Left Column - Profile & Stats */}
           <div className="flex-1 flex flex-col gap-5">
-            {/* Perfil Card */}
+            {/* Profile Card */}
             <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)]">
               <div className="flex items-start justify-between mb-6">
                 <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-                  Perfil
+                  Profile
                 </h2>
                 <button
                   onClick={() => {
@@ -716,7 +716,7 @@ export default function AccountPage() {
                   )}
                 </div>
 
-                {/* Perfil Info */}
+                {/* Profile Info */}
                 <div className="flex-1">
                   {isEditing ? (
                     <div className="flex flex-col gap-4">
@@ -764,7 +764,7 @@ export default function AccountPage() {
                         />
                       </div>
                       <button
-                        onClick={handleSavePerfil}
+                        onClick={handleSaveProfile}
                         disabled={isSaving}
                         className="self-start px-4 py-2 rounded-lg bg-[var(--accent-primary)] text-sm font-medium text-white hover:bg-[var(--accent-secondary)] transition-colors disabled:opacity-50"
                       >
@@ -860,7 +860,7 @@ export default function AccountPage() {
                     <span className="text-xs text-[var(--text-muted)]">Valor da carteira</span>
                   </div>
                   <span className="font-mono text-2xl font-bold text-[var(--text-primary)]">
-                    {formatMoeda(totalPortfolioValue)}
+                    {formatCurrency(totalPortfolioValue)}
                   </span>
                 </div>
 
@@ -872,7 +872,7 @@ export default function AccountPage() {
                     <span className="text-xs text-[var(--text-muted)]">Retorno total</span>
                   </div>
                   <span className={`font-mono text-2xl font-bold ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                    {totalReturns >= 0 ? "+" : ""}{formatMoeda(totalReturns)}
+                    {totalReturns >= 0 ? "+" : ""}{formatCurrency(totalReturns)}
                   </span>
                   <span className="text-xs text-[var(--text-muted)] ml-2">
                     ({formatPercent(returnsPercent)})
@@ -887,7 +887,7 @@ export default function AccountPage() {
                     <span className="text-xs text-[var(--text-muted)]">Saldo disponível</span>
                   </div>
                   <span className="font-mono text-2xl font-bold text-[var(--text-primary)]">
-                    {formatMoeda(buyingPower, false, { convertFromUSD: false })}
+                    {formatCurrency(buyingPower, false, { convertFromUSD: false })}
                   </span>
                 </div>
 
@@ -1033,7 +1033,7 @@ export default function AccountPage() {
             </div>
           </div>
 
-          {/* Right Column - Configurações */}
+          {/* Right Column - Settings */}
           <div className="w-[380px] flex flex-col gap-5">
             {/* Notificações */}
             <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)]">
@@ -1049,7 +1049,7 @@ export default function AccountPage() {
                   { key: "priceAlerts" as const, label: "Price Alerts", desc: "Get notified when prices hit your targets" },
                   { key: "tradeConfirmations" as const, label: "Trade Confirmations", desc: "Confirm before executing trades" },
                   { key: "weeklyReport" as const, label: "Weekly Report", desc: "Receive weekly performance summary" },
-                  { key: "marketNews" as const, label: "Mercado News", desc: "Breaking news and market updates" },
+                  { key: "marketNews" as const, label: "Market News", desc: "Breaking news and market updates" },
                 ].map((item) => (
                   <div key={item.key} className="flex items-center justify-between">
                     <div>
@@ -1132,7 +1132,7 @@ export default function AccountPage() {
               >
                 <div className="flex items-center gap-3">
                   <Shield size={18} className="text-[var(--text-muted)]" />
-                  <span className="text-sm text-[var(--text-primary)]">Configurações de segurança</span>
+                  <span className="text-sm text-[var(--text-primary)]">Settings de segurança</span>
                 </div>
                 <ChevronRight size={16} className="text-[var(--text-muted)]" />
               </button>
@@ -1195,14 +1195,14 @@ export default function AccountPage() {
         </div>
       </main>
 
-      {/* Configurações de segurança Modal */}
+      {/* Settings de segurança Modal */}
       <Modal
         isOpen={showSecurityModal}
         onClose={() => {
           setShowSecurityModal(false);
           resetSecurityState();
         }}
-        title="Configurações de segurança"
+        title="Settings de segurança"
       >
         <div className="flex flex-col gap-4">
           {securityView === 'overview' && (
@@ -1525,20 +1525,20 @@ export default function AccountPage() {
       <Modal
         isOpen={showAparênciaModal}
         onClose={() => setShowAparênciaModal(false)}
-        title="Configurações"
+        title="Settings"
       >
         <div className="flex flex-col gap-4">
-          {/* Mercado Selection */}
+          {/* Market Selection */}
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Globe size={16} className="text-[var(--text-muted)]" />
-              <span className="text-xs font-medium text-[var(--text-muted)]">Mercado</span>
+              <span className="text-xs font-medium text-[var(--text-muted)]">Market</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {AVAILABLE_MARKETS.map((mkt) => (
                 <button
                   key={mkt.code}
-                  onClick={() => handleMercadoChange(mkt.code)}
+                  onClick={() => handleMarketChange(mkt.code)}
                   className={`flex flex-col items-start gap-1 p-4 rounded-lg border transition-all text-left ${
                     (settings.display.market || market) === mkt.code
                       ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/10"
@@ -1567,7 +1567,7 @@ export default function AccountPage() {
           </div>
 
           <div className="border-t border-[var(--border-primary)] pt-4">
-            <span className="text-xs font-medium text-[var(--text-muted)]">Tema</span>
+            <span className="text-xs font-medium text-[var(--text-muted)]">Theme</span>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[
@@ -1577,7 +1577,7 @@ export default function AccountPage() {
             ].map((theme) => (
               <button
                 key={theme.value}
-                onClick={() => handleTemaChange(theme.value)}
+                onClick={() => handleThemeChange(theme.value)}
                 className={`flex flex-col items-center gap-2 p-4 rounded-lg border transition-all ${
                   settings.display.theme === theme.value
                     ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/10"
@@ -1608,13 +1608,13 @@ export default function AccountPage() {
           <div className="mt-4 pt-4 border-t border-[var(--border-primary)]">
             <div className="flex items-center gap-2 mb-3">
               <Coins size={16} className="text-[var(--text-muted)]" />
-              <span className="text-xs font-medium text-[var(--text-muted)]">Moeda</span>
+              <span className="text-xs font-medium text-[var(--text-muted)]">Currency</span>
             </div>
             <div className="grid grid-cols-2 gap-2 max-h-[180px] overflow-y-auto pr-1">
               {AVAILABLE_CURRENCIES.map((curr) => (
                 <button
                   key={curr.code}
-                  onClick={() => handleMoedaChange(curr.code)}
+                  onClick={() => handleCurrencyChange(curr.code)}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all ${
                     (settings.display.currency || currency) === curr.code
                       ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/10"
