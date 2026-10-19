@@ -155,6 +155,14 @@ function TradePageContent() {
   const margin = Number(marginInput);
   const quantity = currentPrice > 0 && leverage > 0 && Number.isFinite(margin) ? (margin * leverage) / currentPrice : 0;
   const estimatedTotal = margin * leverage;
+  // Projections use a 1% underlying-price movement unless SL/TP percentages are provided.
+  const projectedNotional = Number.isFinite(estimatedTotal) && estimatedTotal > 0 ? estimatedTotal : 0;
+  const projectedProfitPercent = Number(takeProfitInput) > 0 && Number.isFinite(Number(takeProfitInput)) ? Number(takeProfitInput) : 1;
+  const projectedLossPercent = Number(stopLossInput) > 0 && Number.isFinite(Number(stopLossInput)) ? Number(stopLossInput) : 1;
+  const projectedProfit = projectedNotional * projectedProfitPercent / 100;
+  const projectedLoss = projectedNotional * projectedLossPercent / 100;
+  const hasProjectedProfitTarget = takeProfitInput.trim() !== "" && Number(takeProfitInput) > 0;
+  const hasProjectedLossTarget = stopLossInput.trim() !== "" && Number(stopLossInput) > 0;
   const sourceCurrency = selectedQuote?.currency || getStockBySymbol(selectedSymbol)?.currency || 'USD';
 
 
@@ -646,6 +654,17 @@ function TradePageContent() {
                     {quantity > 0 ? quantity.toFixed(8) : "—"}
                   </span>
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-[var(--border-primary)] p-3">
+                    <p className="text-xs text-[var(--text-muted)]">Possível lucro ({hasProjectedProfitTarget ? "Take Profit" : "alta favorável de 1%"})</p>
+                    <p className="mt-1 font-mono text-base font-bold text-[var(--accent-green)]">+{formatCurrency(projectedProfit, false, { convertFromUSD: false })}</p>
+                  </div>
+                  <div className="rounded-lg border border-[var(--border-primary)] p-3">
+                    <p className="text-xs text-[var(--text-muted)]">Possível prejuízo ({hasProjectedLossTarget ? "Stop Loss" : "queda desfavorável de 1%"})</p>
+                    <p className="mt-1 font-mono text-base font-bold text-[var(--accent-red)]">-{formatCurrency(projectedLoss, false, { convertFromUSD: false })}</p>
+                  </div>
+                </div>
+                <p className="text-[11px] text-[var(--text-muted)]">Projeção: margem × {leverage}x × variação do ativo. Sem SL/TP, cenário ilustrativo de 1% em cada direção. Valores em USD, sem taxas, slippage ou garantia de execução. A perda real pode exceder a margem.</p>
                 <div className="h-px bg-[var(--border-primary)]" />
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-[var(--text-primary)]">
@@ -783,6 +802,8 @@ function TradePageContent() {
                 <span className="font-mono text-sm text-[var(--text-primary)]">{quantity.toFixed(8)}</span>
               </div>
               <div className="flex items-center justify-between"><span className="text-sm text-[var(--text-muted)]">Stop Loss / Take Profit</span><span className="font-mono text-xs text-[var(--text-primary)]">{stopLossInput || "—"} / {takeProfitInput || "—"}</span></div>
+              <div className="flex items-center justify-between gap-3 text-sm"><span className="text-[var(--text-muted)]">Possível lucro ({hasProjectedProfitTarget ? "TP" : "1%"} )</span><span className="font-mono text-[var(--accent-green)]">+{formatCurrency(projectedProfit, false, { convertFromUSD: false })}</span></div>
+              <div className="flex items-center justify-between gap-3 text-sm"><span className="text-[var(--text-muted)]">Possível prejuízo ({hasProjectedLossTarget ? "SL" : "1%"})</span><span className="font-mono text-[var(--accent-red)]">-{formatCurrency(projectedLoss, false, { convertFromUSD: false })}</span></div>
               <div className="h-px bg-[var(--border-primary)]" />
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-[var(--text-primary)]">Margem estimada</span>
