@@ -131,6 +131,9 @@ class UserProfile(models.Model):
         help_text='Unique username (3-30 chars, lowercase alphanumeric and hyphens)',
     )
     email = models.EmailField(unique=True)
+    cpf = models.CharField('CPF', max_length=11, blank=True, default='', help_text='Somente 11 dígitos, sem pontuação')
+    date_of_birth = models.DateField('Data de nascimento', null=True, blank=True)
+    phone = models.CharField('Telefone', max_length=20, blank=True, default='')
     password = models.CharField(max_length=128, default='')
     avatar_url = models.CharField(max_length=500, blank=True, default='')
 
