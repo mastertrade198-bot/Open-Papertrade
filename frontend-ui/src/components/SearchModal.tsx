@@ -152,7 +152,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name or symbol (e.g., Apple, AAPL, Reliance)"
+            placeholder="Pesquise por nome ou símbolo (ex.: Apple, AAPL)"
             className="flex-1 bg-transparent text-base text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
           />
           {query && (
@@ -228,7 +228,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                             handleAddToWatchlist(result.symbol);
                           }}
                           className="p-1.5 rounded-md hover:bg-[var(--bg-hover)] transition-colors"
-                          title="Add to watchlist"
+                          title="Adicionar à lista de acompanhamento"
                         >
                           <Star size={14} className="text-[var(--text-muted)]" />
                         </button>
@@ -301,7 +301,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                           handleAddToWatchlist(stock.symbol);
                         }}
                         className="p-1.5 rounded-md hover:bg-[var(--bg-hover)] transition-colors"
-                        title="Add to watchlist"
+                        title="Adicionar à lista de acompanhamento"
                       >
                         <Star size={14} className="text-[var(--text-muted)]" />
                       </button>
