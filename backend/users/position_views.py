@@ -53,8 +53,11 @@ def parse_positive(data, key, decimal_places):
     if not value.is_finite() or value <= 0:
         raise ValueError(f"{key} deve ser maior que zero.")
 
-    step = QTY_STEP if decimal_places == 8 else PRICE_STEP
-    return value.quantize(step, rounding=ROUND_HALF_UP)
+    step = Decimal("1").scaleb(-decimal_places)
+    result = value.quantize(step, rounding=ROUND_HALF_UP)
+    if result <= 0:
+        raise ValueError(f"{key} é pequeno demais para a precisão permitida.")
+    return result
 
 
 class PositionsView(APIView):
@@ -151,10 +154,12 @@ class ClosePositionView(APIView):
 
         try:
             with transaction.atomic():
+                # Lock accounts before positions in all trading operations.
+                locked_user = UserProfile.objects.select_for_update().get(pk=user.pk)
                 position = get_object_or_404(
                     Position.objects.select_for_update(),
                     pk=position_id,
-                    user=user,
+                    user=locked_user,
                 )
 
                 if position.status != Position.Status.OPEN:
@@ -169,7 +174,7 @@ class ClosePositionView(APIView):
                 # Margem isolada: a perda não excede a margem reservada.
                 pnl = max(pnl, -position.margin)
 
-                locked_user = UserProfile.objects.select_for_update().get(pk=user.pk)
+                old_buying_power = locked_user.buying_power
                 locked_user.buying_power = money(
                     locked_user.buying_power + position.margin + pnl
                 )
@@ -186,6 +191,18 @@ class ClosePositionView(APIView):
                     "status", "exit_price", "realized_pnl",
                     "closed_at", "updated_at",
                 ])
+                PositionAuditLog.objects.create(
+                    position=position,
+                    actor=locked_user,
+                    action="USER_CLOSE",
+                    old_values={"status": "OPEN", "buying_power": str(old_buying_power)},
+                    new_values={
+                        "status": "CLOSED",
+                        "exit_price": str(position.exit_price),
+                        "realized_pnl": str(pnl),
+                        "buying_power": str(locked_user.buying_power),
+                    },
+                )
 
             return Response({
                 "position": position.to_dict(),
