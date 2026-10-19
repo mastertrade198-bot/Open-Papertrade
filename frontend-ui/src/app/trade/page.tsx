@@ -52,6 +52,23 @@ function TradePageContent() {
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
 
+  const [showAssetMenu, setShowAssetMenu] = useState(false);
+  const availableAssets = useMemo(() => {
+    const bySymbol = new Map<string, { symbol: string; name: string; category: string }>();
+    for (const asset of stocks) {
+      if (asset.currency !== "USD" || /\.(NS|BO)$/i.test(asset.symbol)) continue;
+      bySymbol.set(asset.symbol, { symbol: asset.symbol, name: asset.name || asset.symbol, category: "Ações" });
+    }
+    for (const asset of crypto) {
+      if (asset.currency !== "USD" || /\.(NS|BO)$/i.test(asset.symbol)) continue;
+      bySymbol.set(asset.symbol, { symbol: asset.symbol, name: asset.name || asset.symbol, category: "Criptomoedas" });
+    }
+    if (!bySymbol.has(selectedSymbol)) {
+      bySymbol.set(selectedSymbol, { symbol: selectedSymbol, name: selectedQuote?.name || selectedSymbol, category: "Selecionado" });
+    }
+    return Array.from(bySymbol.values()).sort((a, b) => a.category.localeCompare(b.category, "pt-BR") || a.symbol.localeCompare(b.symbol));
+  }, [stocks, crypto, selectedSymbol, selectedQuote]);
+
   // Trade state
   const [selectedSymbol, setSelectedSymbol] = useState("AAPL");
   const [selectedQuote, setSelectedQuote] = useState<StockQuote | null>(null);
@@ -317,6 +334,43 @@ function TradePageContent() {
         <div className="flex gap-6 items-start shrink-0 min-w-0">
           {/* Left Panel - Stock Selection */}
           <div className="flex-1 min-w-0 flex flex-col gap-5">
+            {/* Asset selection from currently loaded market catalog */}
+            <div className="relative">
+              <button
+                type="button"
+                aria-expanded={showAssetMenu}
+                aria-haspopup="listbox"
+                onClick={() => setShowAssetMenu((open) => !open)}
+                className="w-full flex items-center justify-between gap-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-3 text-left hover:border-[var(--accent-primary)]"
+              >
+                <span className="min-w-0">
+                  <span className="block text-xs text-[var(--text-muted)]">Selecionar ativo</span>
+                  <span className="block truncate font-semibold text-[var(--text-primary)]">{selectedSymbol} — {selectedQuote?.name || "Ativo selecionado"}</span>
+                </span>
+                <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
+              </button>
+              {showAssetMenu && (
+                <div role="listbox" aria-label="Ativos disponíveis" className="absolute left-0 right-0 top-full z-30 mt-2 max-h-80 overflow-y-auto rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] shadow-xl">
+                  <div className="sticky top-0 border-b border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-2 text-xs text-[var(--text-muted)]">
+                    {availableAssets.length} ativos carregados · Use a pesquisa abaixo para encontrar outros
+                  </div>
+                  {availableAssets.map((asset) => (
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={selectedSymbol === asset.symbol}
+                      key={asset.symbol}
+                      onClick={() => { selectStock({ symbol: asset.symbol, name: asset.name, provider: "catalog" }); setShowAssetMenu(false); }}
+                      className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[var(--bg-muted)] ${selectedSymbol === asset.symbol ? "text-[var(--accent-primary)]" : "text-[var(--text-primary)]"}`}
+                    >
+                      <span className="min-w-0 truncate"><strong>{asset.symbol}</strong> <span className="text-xs text-[var(--text-muted)]">{asset.name}</span></span>
+                      <span className="shrink-0 text-xs text-[var(--text-muted)]">{asset.category}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Search Bar */}
             <div className="relative">
               <div className="flex items-center gap-3 px-4 py-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-primary)] focus-within:border-[var(--accent-primary)] transition-colors">
