@@ -33,7 +33,7 @@ export default function Sidebar() {
   };
 
   return (
-    <header className="master-topnav absolute inset-x-0 top-0 z-[100] h-[66px] border-b border-[var(--border-primary)] bg-[var(--bg-sidebar)]/95 backdrop-blur-xl">
+    <header className="master-topnav relative z-[100] h-[66px] border-b border-[var(--border-primary)] bg-[var(--bg-sidebar)]/95 backdrop-blur-xl">
       <div className="mx-auto flex h-full w-full max-w-[1920px] items-center gap-4 px-4 lg:px-7">
         <Link href="/" className="flex shrink-0 items-center gap-2.5 hover:opacity-90" aria-label="Master Trade — Painel">
           <img src="/logo.png" alt="" width={32} height={32} className="rounded-lg" />
