@@ -1,4 +1,7 @@
 from django.contrib import admin
+from django import forms
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
@@ -11,7 +14,7 @@ from unfold.decorators import display, action
 from .models import (
     UserProfile, UserSettings, Achievement, UserAchievement,
     Trade, Holding, Watchlist, PriceAlert, SiteSettings, APIKey, LimitOrder,
-    Strategy, Backtest, Position, PositionAuditLog, BalanceTransaction,
+    Strategy, Backtest, Position, PositionAuditLog, BalanceTransaction, generate_username,
 )
 from .email_service import send_test_email
 from .report_views import compute_weekly_report, compute_monthly_report, compute_yearly_report
@@ -104,8 +107,39 @@ class SiteSettingsAdmin(ModelAdmin):
         return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/admin/'))
 
 
+
+class UserProfileAdminForm(forms.ModelForm):
+    """Create a trading account without exposing its stored password hash."""
+    password1 = forms.CharField(
+        label="Senha", widget=forms.PasswordInput(render_value=False), required=False
+    )
+    password2 = forms.CharField(
+        label="Confirmar senha", widget=forms.PasswordInput(render_value=False), required=False
+    )
+
+    class Meta:
+        model = UserProfile
+        exclude = ("password",)
+
+    def clean(self):
+        cleaned = super().clean()
+        if self.instance._state.adding:
+            password = cleaned.get("password1")
+            if not password:
+                self.add_error("password1", "Informe uma senha.")
+            elif password != cleaned.get("password2"):
+                self.add_error("password2", "As senhas não coincidem.")
+            else:
+                try:
+                    validate_password(password, user=self.instance)
+                except ValidationError as error:
+                    self.add_error("password1", error)
+        return cleaned
+
+
 @admin.register(UserProfile)
 class UserProfileAdmin(ModelAdmin):
+    form = UserProfileAdminForm
     list_display = ['name', 'email', 'display_buying_power', 'display_admin', 'created_at']
     search_fields = ['name', 'email', 'username']
     list_filter = ['is_admin', 'created_at']
@@ -118,6 +152,25 @@ class UserProfileAdmin(ModelAdmin):
         ("Security", {"fields": ["password_changed_at", "is_2fa_enabled"]}),
         ("Timestamps", {"fields": ["created_at", "updated_at"]}),
     ]
+
+    def get_fieldsets(self, request, obj=None):
+        if obj is None:
+            return [
+                ("Novo usuário", {"fields": ("name", "username", "email", "password1", "password2")}),
+                ("Saldo simulado", {"fields": ("initial_balance", "buying_power")}),
+                ("Conta", {"fields": ("plan", "is_email_verified")}),
+            ]
+        return super().get_fieldsets(request, obj)
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            if not obj.username:
+                obj.username = generate_username(obj.name)
+            obj.is_admin = False
+            obj.set_password(form.cleaned_data["password1"])
+        super().save_model(request, obj, form, change)
+        if not change:
+            UserSettings.objects.get_or_create(user=obj)
 
     def get_urls(self):
         custom_urls = [
