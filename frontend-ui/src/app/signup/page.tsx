@@ -16,40 +16,40 @@ const features = [
 export default function SignupPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [username, setUsername] = useState("");
-  const [usernameError, setUsernameError] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [username, setNome de usuário] = useState("");
+  const [usernameError, setNome de usuárioError] = useState("");
+  const [email, setE-mail] = useState("");
+  const [password, setSenha] = useState("");
+  const [showSenha, setShowSenha] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Email verification state
+  // E-mail verification state
   const [verificationSent, setVerificationSent] = useState(false);
-  const [verificationEmail, setVerificationEmail] = useState("");
+  const [verificationE-mail, setVerificationE-mail] = useState("");
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
 
-  const [usernameManuallyEdited, setUsernameManuallyEdited] = useState(false);
+  const [usernameManuallyEdited, setNome de usuárioManuallyEdited] = useState(false);
   const { signup, resendVerification } = useAuth();
   const router = useRouter();
 
   // Validate username format
-  const validateUsername = useCallback((value: string) => {
+  const validateNome de usuário = useCallback((value: string) => {
     if (!value) {
-      setUsernameError("");
+      setNome de usuárioError("");
       return;
     }
     if (value.length < 3) {
-      setUsernameError("Must be at least 3 characters");
+      setNome de usuárioError("Must be at least 3 characters");
       return;
     }
     if (!/^[a-z0-9](?:[a-z0-9-]{0,28}[a-z0-9])?$/.test(value)) {
-      setUsernameError("Only lowercase letters, numbers, and hyphens");
+      setNome de usuárioError("Only lowercase letters, numbers, and hyphens");
       return;
     }
-    setUsernameError("");
+    setNome de usuárioError("");
   }, []);
 
   // Auto-generate username from name if not manually edited
@@ -57,19 +57,19 @@ export default function SignupPage() {
     if (usernameManuallyEdited) return;
     const name = `${firstName} ${lastName}`.trim();
     if (!name) {
-      setUsername("");
+      setNome de usuário("");
       return;
     }
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    setUsername(slug);
-    validateUsername(slug);
-  }, [firstName, lastName, usernameManuallyEdited, validateUsername]);
+    setNome de usuário(slug);
+    validateNome de usuário(slug);
+  }, [firstName, lastName, usernameManuallyEdited, validateNome de usuário]);
 
-  const handleUsernameChange = (value: string) => {
+  const handleNome de usuárioChange = (value: string) => {
     const cleaned = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-    setUsername(cleaned);
-    setUsernameManuallyEdited(true);
-    validateUsername(cleaned);
+    setNome de usuário(cleaned);
+    setNome de usuárioManuallyEdited(true);
+    validateNome de usuário(cleaned);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,7 +82,7 @@ export default function SignupPage() {
       const result = await signup(name, email, password, username || undefined);
 
       if (result.emailVerificationRequired) {
-        setVerificationEmail(email);
+        setVerificationE-mail(email);
         setVerificationSent(true);
       } else {
         router.push("/");
@@ -99,7 +99,7 @@ export default function SignupPage() {
     setResendMessage("");
     setError("");
     try {
-      const message = await resendVerification(verificationEmail);
+      const message = await resendVerification(verificationE-mail);
       setResendMessage(message);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to resend");
@@ -149,13 +149,13 @@ export default function SignupPage() {
 
             <div className="flex flex-col gap-2">
               <h2 className="font-serif text-[28px] font-medium text-[var(--text-primary)]">
-                Check your email
+                Verifique seu e-mail
               </h2>
               <p className="text-[15px] text-[var(--text-muted)] leading-[1.6]">
-                We sent a verification link to
+                Enviamos um link de verificação para
               </p>
               <p className="text-[15px] font-semibold text-[var(--text-primary)]">
-                {verificationEmail}
+                {verificationE-mail}
               </p>
             </div>
 
@@ -185,13 +185,13 @@ export default function SignupPage() {
               )}
             </div>
 
-            {/* Back to login */}
+            {/* Voltar ao login */}
             <Link
               href="/login"
               className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors mt-2"
             >
               <ArrowLeft size={16} />
-              Back to login
+              Voltar ao login
             </Link>
           </div>
         </div>
@@ -224,7 +224,7 @@ export default function SignupPage() {
             Trading Journey.
           </h1>
           <p className="text-lg text-[var(--text-muted)] leading-[1.6]">
-            Build your trading skills risk-free
+            Desenvolva suas habilidades sem arriscar dinheiro real
             <br />
             with virtual capital. No real money needed.
           </p>
@@ -281,7 +281,7 @@ export default function SignupPage() {
           {/* Form Header */}
           <div className="flex flex-col items-center lg:items-start gap-2">
             <h2 className="font-serif text-[32px] font-medium text-[var(--text-primary)]">
-              Create an account
+              Criar uma conta
             </h2>
             <p className="text-[15px] text-[var(--text-muted)]">
               Start trading in under 2 minutes
@@ -294,7 +294,7 @@ export default function SignupPage() {
             <div className="flex gap-3">
               <div className="flex flex-col gap-2 flex-1">
                 <label className="text-sm font-medium text-[var(--text-primary)]">
-                  First name
+                  Nome
                 </label>
                 <input
                   type="text"
@@ -306,7 +306,7 @@ export default function SignupPage() {
               </div>
               <div className="flex flex-col gap-2 flex-1">
                 <label className="text-sm font-medium text-[var(--text-primary)]">
-                  Last name
+                  Sobrenome
                 </label>
                 <input
                   type="text"
@@ -318,10 +318,10 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {/* Username */}
+            {/* Nome de usuário */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-[var(--text-primary)]">
-                Username
+                Nome de usuário
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] text-[var(--text-dim)]">@</span>
@@ -329,7 +329,7 @@ export default function SignupPage() {
                   type="text"
                   placeholder="john-doe"
                   value={username}
-                  onChange={(e) => handleUsernameChange(e.target.value)}
+                  onChange={(e) => handleNome de usuárioChange(e.target.value)}
                   maxLength={30}
                   className="w-full rounded-lg border border-[var(--border-muted)] bg-transparent pl-8 pr-3.5 py-3 text-[15px] text-[var(--text-primary)] placeholder-[var(--text-dim)] outline-none focus:border-[var(--accent-primary)] transition-colors"
                 />
@@ -337,45 +337,45 @@ export default function SignupPage() {
               {usernameError ? (
                 <span className="text-xs text-[var(--accent-red)]">{usernameError}</span>
               ) : username.length >= 3 ? (
-                <span className="text-xs text-[var(--accent-green)]">Username available</span>
+                <span className="text-xs text-[var(--accent-green)]">Nome de usuário available</span>
               ) : (
                 <span className="text-xs text-[var(--text-muted)]">3-30 characters, letters, numbers, and hyphens</span>
               )}
             </div>
 
-            {/* Email */}
+            {/* E-mail */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-[var(--text-primary)]">
-                Email
+                E-mail
               </label>
               <input
                 type="email"
                 placeholder="john@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setE-mail(e.target.value)}
                 className="w-full rounded-lg border border-[var(--border-muted)] bg-transparent px-3.5 py-3 text-[15px] text-[var(--text-primary)] placeholder-[var(--text-dim)] outline-none focus:border-[var(--accent-primary)] transition-colors"
               />
             </div>
 
-            {/* Password */}
+            {/* Senha */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-[var(--text-primary)]">
-                Password
+                Senha
               </label>
               <div className="relative">
                 <input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
+                  type={showSenha ? "text" : "password"}
+                  placeholder="Crie uma senha"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => setSenha(e.target.value)}
                   className="w-full rounded-lg border border-[var(--border-muted)] bg-transparent px-3.5 py-3 pr-12 text-[15px] text-[var(--text-primary)] placeholder-[var(--text-dim)] outline-none focus:border-[var(--accent-primary)] transition-colors"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowSenha(!showSenha)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--text-dim)] hover:text-[var(--text-secondary)] transition-colors"
                 >
-                  {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+                  {showSenha ? <Eye size={20} /> : <EyeOff size={20} />}
                 </button>
               </div>
               <span className="text-xs text-[var(--text-muted)]">
@@ -409,11 +409,11 @@ export default function SignupPage() {
               <span className="text-[13px] text-[var(--text-secondary)] leading-[1.4]">
                 I agree to the{" "}
                 <button type="button" className="text-[var(--accent-primary)] hover:opacity-80 transition-opacity">
-                  Terms of Service
+                  Termos de serviço
                 </button>{" "}
                 and{" "}
                 <button type="button" className="text-[var(--accent-primary)] hover:opacity-80 transition-opacity">
-                  Privacy Policy
+                  Política de privacidade
                 </button>
               </span>
             </div>
@@ -444,7 +444,7 @@ export default function SignupPage() {
               href="/login"
               className="text-sm font-semibold text-[var(--accent-primary)] hover:opacity-80 transition-opacity"
             >
-              Log in
+              Entrar
             </Link>
           </div>
 
