@@ -285,6 +285,7 @@ function TradePageContent() {
           title="Trade"
           subtitle="Search any stock or crypto to start trading"
         />
+        <a href="/positions" className="inline-flex w-fit items-center rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] hover:opacity-80">Operações alavancadas (simuladas) →</a>
 
         {/* Success/Error Message */}
         {message && (
