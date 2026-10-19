@@ -549,11 +549,11 @@ function TradePageContent() {
           </div>
 
           {/* Right Panel - Order Form */}
-          <div className="w-[380px] shrink-0 flex flex-col gap-5">
+          <div className="w-[330px] shrink-0 flex flex-col gap-3">
             {/* Order Form */}
-            <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)] flex flex-col gap-5">
+            <div className="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] flex flex-col gap-3">
               {/* Prominent available balance above order direction */}
-              <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)] p-4" aria-live="polite">
+              <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)] p-3" aria-live="polite">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-[var(--text-muted)]">Saldo disponível (USD)</span>
                   <button type="button" onClick={() => void refreshPositions()} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]" title="Atualizar saldo disponível">Atualizar</button>
