@@ -80,6 +80,23 @@ function TradePageContent() {
     return () => window.clearInterval(interval);
   }, [refreshPositions]);
 
+  const [closingPositionId, setClosingPositionId] = useState<string | null>(null);
+  const [positionsTab, setPositionsTab] = useState<"OPEN" | "CLOSED">("OPEN");
+
+  const closeSimulatedPosition = async (id: string) => {
+    if (!window.confirm("Encerrar esta posição simulada pelo preço atual?")) return;
+    setClosingPositionId(id);
+    try {
+      await userAPI.closePosition(id);
+      setMessage({ type: "success", text: "Posição simulada encerrada." });
+      await refreshPositions();
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "Falha ao encerrar posição." });
+    } finally {
+      setClosingPositionId(null);
+    }
+  };
+
   // All orders in this panel open leveraged simulated positions.
 
   // Confirm dialog state
@@ -453,6 +470,51 @@ function TradePageContent() {
 
             {/* Price Chart */}
             <StockChart symbol={selectedSymbol} />
+
+            {/* Positions tab: the same positions opened by the Buy/Sell ticket. */}
+            <section className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] overflow-hidden">
+              <div className="flex items-center justify-between gap-3 border-b border-[var(--border-primary)] px-4 py-3">
+                <div className="flex gap-4">
+                  <button type="button" onClick={() => setPositionsTab("OPEN")} className={`text-sm font-semibold pb-1 ${positionsTab === "OPEN" ? "text-[var(--accent-primary)] border-b-2 border-[var(--accent-primary)]" : "text-[var(--text-muted)]"}`}>
+                    Positions ({positions.filter(p => p.status === "OPEN").length})
+                  </button>
+                  <button type="button" onClick={() => setPositionsTab("CLOSED")} className={`text-sm font-semibold pb-1 ${positionsTab === "CLOSED" ? "text-[var(--accent-primary)] border-b-2 border-[var(--accent-primary)]" : "text-[var(--text-muted)]"}`}>
+                    History
+                  </button>
+                </div>
+                <button type="button" onClick={() => void refreshPositions()} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]">Refresh</button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[740px] text-xs text-left">
+                  <thead className="text-[var(--text-muted)] bg-[var(--bg-card-inner)]">
+                    <tr>
+                      {["Symbol", "Side", "Quantity", "Entry", "Leverage", "Margin", "Market", "P&L", "Action"].map(h => <th key={h} className="px-3 py-3 font-medium">{h}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {positions.filter(p => p.status === positionsTab).map(p => {
+                      const pnl = p.status === "OPEN" ? p.unrealizedPnl : p.realizedPnl;
+                      return (
+                        <tr key={p.id} className="border-t border-[var(--border-primary)] text-[var(--text-primary)]">
+                          <td className="px-3 py-3 font-semibold">{p.symbol}</td>
+                          <td className={`px-3 py-3 font-semibold ${p.side === "LONG" ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{p.side === "LONG" ? "BUY" : "SELL"}</td>
+                          <td className="px-3 py-3 font-mono">{p.quantity}</td>
+                          <td className="px-3 py-3 font-mono">${p.entryPrice.toFixed(2)}</td>
+                          <td className="px-3 py-3">{p.leverage}x</td>
+                          <td className="px-3 py-3 font-mono">${p.margin.toFixed(2)}</td>
+                          <td className="px-3 py-3 font-mono">{p.marketPrice === undefined ? (p.exitPrice === null ? "—" : `${p.exitPrice.toFixed(2)}`) : `${p.marketPrice.toFixed(2)}`}</td>
+                          <td className={`px-3 py-3 font-mono ${pnl === undefined || pnl === null ? "" : pnl >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{pnl === undefined || pnl === null ? "—" : `${pnl.toFixed(2)}`}</td>
+                          <td className="px-3 py-3">
+                            {p.status === "OPEN" ? <button type="button" disabled={closingPositionId !== null} onClick={() => void closeSimulatedPosition(p.id)} className="rounded border border-[var(--border-primary)] px-2 py-1 hover:bg-[var(--bg-muted)] disabled:opacity-50">{closingPositionId === p.id ? "Closing…" : "Close"}</button> : <span className="text-[var(--text-muted)]">Closed</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {positions.filter(p => p.status === positionsTab).length === 0 && <p className="p-5 text-sm text-[var(--text-muted)]">No {positionsTab === "OPEN" ? "open positions" : "closed positions"}.</p>}
+              </div>
+            </section>
 
             {/* Stock News */}
             <StockNews symbol={selectedSymbol} />
