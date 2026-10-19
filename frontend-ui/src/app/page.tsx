@@ -54,6 +54,13 @@ export default function Dashboard() {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [indices, setIndices] = useState<StockQuote[]>([]);
+  const [tickerQuotes, setTickerQuotes] = useState<StockQuote[]>([]);
+  const tickerSymbols = ["BRL=X", "GC=F", "CL=F", "AAPL", "MSFT", "NVDA", "AMZN", "TSLA", "ETH-USD"];
+  const tickerNames: Record<string, string> = {
+    "BRL=X": "USD/BRL", "GC=F": "OURO", "CL=F": "PETRÓLEO",
+    AAPL: "APPLE", MSFT: "MICROSOFT", NVDA: "NVIDIA",
+    AMZN: "AMAZON", TSLA: "TESLA", "ETH-USD": "ETH",
+  };
 
   // Fetch market indices whenever the market changes
   useEffect(() => {
@@ -63,6 +70,25 @@ export default function Dashboard() {
       console.error("Failed to fetch indices:", err);
     });
   }, [market]);
+
+  useEffect(() => {
+    let active = true;
+    const refreshTicker = async () => {
+      try {
+        const response = await stockAPI.getQuotes(tickerSymbols);
+        if (!active) return;
+        setTickerQuotes(tickerSymbols.flatMap((symbol) => {
+          const result = response.quotes[symbol];
+          return result?.success && result.data ? [result.data] : [];
+        }));
+      } catch (error) {
+        console.error("Falha ao carregar cotações do painel:", error);
+      }
+    };
+    void refreshTicker();
+    const interval = window.setInterval(() => void refreshTicker(), 60000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, []);
 
   // Top holdings by value
   const topHoldings = [...holdings]
@@ -163,36 +189,41 @@ export default function Dashboard() {
           </div>
         </header>
 
-        {/* Market Indices Bar */}
-        {indices.length > 0 && (
-          <div className="flex items-center gap-6 px-5 py-3 bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)]">
-            {indices.map((idx) => (
-              <div key={idx.symbol} className="flex items-center gap-3">
-                <span className="text-xs font-semibold text-[var(--text-muted)]">{idx.symbol}</span>
-                <span className="font-mono text-sm font-medium text-[var(--text-primary)]">
-                  {idx.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                </span>
-                <span className={`font-mono text-xs font-medium ${idx.changePercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                  {formatPercent(idx.changePercent)}
-                </span>
+        {/* Scrolling market ticker: duplicated sequence for seamless motion */}
+        {(() => {
+          const btc = crypto.find((item) => item.symbol === "BTC");
+          const items = [
+            ...indices.map((item) => ({ ...item, label: item.symbol })),
+            ...(btc ? [{ ...btc, label: "BTC" }] : []),
+            ...tickerQuotes.map((item) => ({ ...item, label: tickerNames[item.symbol] || item.symbol })),
+          ];
+          if (!items.length) return null;
+          return (
+            <div className="overflow-hidden bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] py-3" aria-label="Cotações de mercado">
+              <style>{`@keyframes dashboardTickerScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+                .dashboard-ticker-track { display: flex; width: max-content; animation: dashboardTickerScroll 65s linear infinite; }
+                .dashboard-ticker-track:hover { animation-play-state: paused; }
+                @media (prefers-reduced-motion: reduce) { .dashboard-ticker-track { animation: none; } }`}</style>
+              <div className="dashboard-ticker-track">
+                {[0, 1].map((copy) => (
+                  <div key={copy} className="flex shrink-0 items-center gap-8 pr-8" aria-hidden={copy === 1}>
+                    {items.map((item, index) => (
+                      <div key={`${copy}-${item.symbol}-${index}`} className="flex shrink-0 items-center gap-2.5 whitespace-nowrap">
+                        <span className="text-xs font-semibold text-[var(--text-muted)]">{item.label}</span>
+                        <span className="font-mono text-sm font-medium text-[var(--text-primary)]">
+                          {item.label === "USD/BRL" ? `R$ ${item.price.toLocaleString("pt-BR", { minimumFractionDigits: 4, maximumFractionDigits: 4 })}` : item.price.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+                        </span>
+                        <span className={`font-mono text-xs font-medium ${item.changePercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
+                          {formatPercent(item.changePercent)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
               </div>
-            ))}
-            {(() => {
-              const btc = crypto.find((c) => c.symbol === "BTC");
-              return btc ? (
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-semibold text-[var(--text-muted)]">BTC</span>
-                  <span className="font-mono text-sm font-medium text-[var(--text-primary)]">
-                    {formatCurrency(btc.price, false, { sourceCurrency: btc.currency || "USD" })}
-                  </span>
-                  <span className={`font-mono text-xs font-medium ${btc.changePercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                    {formatPercent(btc.changePercent)}
-                  </span>
-                </div>
-              ) : null;
-            })()}
-          </div>
-        )}
+            </div>
+          );
+        })()}
 
         {/* Main Stats Row */}
         <div className="grid grid-cols-4 gap-4">
