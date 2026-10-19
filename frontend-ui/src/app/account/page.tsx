@@ -122,6 +122,9 @@ export default function AccountPage() {
   const [editUsername, setEditUsername] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editCpf, setEditCpf] = useState("");
+  const [editDateOfBirth, setEditDateOfBirth] = useState("");
+  const [editPhone, setEditPhone] = useState("");
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Modal states
@@ -160,6 +163,9 @@ export default function AccountPage() {
       setEditName(profileRes.profile.name);
       setEditUsername(profileRes.profile.username || '');
       setEditEmail(profileRes.profile.email);
+      setEditCpf(profileRes.profile.cpf || "");
+      setEditDateOfBirth(profileRes.profile.dateOfBirth || "");
+      setEditPhone(profileRes.profile.phone || "");
       setStats(statsRes);
       setAchievements(achievementsRes.achievements);
       setAchievementStats({
@@ -199,6 +205,9 @@ export default function AccountPage() {
       const updated = await userAPI.updateProfile({
         name: editName,
         email: editEmail,
+        cpf: editCpf,
+        dateOfBirth: editDateOfBirth,
+        phone: editPhone,
         ...(editUsername ? { username: editUsername } : {}),
       } as any);
       setProfile({ ...profile, ...updated });
@@ -663,6 +672,9 @@ export default function AccountPage() {
                       setEditName(profile.name);
                       setEditUsername(profile.username || '');
                       setEditEmail(profile.email);
+                      setEditCpf(profile.cpf || "");
+                      setEditDateOfBirth(profile.dateOfBirth || "");
+                      setEditPhone(profile.phone || "");
                       setUsernameError("");
                     }
                   }}
@@ -762,6 +774,20 @@ export default function AccountPage() {
                           className="w-full px-3 py-2 rounded-lg bg-[var(--bg-card-inner)] border border-[var(--border-muted)] text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]"
                         />
                       </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label htmlFor="profile-cpf" className="text-[11px] text-[var(--text-muted)]">CPF</label>
+                          <input id="profile-cpf" inputMode="numeric" maxLength={11} value={editCpf} onChange={(e) => setEditCpf(e.target.value.replace(/\D/g, "").slice(0, 11))} placeholder="Somente números" className="w-full px-3 py-2 rounded-lg bg-[var(--bg-card-inner)] border border-[var(--border-muted)] text-sm text-[var(--text-primary)]" />
+                        </div>
+                        <div>
+                          <label htmlFor="profile-birth" className="text-[11px] text-[var(--text-muted)]">Data de nascimento</label>
+                          <input id="profile-birth" type="date" max={new Date().toISOString().slice(0, 10)} value={editDateOfBirth} onChange={(e) => setEditDateOfBirth(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-[var(--bg-card-inner)] border border-[var(--border-muted)] text-sm text-[var(--text-primary)]" />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label htmlFor="profile-phone" className="text-[11px] text-[var(--text-muted)]">Telefone</label>
+                          <input id="profile-phone" type="tel" maxLength={20} value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="(81) 99999-9999" className="w-full px-3 py-2 rounded-lg bg-[var(--bg-card-inner)] border border-[var(--border-muted)] text-sm text-[var(--text-primary)]" />
+                        </div>
+                      </div>
                       <button
                         onClick={handleSaveProfile}
                         disabled={isSaving}
@@ -780,9 +806,10 @@ export default function AccountPage() {
                           @{profile.username}
                         </p>
                       )}
-                      <p className="text-sm text-[var(--text-muted)] mt-1">
-                        {profile.email}
-                      </p>
+                      <p className="text-sm text-[var(--text-muted)] mt-1">{profile.email}</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-2">CPF: {profile.cpf || "Não informado"}</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">Data de nascimento: {profile.dateOfBirth ? profile.dateOfBirth.split("-").reverse().join("/") : "Não informada"}</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">Telefone: {profile.phone || "Não informado"}</p>
                       <div className="flex items-center gap-2 mt-3">
                         <span className="px-2 py-1 rounded-md bg-purple-500/10 text-[10px] font-semibold text-purple-400">
                           Lv.{profile.level} {profile.rank}
