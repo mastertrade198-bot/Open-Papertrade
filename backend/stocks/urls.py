@@ -14,6 +14,9 @@ urlpatterns = [
     # Bulk quotes
     path('quotes/', views.BulkQuoteView.as_view(), name='bulk-quotes'),
 
+    # Paginated USD instrument catalog
+    path('catalog/', views.AssetCatalogView.as_view(), name='catalog'),
+
     # Search
     path('search/', views.SymbolSearchView.as_view(), name='search'),
 
