@@ -91,8 +91,22 @@ export default function PositionsPage() {
         </header>
 
         <form onSubmit={openPosition} className="grid grid-cols-2 lg:grid-cols-5 gap-3 p-5 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)]">
-          <label className="text-sm">Ativo (USD)
-            <input aria-label="Ativo" value={symbol} maxLength={20} onChange={e => setSymbol(e.target.value)} className="mt-1 w-full p-2 rounded bg-[var(--bg-primary)] border border-[var(--border-primary)]" required />
+          <label className="text-sm">Selecionar ativo (USD)
+            <select aria-label="Selecionar ativo" value={symbol} onChange={e => setSymbol(e.target.value)} className="mt-1 w-full p-2 rounded bg-[var(--bg-primary)] border border-[var(--border-primary)]" required>
+              <optgroup label="Ações dos EUA">
+                <option value="AAPL">Apple (AAPL)</option>
+                <option value="MSFT">Microsoft (MSFT)</option>
+                <option value="NVDA">NVIDIA (NVDA)</option>
+                <option value="TSLA">Tesla (TSLA)</option>
+                <option value="AMZN">Amazon (AMZN)</option>
+                <option value="GOOGL">Alphabet (GOOGL)</option>
+                <option value="META">Meta (META)</option>
+              </optgroup>
+              <optgroup label="Criptomoedas">
+                <option value="BTC-USD">Bitcoin (BTC-USD)</option>
+                <option value="ETH-USD">Ethereum (ETH-USD)</option>
+              </optgroup>
+            </select>
           </label>
           <label className="text-sm">Direção
             <select value={side} onChange={e => setSide(e.target.value as "LONG" | "SHORT")} className="mt-1 w-full p-2 rounded bg-[var(--bg-primary)] border border-[var(--border-primary)]">
