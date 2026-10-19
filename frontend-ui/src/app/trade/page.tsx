@@ -687,50 +687,7 @@ function TradePageContent() {
               </button>
             </div>
 
-            {/* Pending Orders */}
-            {/* Recent Trades */}
-            <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex-1">
-              <div className="flex items-center gap-2 mb-4">
-                <Clock size={14} className="text-[var(--text-muted)]" />
-                <span className="text-[10px] font-bold tracking-[1px] text-[var(--text-muted)]">
-                  OPERAÇÕES RECENTES
-                </span>
-              </div>
-              <div className="flex flex-col gap-2">
-                {recentTrades.length > 0 ? (
-                  recentTrades.map((trade) => (
-                    <div
-                      key={trade.id}
-                      className={`flex items-center justify-between border-b border-[var(--border-primary)] last:border-0 ${settings.compactMode ? "py-1.5" : "py-2"}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                            trade.type === "BUY"
-                              ? "bg-[#22C55E20] text-[var(--accent-green)]"
-                              : "bg-[#EF444420] text-[var(--accent-red)]"
-                          }`}
-                        >
-                          {trade.type}
-                        </span>
-                        <span className="font-mono text-sm text-[var(--text-primary)]">
-                          {trade.symbol}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-mono text-sm text-[var(--text-primary)]">
-                          {trade.shares} @ {formatCurrency(trade.price)}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-4 text-sm text-[var(--text-muted)]">
-                    Nenhuma operação recente
-                  </div>
-                )}
-              </div>
-            </div>
+
           </div>
         </div>
         <div className="w-full min-w-0 shrink-0 space-y-3">
