@@ -11,7 +11,7 @@ from unfold.decorators import display, action
 from .models import (
     UserProfile, UserSettings, Achievement, UserAchievement,
     Trade, Holding, Watchlist, PriceAlert, SiteSettings, APIKey, LimitOrder,
-    Strategy, Backtest,
+    Strategy, Backtest, Position, PositionAuditLog, BalanceTransaction,
 )
 from .email_service import send_test_email
 from .report_views import compute_weekly_report, compute_monthly_report, compute_yearly_report
@@ -244,3 +244,54 @@ class UserProfileAdmin(ModelAdmin):
 
 
 
+
+# Operational records are visible but not editable here: changing a leveraged
+# position must go through the audited position-management API.
+@admin.register(Position)
+class PositionAdmin(ModelAdmin):
+    list_display = ("user", "symbol", "side", "status", "quantity", "entry_price", "leverage", "margin", "realized_pnl", "opened_at")
+    list_filter = ("status", "side", "opened_at")
+    search_fields = ("symbol", "user__name", "user__email")
+    readonly_fields = tuple(field.name for field in Position._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(BalanceTransaction)
+class BalanceTransactionAdmin(ModelAdmin):
+    list_display = ("user", "category", "amount", "balance_before", "balance_after", "created_at")
+    list_filter = ("category", "created_at")
+    search_fields = ("user__name", "user__email", "description")
+    readonly_fields = tuple(field.name for field in BalanceTransaction._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PositionAuditLog)
+class PositionAuditLogAdmin(ModelAdmin):
+    list_display = ("position", "actor", "action", "created_at")
+    list_filter = ("action", "created_at")
+    readonly_fields = tuple(field.name for field in PositionAuditLog._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
