@@ -221,7 +221,6 @@ function TradePageContent() {
     setSelectedQuote(null);
     setSearchQuery("");
     setShowSearchResults(false);
-    setQuantity(1);
     fetchQuote(result.symbol);
   };
 
