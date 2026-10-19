@@ -204,7 +204,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       setCurrentCurrency({ code: userCurrency, symbol, rate });
 
       // Update market from settings
-      const userMarket = profileRes.settings.display.market || 'US';
+      const userMarket = 'US';
       setMarketState(userMarket);
 
       // Apply theme from settings
@@ -763,6 +763,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   }, [toast]);
 
   const setMarket = useCallback(async (newMarket: string) => {
+    if (newMarket !== "US") throw new Error("Apenas o mercado dos EUA está disponível.");
     try {
       const result = await userAPI.updateMarket(newMarket);
       setMarketState(result.market);
