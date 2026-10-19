@@ -1,0 +1,14 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div class="max-w-2xl">
+  <p><strong>Cliente:</strong> {{ target_user.name }} ({{ target_user.email }})</p>
+  <p><strong>Saldo disponível:</strong> {{ target_user.buying_power }}</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div style="margin: 20px 0;">{{ form.as_p }}</div>
+    <p>Esta operação altera apenas o saldo disponível simulado e será registrada no extrato financeiro.</p>
+    <button type="submit" class="bg-primary-600 text-white px-4 py-2 rounded">Confirmar movimentação</button>
+  </form>
+</div>
+{% endblock %}
