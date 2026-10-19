@@ -116,7 +116,7 @@ function ChartPageContent() {
               Análise gráfica
             </h1>
             <p className="text-xs text-[var(--text-muted)]">
-              Multi-pane technical analysis with indicators, drawing tools, and saved layouts
+              Análise técnica com indicadores, ferramentas de desenho e layouts salvos
             </p>
           </div>
 
