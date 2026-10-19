@@ -28,6 +28,9 @@ def get_usd_quote(symbol):
     if not symbol or len(symbol) > 20:
         raise ValueError("Símbolo inválido.")
 
+    if symbol.endswith((".NS", ".BO")) or symbol in {"RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "HINDUNILVR", "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK"}:
+        raise ValueError("Ativos do mercado indiano não estão disponíveis para novas operações.")
+
     result = get_stock_service().get_quote(symbol, skip_cache=True)
     quote = result.quote if result and result.success else None
 
