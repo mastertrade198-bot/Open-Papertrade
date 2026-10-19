@@ -262,7 +262,7 @@ function TradePageContent() {
   const validStopLoss = stopLoss === null || (Number.isFinite(stopLoss) && stopLoss > 0 && (orderType === "BUY" ? stopLoss < currentPrice : stopLoss > currentPrice));
   const validTakeProfit = takeProfit === null || (Number.isFinite(takeProfit) && takeProfit > 0 && (orderType === "BUY" ? takeProfit > currentPrice : takeProfit < currentPrice));
   const canTrade = marketStatus.isOpen && sourceCurrency === "USD" && Number.isFinite(margin) &&
-    margin >= 0.01 && /^\\d+(\\.\\d{1,2})?$/.test(marginInput) &&
+    margin >= 0.01 && /^\d+(\.\d{1,2})?$/.test(marginInput) &&
     Number.isFinite(leverage) && leverage >= 1 && leverage <= 100 && currentPrice > 0 &&
     marginBalance !== null && margin <= marginBalance && validStopLoss && validTakeProfit && !submitting;
 
