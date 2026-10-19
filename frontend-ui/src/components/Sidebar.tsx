@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, TrendingUp, Wallet, Repeat, History, Star, Settings, LogOut, CandlestickChart, Menu, X, ChevronDown, UserRound } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Wallet, History, Star, Settings, LogOut, CandlestickChart, ChevronDown, UserRound } from "lucide-react";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useAuth } from "@/context/AuthContext";
 import { API_HOST } from "@/lib/api";
@@ -31,7 +31,6 @@ export default function Sidebar() {
     try { await refreshPrices(); } finally { setRefreshing(false); }
   };
   const { logout } = useAuth();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const handleLogout = async () => {
     await logout();
@@ -40,16 +39,16 @@ export default function Sidebar() {
   };
 
   return (
-    <header className="master-topnav relative z-[100] h-[66px] border-b border-[var(--border-primary)] bg-[var(--bg-sidebar)]/95 backdrop-blur-xl">
-      <div className="mx-auto flex h-full w-full max-w-[1920px] items-center gap-2 px-3 lg:px-4">
+    <header className="master-topnav relative z-[100] min-h-[66px] border-b border-[var(--border-primary)] bg-[var(--bg-sidebar)]/95 backdrop-blur-xl">
+      <div className="mx-auto flex min-h-[66px] w-full max-w-[1920px] flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 lg:px-4">
         <Link href="/" className="flex shrink-0 items-center gap-2.5 hover:opacity-90" aria-label="Master Trade — Painel">
           <img src="/logo.png" alt="" width={26} height={26} className="rounded-lg" />
           <span className="whitespace-nowrap text-[12px] font-extrabold tracking-[.07em] text-[var(--text-primary)]">
             MASTER <span className="text-[var(--accent-primary)]">TRADE</span>
           </span>
         </Link>
-        <div className="hidden h-6 w-px bg-[var(--border-primary)] 2xl:block" />
-        <nav aria-label="Navegação principal" className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 overflow-hidden 2xl:flex">
+        <div className="hidden h-6 w-px bg-[var(--border-primary)] xl:block" />
+        <nav aria-label="Navegação principal" className="order-3 flex w-full min-w-0 flex-wrap items-center justify-center gap-0.5 lg:order-none lg:w-auto lg:flex-1">
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
             return (
@@ -75,18 +74,9 @@ export default function Sidebar() {
               <button type="button" onClick={() => void handleLogout()} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--accent-red)] hover:bg-[var(--bg-hover)]"><LogOut size={15} /> Sair</button>
             </div>}
           </div>
-          <button type="button" aria-label={menuOpen ? "Fechar menu" : "Abrir menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen(v => !v)}
-            className="rounded-lg border border-[var(--border-primary)] p-2 text-[var(--text-primary)] 2xl:hidden">
-            {menuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
         </div>
       </div>
-      {menuOpen && <nav aria-label="Navegação móvel" className="absolute left-0 right-0 top-full max-h-[calc(100dvh-66px)] overflow-y-auto border-b border-[var(--border-primary)] bg-[var(--bg-sidebar)] p-3 shadow-2xl 2xl:hidden">
-        <div className="grid grid-cols-2 gap-1 sm:grid-cols-4">
-          {navItems.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setMenuOpen(false)}
-            className={`flex items-center gap-2 rounded-lg px-3 py-3 text-sm ${pathname === href ? "bg-[var(--bg-hover)] text-[var(--accent-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"}`}><Icon size={17}/>{label}</Link>)}
-        </div>
-      </nav>}
+
     </header>
   );
 }
