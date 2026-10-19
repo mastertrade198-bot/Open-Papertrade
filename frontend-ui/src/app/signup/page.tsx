@@ -321,7 +321,7 @@ export default function SignupPage() {
             {/* Username */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-[var(--text-primary)]">
-                Username
+                Nome de usuário
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] text-[var(--text-dim)]">@</span>
@@ -346,7 +346,7 @@ export default function SignupPage() {
             {/* Email */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-[var(--text-primary)]">
-                Email
+                E-mail
               </label>
               <input
                 type="email"
@@ -360,7 +360,7 @@ export default function SignupPage() {
             {/* Password */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-[var(--text-primary)]">
-                Password
+                Senha
               </label>
               <div className="relative">
                 <input
