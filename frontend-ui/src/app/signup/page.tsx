@@ -19,6 +19,9 @@ export default function SignupPage() {
   const [username, setUsername] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [email, setEmail] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -79,7 +82,8 @@ export default function SignupPage() {
     setError("");
     try {
       const name = `${firstName} ${lastName}`.trim();
-      const result = await signup(name, email, password, username || undefined);
+      if (cpf && !/^\d{11}$/.test(cpf)) { setError("CPF deve conter 11 dígitos"); setIsLoading(false); return; }
+      const result = await signup(name, email, password, username || undefined, { cpf, dateOfBirth, phone });
 
       if (result.emailVerificationRequired) {
         setVerificationEmail(email);
@@ -345,6 +349,19 @@ export default function SignupPage() {
               />
             </div>
 
+            {/* Dados pessoais */}
+            <div className="flex flex-col gap-2">
+              <label htmlFor="signup-cpf" className="text-sm font-medium text-[var(--text-primary)]">CPF</label>
+              <input id="signup-cpf" type="text" inputMode="numeric" autoComplete="off" maxLength={11} placeholder="Somente números" value={cpf} onChange={(e) => setCpf(e.target.value.replace(/\D/g, "").slice(0, 11))} className="w-full rounded-lg border border-[var(--border-muted)] bg-transparent px-3.5 py-3 text-[15px] text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="signup-birth" className="text-sm font-medium text-[var(--text-primary)]">Data de nascimento</label>
+              <input id="signup-birth" type="date" max={new Date().toISOString().slice(0, 10)} value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="w-full rounded-lg border border-[var(--border-muted)] bg-transparent px-3.5 py-3 text-[15px] text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="signup-phone" className="text-sm font-medium text-[var(--text-primary)]">Telefone</label>
+              <input id="signup-phone" type="tel" autoComplete="tel" maxLength={20} placeholder="(81) 99999-9999" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full rounded-lg border border-[var(--border-muted)] bg-transparent px-3.5 py-3 text-[15px] text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
+            </div>
             {/* Password */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-[var(--text-primary)]">
