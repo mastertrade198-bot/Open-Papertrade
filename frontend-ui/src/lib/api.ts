@@ -41,6 +41,9 @@ export interface ProviderStatus {
   cacheSize: number;
 }
 
+export interface CatalogAsset { symbol: string; name: string; category: string; currency: "USD"; }
+export interface CatalogResponse { assets: CatalogAsset[]; count: number; page: number; pageSize: number; hasMore: boolean; currency: "USD"; }
+
 export interface SearchResult {
   symbol: string;
   name: string;
@@ -436,6 +439,17 @@ class StockAPI {
   async getCrypto(market?: string): Promise<{ crypto: StockQuote[]; count: number; market: string }> {
     const params = market ? `?market=${market}` : '';
     return this.fetch(`/stocks/crypto/${params}`);
+  }
+
+  async getAssetCatalog(page = 1, query = ""): Promise<CatalogResponse> {
+    return this.fetch(`/stocks/catalog/?page=${page}&q=${encodeURIComponent(query)}`);
+  }
+
+  async registerCatalogAsset(symbol: string, type?: string): Promise<CatalogAsset> {
+    return this.fetch('/stocks/catalog/', {
+      method: 'POST',
+      body: JSON.stringify({ symbol, type }),
+    });
   }
 
   /**
