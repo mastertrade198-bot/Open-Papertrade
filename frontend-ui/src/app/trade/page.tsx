@@ -23,7 +23,7 @@ import StockChart from "@/components/StockChart";
 
 import { usePortfolio } from "@/context/PortfolioContext";
 import { formatCurrency, formatPercent, formatTime, getMarketStatus, getMarketStatusLocal, MarketStatus } from "@/lib/utils";
-import { stockAPI, userAPI, StockQuote, SearchResult, SimulatedPosition } from "@/lib/api";
+import { stockAPI, userAPI, StockQuote, SearchResult, SimulatedPosition, CatalogAsset } from "@/lib/api";
 
 export default function TradePage() {
   return (
@@ -57,21 +57,54 @@ function TradePageContent() {
   const [selectedQuote, setSelectedQuote] = useState<StockQuote | null>(null);
   const [showAssetMenu, setShowAssetMenu] = useState(false);
   const [expandedAssetCategory, setExpandedAssetCategory] = useState<string | null>("Ações");
+  const [catalogAssets, setCatalogAssets] = useState<CatalogAsset[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogError, setCatalogError] = useState("");
+
+  const refreshCatalog = useCallback(async () => {
+    setCatalogLoading(true);
+    setCatalogError("");
+    try {
+      const all: CatalogAsset[] = [];
+      let page = 1;
+      let more = true;
+      while (more && page <= 30) {
+        const response = await stockAPI.getAssetCatalog(page);
+        all.push(...response.assets.filter(asset => asset.currency === "USD"));
+        more = response.hasMore;
+        page += 1;
+      }
+      setCatalogAssets(all);
+    } catch (error) {
+      console.error("Catalog error:", error);
+      setCatalogError("Não foi possível carregar o catálogo de ativos.");
+    } finally {
+      setCatalogLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (showAssetMenu) void refreshCatalog();
+  }, [showAssetMenu, refreshCatalog]);
+
   const availableAssets = useMemo(() => {
-    const bySymbol = new Map<string, { symbol: string; name: string; category: string }>();
+    const bySymbol = new Map<string, CatalogAsset>();
+    for (const asset of catalogAssets) {
+      if (asset.currency === "USD") bySymbol.set(asset.symbol, asset);
+    }
+    // Keep verified USD instruments from the live portfolio feed visible.
     for (const asset of stocks) {
-      if (asset.currency !== "USD" || /\.(NS|BO)$/i.test(asset.symbol)) continue;
-      bySymbol.set(asset.symbol, { symbol: asset.symbol, name: asset.name || asset.symbol, category: "Ações" });
+      if (asset.currency === "USD" && !/\\.(NS|BO)$/i.test(asset.symbol) && !bySymbol.has(asset.symbol)) {
+        bySymbol.set(asset.symbol, { symbol: asset.symbol, name: asset.name || asset.symbol, category: "Ações", currency: "USD" });
+      }
     }
     for (const asset of crypto) {
-      if (asset.currency !== "USD" || /\.(NS|BO)$/i.test(asset.symbol)) continue;
-      bySymbol.set(asset.symbol, { symbol: asset.symbol, name: asset.name || asset.symbol, category: "Criptomoedas" });
-    }
-    if (!bySymbol.has(selectedSymbol)) {
-      bySymbol.set(selectedSymbol, { symbol: selectedSymbol, name: selectedQuote?.name || selectedSymbol, category: "Selecionado" });
+      if (asset.currency === "USD" && !bySymbol.has(asset.symbol)) {
+        bySymbol.set(asset.symbol, { symbol: asset.symbol, name: asset.name || asset.symbol, category: "Criptomoedas", currency: "USD" });
+      }
     }
     return Array.from(bySymbol.values()).sort((a, b) => a.category.localeCompare(b.category, "pt-BR") || a.symbol.localeCompare(b.symbol));
-  }, [stocks, crypto, selectedSymbol, selectedQuote]);
+  }, [catalogAssets, stocks, crypto]);
 
   const assetCategories = useMemo(() => {
     const groups = new Map<string, typeof availableAssets>();
@@ -250,6 +283,10 @@ function TradePageContent() {
 
   // Select a stock from search
   const selectStock = (result: SearchResult) => {
+    // Newly searched symbols join the shared catalog only after backend USD verification.
+    void stockAPI.registerCatalogAsset(result.symbol, result.type).then(asset => {
+      setCatalogAssets(current => current.some(item => item.symbol === asset.symbol) ? current : [...current, asset]);
+    }).catch(() => { /* Non-USD or unavailable instruments are not added to the catalog. */ });
     setSelectedSymbol(result.symbol);
     setSelectedQuote(null);
     setSearchQuery("");
@@ -370,7 +407,8 @@ function TradePageContent() {
                 <div aria-label="Ativos por categoria" className="absolute left-0 top-full z-40 mt-2 w-[min(440px,calc(100vw-48px))] max-h-[420px] overflow-y-auto rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] shadow-2xl">
                   <div className="sticky top-0 z-10 border-b border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-3">
                     <p className="text-sm font-semibold text-[var(--text-primary)]">Mercados disponíveis</p>
-                    <p className="text-[11px] text-[var(--text-muted)]">{availableAssets.length} ativos carregados · Escolha uma categoria</p>
+                    <p className="text-[11px] text-[var(--text-muted)]">{catalogLoading ? "Carregando catálogo..." : `${availableAssets.length} ativos USD · Escolha uma categoria`}</p>
+                    {catalogError && <p role="alert" className="mt-1 text-[11px] text-[var(--accent-red)]">{catalogError}</p>}
                   </div>
                   {assetCategories.map(({ name, assets }) => (
                     <div key={name} className="border-b border-[var(--border-primary)] last:border-b-0">
