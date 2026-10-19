@@ -768,6 +768,8 @@ class Position(models.Model):
     leverage = models.DecimalField(max_digits=8, decimal_places=2, default=1)
     margin = models.DecimalField(max_digits=20, decimal_places=2)
     notional_value = models.DecimalField(max_digits=20, decimal_places=2)
+    stop_loss = models.DecimalField(max_digits=20, decimal_places=6, null=True, blank=True)
+    take_profit = models.DecimalField(max_digits=20, decimal_places=6, null=True, blank=True)
     currency = models.CharField(max_length=3, default="USD")
 
     status = models.CharField(
@@ -815,6 +817,8 @@ class Position(models.Model):
             "leverage": float(self.leverage),
             "margin": float(self.margin),
             "notionalValue": float(self.notional_value),
+            "stopLoss": float(self.stop_loss) if self.stop_loss is not None else None,
+            "takeProfit": float(self.take_profit) if self.take_profit is not None else None,
             "currency": self.currency,
             "status": self.status,
             "exitPrice": float(self.exit_price) if self.exit_price is not None else None,
