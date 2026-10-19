@@ -114,10 +114,22 @@
 }
 
 
-/* Top navigation occupies its own row; page content starts below it. */
-body:has(.master-topnav) main {
-  margin-top: 66px;
-  height: calc(100% - 66px);
-  min-height: 0;
+/* The header is part of the page scroll, never fixed or sticky. */
+div:has(> .master-topnav) {
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+div:has(> .master-topnav) > .master-topnav {
+  position: relative;
+  flex: 0 0 66px;
+  width: 100%;
+}
+div:has(> .master-topnav) > main {
+  margin-top: 0;
+  height: auto;
+  min-height: auto;
   min-width: 0;
+  flex: 0 0 auto;
+  overflow: visible;
 }
