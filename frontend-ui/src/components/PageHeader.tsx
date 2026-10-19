@@ -18,7 +18,7 @@ interface PageHeaderProps {
 export default function PageHeader({
   title,
   subtitle,
-  primaryButtonText = "New Trade",
+  primaryButtonText = "Nova operação",
   primaryButtonIcon = "plus",
   onPrimaryClick,
   extraActions,
@@ -60,7 +60,7 @@ export default function PageHeader({
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-[var(--border-muted)] hover:bg-[var(--bg-muted)] transition-colors"
           >
             <Search size={16} className="text-[var(--text-muted)]" />
-            <span className="text-[13px] text-[var(--text-dim)]">Search...</span>
+            <span className="text-[13px] text-[var(--text-dim)]">Pesquisar...</span>
             <span className="font-mono text-[11px] text-[var(--text-dim)] ml-4">
               ⌘K
             </span>
