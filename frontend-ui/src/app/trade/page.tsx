@@ -53,7 +53,7 @@ function TradePageContent() {
   const [showSearchResults, setShowSearchResults] = useState(false);
 
   // Trade state
-  const [selectedSymbol, setSelectedSymbol] = useState(market === "IN" ? "RELIANCE.NS" : "AAPL");
+  const [selectedSymbol, setSelectedSymbol] = useState("AAPL");
   const [selectedQuote, setSelectedQuote] = useState<StockQuote | null>(null);
   const [orderType, setOrderType] = useState<"BUY" | "SELL">("BUY");
   const [marginInput, setMarginInput] = useState("100.00");
@@ -158,7 +158,7 @@ function TradePageContent() {
   useEffect(() => {
     const symbolParam = searchParams.get("symbol");
     if (symbolParam) return;
-    const defaultSymbol = market === "IN" ? "RELIANCE.NS" : "AAPL";
+    const defaultSymbol = "AAPL";
     setSelectedSymbol(defaultSymbol);
     setSelectedQuote(null);
     fetchQuote(defaultSymbol);
