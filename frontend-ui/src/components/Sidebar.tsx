@@ -8,6 +8,7 @@ import {
   Wallet,
   Repeat,
   History,
+  Star,
   Settings,
   LogOut,
   CandlestickChart,
@@ -55,6 +56,7 @@ const navItems = [
   { icon: <CandlestickChart size={18} />, label: "Gráficos", href: "/chart" },
   { icon: <Repeat size={18} />, label: "Negociar", href: "/trade" },
   { icon: <Wallet size={18} />, label: "Carteira", href: "/portfolio" },
+  { icon: <Star size={18} />, label: "Lista de acompanhamento", href: "/watchlist" },
   { icon: <History size={18} />, label: "Histórico", href: "/history" },
   { icon: <Settings size={18} />, label: "Conta", href: "/account" },
 ];
