@@ -115,14 +115,10 @@ export default function SignupPage() {
         {/* Left Panel - Branding */}
         <div className="hidden lg:flex flex-1 flex-col justify-between bg-[var(--bg-sidebar)] p-[60px]">
           <Link href="/" className="flex items-center gap-3.5 hover:opacity-80 transition-opacity">
-            <img src="/logo.png" alt="Open Papertrade" width={40} height={40} />
+            <img src="/logo.png" alt="Master Trade" width={40} height={40} />
             <div className="flex items-center gap-1.5">
-              <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">
-                OPEN
-              </span>
-              <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">
-                PAPERTRADE
-              </span>
+              <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">MASTER</span>
+              <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">TRADE</span>
             </div>
           </Link>
 
@@ -205,14 +201,10 @@ export default function SignupPage() {
       <div className="hidden lg:flex flex-1 flex-col justify-between bg-[var(--bg-sidebar)] p-[60px]">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3.5 hover:opacity-80 transition-opacity">
-          <img src="/logo.png" alt="Open Papertrade" width={40} height={40} />
+          <img src="/logo.png" alt="Master Trade" width={40} height={40} />
           <div className="flex items-center gap-1.5">
-            <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">
-              OPEN
-            </span>
-            <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">
-              PAPERTRADE
-            </span>
+            <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">MASTER</span>
+            <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">TRADE</span>
           </div>
         </Link>
 
@@ -266,14 +258,10 @@ export default function SignupPage() {
       <div className="flex flex-col items-center justify-center w-full lg:w-[520px] lg:min-w-[520px] px-8 py-10 lg:px-[80px]">
         {/* Mobile Logo */}
         <div className="flex items-center gap-3.5 mb-10 lg:hidden">
-          <img src="/logo.png" alt="Open Papertrade" width={40} height={40} />
+          <img src="/logo.png" alt="Master Trade" width={40} height={40} />
           <div className="flex items-center gap-1.5">
-            <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">
-              OPEN
-            </span>
-            <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">
-              PAPERTRADE
-            </span>
+            <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">MASTER</span>
+            <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">TRADE</span>
           </div>
         </div>
 
