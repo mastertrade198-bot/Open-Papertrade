@@ -96,7 +96,6 @@ const AVAILABLE_CURRENCIES = [
 // Available markets for selection
 const AVAILABLE_MARKETS = [
   { code: 'US', name: 'United States', flag: '🇺🇸', exchanges: ['NASDAQ', 'NYSE'], description: 'US stocks (AAPL, GOOGL, MSFT...)' },
-  { code: 'IN', name: 'India', flag: '🇮🇳', exchanges: ['NSE', 'BSE'], description: 'Indian stocks (RELIANCE, TCS, INFY...)' },
 ];
 
 export default function AccountPage() {
