@@ -114,22 +114,37 @@
 }
 
 
-/* The header is part of the page scroll, never fixed or sticky. */
+/* Full-width pages, natural vertical scroll, never a horizontal scrollbar. */
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
 div:has(> .master-topnav) {
+  display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: 100%;
+  overflow-x: clip;
   overflow-y: auto;
-  overflow-x: hidden;
+  scrollbar-gutter: auto;
 }
 div:has(> .master-topnav) > .master-topnav {
   position: relative;
-  flex: 0 0 66px;
+  flex: none;
   width: 100%;
+  min-width: 0;
 }
 div:has(> .master-topnav) > main {
-  margin-top: 0;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
   height: auto;
   min-height: auto;
-  min-width: 0;
   flex: 0 0 auto;
-  overflow: visible;
+  overflow-x: clip;
+  overflow-y: visible;
 }
