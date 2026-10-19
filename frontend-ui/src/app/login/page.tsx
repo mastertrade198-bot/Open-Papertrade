@@ -36,7 +36,7 @@ export default function LoginPage() {
         router.push("/");
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Login failed";
+      const message = err instanceof Error ? err.message : "Falha ao entrar";
       setError(message);
       // Check if it's an unverified email error
       if (message.toLowerCase().includes("verify your email")) {
@@ -55,7 +55,7 @@ export default function LoginPage() {
       await verify2FALogin(tempToken, twoFactorCode);
       router.push("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Verification failed");
+      setError(err instanceof Error ? err.message : "Falha na verificação");
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +68,7 @@ export default function LoginPage() {
       const message = await resendVerification(unverifiedEmail);
       setResendMessage(message);
     } catch (err) {
-      setResendMessage(err instanceof Error ? err.message : "Failed to resend");
+      setResendMessage(err instanceof Error ? err.message : "Falha ao reenviar");
     } finally {
       setResendLoading(false);
     }
@@ -94,14 +94,14 @@ export default function LoginPage() {
         {/* Center Content */}
         <div className="flex flex-col gap-8">
           <h1 className="font-serif text-[56px] font-medium leading-[1.1] tracking-[-1px] text-[var(--text-primary)]">
-            Trade Smarter.
+            Negocie com inteligência.
             <br />
-            Risk Nothing.
+            Gerencie seus riscos.
           </h1>
           <p className="text-lg text-[var(--text-muted)] leading-[1.6]">
-            Practice with $100K virtual funds.
+            Pratique com US$ 100 mil em saldo virtual.
             <br />
-            Master the markets before going live.
+            Conheça os mercados antes de operar.
           </p>
 
           {/* Stats */}
@@ -111,7 +111,7 @@ export default function LoginPage() {
                 10,000+
               </span>
               <span className="text-sm text-[var(--text-muted)]">
-                Stocks &amp; Crypto
+                Ações e criptomoedas
               </span>
             </div>
             <div className="flex flex-col gap-1">
@@ -119,7 +119,7 @@ export default function LoginPage() {
                 Live
               </span>
               <span className="text-sm text-[var(--text-muted)]">
-                Market Prices
+                Cotações de mercado
               </span>
             </div>
           </div>
@@ -138,7 +138,7 @@ export default function LoginPage() {
                 Jane Doe
               </span>
               <span className="text-[13px] text-[var(--text-muted)]">
-                Day Trader, 2 years on platform
+                Trader, há 2 anos na plataforma
               </span>
             </div>
           </div>
@@ -164,16 +164,16 @@ export default function LoginPage() {
           <form onSubmit={handle2FASubmit} className="flex flex-col gap-8 w-full max-w-[360px]">
             <div className="flex flex-col items-center lg:items-start gap-2">
               <h2 className="font-serif text-[32px] font-medium text-[var(--text-primary)]">
-                Two-Factor Authentication
+                Autenticação em dois fatores
               </h2>
               <p className="text-[15px] text-[var(--text-muted)]">
-                Enter the 6-digit code from your authenticator app, or a backup code
+                Digite o código de 6 dígitos do aplicativo autenticador ou um código de recuperação
               </p>
             </div>
 
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-[var(--text-primary)]">
-                Verification Code
+                Código de verificação
               </label>
               <input
                 type="text"
@@ -197,7 +197,7 @@ export default function LoginPage() {
               disabled={isLoading || !twoFactorCode}
               className="w-full rounded-lg bg-[var(--accent-primary)] py-4 text-base font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? "Verifying..." : "Verify"}
+              {isLoading ? "Verificando..." : "Verificar"}
             </button>
 
             <button
@@ -210,7 +210,7 @@ export default function LoginPage() {
               }}
               className="text-sm font-medium text-[var(--accent-primary)] hover:opacity-80 transition-opacity"
             >
-              Back to login
+              Voltar ao login
             </button>
           </form>
         ) : (
@@ -218,10 +218,10 @@ export default function LoginPage() {
           {/* Form Header */}
           <div className="flex flex-col items-center lg:items-start gap-2">
             <h2 className="font-serif text-[32px] font-medium text-[var(--text-primary)]">
-              Welcome back
+              Bem-vindo de volta
             </h2>
             <p className="text-[15px] text-[var(--text-muted)]">
-              Log in to your account
+              Entre na sua conta
             </p>
           </div>
 
@@ -251,7 +251,7 @@ export default function LoginPage() {
                   href="/forgot-password"
                   className="text-[13px] font-medium text-[var(--accent-primary)] hover:opacity-80 transition-opacity"
                 >
-                  Forgot password?
+                  Esqueceu a senha?
                 </Link>
               </div>
               <div className="relative">
@@ -284,7 +284,7 @@ export default function LoginPage() {
                     disabled={resendLoading}
                     className="text-[var(--accent-primary)] font-medium hover:opacity-80 transition-opacity disabled:opacity-50"
                   >
-                    {resendLoading ? "Sending..." : "Resend verification email"}
+                    {resendLoading ? "Enviando..." : "Reenviar e-mail de verificação"}
                   </button>
                 </div>
               )}
@@ -302,19 +302,19 @@ export default function LoginPage() {
             disabled={isLoading}
             className="w-full rounded-lg bg-[var(--accent-primary)] py-4 text-base font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Logging in..." : "Log in"}
+            {isLoading ? "Entrando..." : "Entrar"}
           </button>
 
           {/* Sign Up Prompt */}
           <div className="flex items-center justify-center gap-1.5">
             <span className="text-sm text-[var(--text-muted)]">
-              Don&apos;t have an account?
+              Ainda não tem uma conta?
             </span>
             <Link
               href="/signup"
               className="text-sm font-semibold text-[var(--accent-primary)] hover:opacity-80 transition-opacity"
             >
-              Sign up
+              Cadastre-se
             </Link>
           </div>
 
