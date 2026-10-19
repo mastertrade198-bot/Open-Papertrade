@@ -6,17 +6,17 @@ import { usePortfolio } from "@/context/PortfolioContext";
 import { CURRENCY_SYMBOLS } from "@/lib/utils";
 
 const CURRENCIES: { code: string; name: string }[] = [
-  { code: "USD", name: "US Dollar" },
+  { code: "USD", name: "Dólar americano" },
 ];
 
 const MARKETS: { code: string; name: string; flag: string }[] = [
-  { code: "US", name: "United States", flag: "🇺🇸" },
+  { code: "US", name: "Estados Unidos", flag: "🇺🇸" },
 ];
 
 const THEMES: { code: "DARK" | "LIGHT" | "AUTO"; label: string; icon: typeof Moon }[] = [
-  { code: "DARK", label: "Dark", icon: Moon },
-  { code: "LIGHT", label: "Light", icon: Sun },
-  { code: "AUTO", label: "Auto", icon: Monitor },
+  { code: "DARK", label: "Escuro", icon: Moon },
+  { code: "LIGHT", label: "Claro", icon: Sun },
+  { code: "AUTO", label: "Automático", icon: Monitor },
 ];
 
 export default function QuickSettings() {
@@ -46,7 +46,7 @@ export default function QuickSettings() {
       <div className="relative">
         <button
           onClick={() => setOpenMenu(openMenu === "theme" ? null : "theme")}
-          title="Theme"
+          title="Tema"
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[var(--bg-card)] border border-[var(--border-primary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/40 transition-all"
         >
           <ThemeIcon size={14} />
@@ -84,7 +84,7 @@ export default function QuickSettings() {
       <div className="relative">
         <button
           onClick={() => setOpenMenu(openMenu === "market" ? null : "market")}
-          title="Market"
+          title="Mercado"
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[var(--bg-card)] border border-[var(--border-primary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/40 transition-all"
         >
           <span className="text-sm leading-none">{marketMeta.flag}</span>
@@ -124,7 +124,7 @@ export default function QuickSettings() {
       <div className="relative">
         <button
           onClick={() => setOpenMenu(openMenu === "currency" ? null : "currency")}
-          title="Currency"
+          title="Moeda"
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[var(--bg-card)] border border-[var(--border-primary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/40 transition-all"
         >
           <span className="font-mono text-[13px] font-bold text-[var(--text-primary)] leading-none">
