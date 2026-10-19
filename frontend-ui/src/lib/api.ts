@@ -71,6 +71,26 @@ export interface HistoricalDataResponse {
 }
 
 // User API types
+export interface SimulatedPosition {
+  id: string;
+  symbol: string;
+  name: string;
+  side: 'LONG' | 'SHORT';
+  quantity: number;
+  entryPrice: number;
+  leverage: number;
+  margin: number;
+  notionalValue: number;
+  currency: string;
+  status: 'OPEN' | 'CLOSED';
+  exitPrice: number | null;
+  realizedPnl: number | null;
+  marketPrice?: number;
+  unrealizedPnl?: number;
+  openedAt: string;
+  closedAt: string | null;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -515,6 +535,19 @@ class UserAPI {
     }
 
     return response.json();
+  }
+
+  /** Leveraged positions use a separate simulated margin ledger. */
+  async getPositions(): Promise<{ positions: SimulatedPosition[]; buyingPower: number; currency: string }> {
+    return this.fetch('/users/positions/');
+  }
+
+  async openPosition(data: { symbol: string; side: 'LONG' | 'SHORT'; quantity: number; leverage: number }): Promise<{ position: SimulatedPosition; buyingPower: number }> {
+    return this.fetch('/users/positions/', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async closePosition(id: string): Promise<{ position: SimulatedPosition; buyingPower: number }> {
+    return this.fetch(`/users/positions/${encodeURIComponent(id)}/close/`, { method: 'POST' });
   }
 
   /**
