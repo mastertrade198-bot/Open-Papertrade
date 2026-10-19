@@ -374,3 +374,6 @@ class BacktestAdmin(ModelAdmin):
     search_fields = ("strategy_name", "symbol", "owner__username", "owner__email")
     readonly_fields = ("created_at", "results", "config_snapshot")
     date_hierarchy = "created_at"
+
+
+from . import position_admin  # Register simulated position administration.

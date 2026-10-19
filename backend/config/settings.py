@@ -259,6 +259,16 @@ UNFOLD = {
                 "separator": True,
                 "items": [
                     {
+                        "title": "Operações simuladas",
+                        "icon": "candlestick_chart",
+                        "link": reverse_lazy("admin:users_position_changelist"),
+                    },
+                    {
+                        "title": "Auditoria de operações",
+                        "icon": "history",
+                        "link": reverse_lazy("admin:users_positionauditlog_changelist"),
+                    },
+                    {
                         "title": "Trades",
                         "icon": "swap_horiz",
                         "link": reverse_lazy("admin:users_trade_changelist"),
