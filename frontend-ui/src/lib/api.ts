@@ -81,6 +81,8 @@ export interface SimulatedPosition {
   leverage: number;
   margin: number;
   notionalValue: number;
+  stopLoss: number | null;
+  takeProfit: number | null;
   currency: string;
   status: 'OPEN' | 'CLOSED';
   exitPrice: number | null;
@@ -542,7 +544,7 @@ class UserAPI {
     return this.fetch('/users/positions/');
   }
 
-  async openPosition(data: { symbol: string; side: 'LONG' | 'SHORT'; quantity: number; leverage: number }): Promise<{ position: SimulatedPosition; buyingPower: number }> {
+  async openPosition(data: { symbol: string; side: 'LONG' | 'SHORT'; margin: number; leverage: number; stopLoss?: number | null; takeProfit?: number | null }): Promise<{ position: SimulatedPosition; buyingPower: number }> {
     return this.fetch('/users/positions/', { method: 'POST', body: JSON.stringify(data) });
   }
 
