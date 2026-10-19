@@ -56,6 +56,7 @@ function TradePageContent() {
   const [selectedSymbol, setSelectedSymbol] = useState("AAPL");
   const [selectedQuote, setSelectedQuote] = useState<StockQuote | null>(null);
   const [showAssetMenu, setShowAssetMenu] = useState(false);
+  const [expandedAssetCategory, setExpandedAssetCategory] = useState<string | null>("Ações");
   const availableAssets = useMemo(() => {
     const bySymbol = new Map<string, { symbol: string; name: string; category: string }>();
     for (const asset of stocks) {
@@ -71,6 +72,15 @@ function TradePageContent() {
     }
     return Array.from(bySymbol.values()).sort((a, b) => a.category.localeCompare(b.category, "pt-BR") || a.symbol.localeCompare(b.symbol));
   }, [stocks, crypto, selectedSymbol, selectedQuote]);
+
+  const assetCategories = useMemo(() => {
+    const groups = new Map<string, typeof availableAssets>();
+    for (const asset of availableAssets) {
+      if (!groups.has(asset.category)) groups.set(asset.category, []);
+      groups.get(asset.category)!.push(asset);
+    }
+    return Array.from(groups, ([name, assets]) => ({ name, assets }));
+  }, [availableAssets]);
 
   const [orderType, setOrderType] = useState<"BUY" | "SELL">("BUY");
   const [marginInput, setMarginInput] = useState("100.00");
@@ -357,23 +367,50 @@ function TradePageContent() {
                 <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
               </button>
               {showAssetMenu && (
-                <div role="listbox" aria-label="Ativos disponíveis" className="absolute left-0 right-0 top-full z-30 mt-2 max-h-80 overflow-y-auto rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] shadow-xl">
-                  <div className="sticky top-0 border-b border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-2 text-xs text-[var(--text-muted)]">
-                    {availableAssets.length} ativos carregados · Use a pesquisa abaixo para encontrar outros
+                <div aria-label="Ativos por categoria" className="absolute left-0 top-full z-40 mt-2 w-[min(440px,calc(100vw-48px))] max-h-[420px] overflow-y-auto rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] shadow-2xl">
+                  <div className="sticky top-0 z-10 border-b border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-3">
+                    <p className="text-sm font-semibold text-[var(--text-primary)]">Mercados disponíveis</p>
+                    <p className="text-[11px] text-[var(--text-muted)]">{availableAssets.length} ativos carregados · Escolha uma categoria</p>
                   </div>
-                  {availableAssets.map((asset) => (
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={selectedSymbol === asset.symbol}
-                      key={asset.symbol}
-                      onClick={() => { selectStock({ symbol: asset.symbol, name: asset.name, provider: "catalog" }); setShowAssetMenu(false); }}
-                      className={`flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[var(--bg-muted)] ${selectedSymbol === asset.symbol ? "text-[var(--accent-primary)]" : "text-[var(--text-primary)]"}`}
-                    >
-                      <span className="min-w-0 truncate"><strong>{asset.symbol}</strong> <span className="text-xs text-[var(--text-muted)]">{asset.name}</span></span>
-                      <span className="shrink-0 text-xs text-[var(--text-muted)]">{asset.category}</span>
-                    </button>
+                  {assetCategories.map(({ name, assets }) => (
+                    <div key={name} className="border-b border-[var(--border-primary)] last:border-b-0">
+                      <button
+                        type="button"
+                        aria-expanded={expandedAssetCategory === name}
+                        onClick={() => setExpandedAssetCategory(current => current === name ? null : name)}
+                        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[var(--bg-muted)] transition-colors"
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="text-sm font-medium text-[var(--text-primary)]">{name}</span>
+                          <span className="rounded-md bg-[var(--bg-muted)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]">{assets.length}</span>
+                        </span>
+                        <ChevronDown size={16} className={`shrink-0 text-[var(--text-muted)] transition-transform ${expandedAssetCategory === name ? "rotate-180" : ""}`} />
+                      </button>
+                      {expandedAssetCategory === name && (
+                        <div className="border-t border-[var(--border-primary)] bg-[var(--bg-card-inner)] py-1">
+                          {assets.map(asset => (
+                            <button
+                              type="button"
+                              key={asset.symbol}
+                              aria-current={selectedSymbol === asset.symbol ? "true" : undefined}
+                              onClick={() => {
+                                selectStock({ symbol: asset.symbol, name: asset.name, provider: "catalog" });
+                                setShowAssetMenu(false);
+                              }}
+                              className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-[var(--bg-muted)] transition-colors ${selectedSymbol === asset.symbol ? "text-[var(--accent-primary)]" : "text-[var(--text-primary)]"}`}
+                            >
+                              <span className="min-w-0">
+                                <span className="block font-mono text-xs font-semibold">{asset.symbol}</span>
+                                <span className="block truncate text-[11px] text-[var(--text-muted)]">{asset.name}</span>
+                              </span>
+                              {selectedSymbol === asset.symbol && <span className="shrink-0 text-[10px] text-[var(--accent-primary)]">Selecionado</span>}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
+                  {assetCategories.length === 0 && <p className="px-4 py-6 text-center text-xs text-[var(--text-muted)]">Nenhum ativo carregado</p>}
                 </div>
               )}
             </div>
