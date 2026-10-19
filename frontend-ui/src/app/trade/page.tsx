@@ -486,6 +486,18 @@ function TradePageContent() {
           <div className="w-[380px] shrink-0 flex flex-col gap-5">
             {/* Order Form */}
             <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)] flex flex-col gap-5">
+              {/* Prominent available balance above order direction */}
+              <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)] p-4" aria-live="polite">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-[var(--text-muted)]">Available Balance (USD)</span>
+                  <button type="button" onClick={() => void refreshPositions()} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]" title="Refresh available balance">Refresh</button>
+                </div>
+                <div className="mt-2 font-mono text-2xl font-bold text-[var(--text-primary)] tabular-nums">
+                  {marginBalance === null ? "Loading…" : formatCurrency(marginBalance, false, { convertFromUSD: false })}
+                </div>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">Funds available to reserve as margin for simulated positions</p>
+              </div>
+
               {/* Buy/Sell Toggle */}
               <div className="flex p-1 rounded-lg bg-[var(--bg-card-inner)]">
                 <button
