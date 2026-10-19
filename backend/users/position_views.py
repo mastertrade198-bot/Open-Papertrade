@@ -94,18 +94,41 @@ class PositionsView(APIView):
             if side not in (Position.Side.LONG, Position.Side.SHORT):
                 raise ValueError("side deve ser LONG ou SHORT.")
 
-            quantity = parse_positive(request.data, "quantity", 8)
             leverage = parse_positive(request.data, "leverage", 2)
-
-            if leverage > MAX_LEVERAGE:
-                raise ValueError("A alavancagem máxima é 100x.")
+            if not Decimal("1") <= leverage <= MAX_LEVERAGE:
+                raise ValueError("A alavancagem deve estar entre 1x e 100x.")
 
             quote, price = get_usd_quote(symbol)
-            notional = money(quantity * price)
-            margin = money(notional / leverage)
 
-            if margin <= 0:
-                raise ValueError("A margem calculada deve ser maior que zero.")
+            # Margin is the source of truth. Quantity is derived, not submitted.
+            margin = parse_positive(request.data, "margin", 2)
+            if margin < CENT:
+                raise ValueError("A margem mínima é USD 0.01.")
+            notional = money(margin * leverage)
+            quantity = (notional / price).quantize(QTY_STEP, rounding=ROUND_HALF_UP)
+            if quantity <= 0:
+                raise ValueError("Margem insuficiente para a precisão deste ativo.")
+            if notional <= 0:
+                raise ValueError("O valor nocional deve ser positivo.")
+
+            def optional_level(key):
+                raw = request.data.get(key)
+                if raw is None or raw == "":
+                    return None
+                return parse_positive(request.data, key, 6)
+
+            stop_loss = optional_level("stopLoss")
+            take_profit = optional_level("takeProfit")
+            if side == Position.Side.LONG:
+                if stop_loss is not None and stop_loss >= price:
+                    raise ValueError("Stop Loss de BUY deve ficar abaixo da cotação.")
+                if take_profit is not None and take_profit <= price:
+                    raise ValueError("Take Profit de BUY deve ficar acima da cotação.")
+            else:
+                if stop_loss is not None and stop_loss <= price:
+                    raise ValueError("Stop Loss de SELL deve ficar acima da cotação.")
+                if take_profit is not None and take_profit >= price:
+                    raise ValueError("Take Profit de SELL deve ficar abaixo da cotação.")
 
             with transaction.atomic():
                 locked_user = UserProfile.objects.select_for_update().get(pk=user.pk)
@@ -129,6 +152,8 @@ class PositionsView(APIView):
                     leverage=leverage,
                     margin=margin,
                     notional_value=notional,
+                    stop_loss=stop_loss,
+                    take_profit=take_profit,
                     currency="USD",
                 )
 
