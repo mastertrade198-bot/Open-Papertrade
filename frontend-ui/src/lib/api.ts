@@ -494,6 +494,16 @@ class StockAPI {
   }
 }
 
+export interface BalanceTransaction {
+  id: string;
+  amount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  category: string;
+  description: string;
+  createdAt: string;
+}
+
 class UserAPI {
   private baseUrl: string;
 
@@ -537,6 +547,10 @@ class UserAPI {
     }
 
     return response.json();
+  }
+
+  async getBalanceHistory(limit = 100): Promise<{ transactions: BalanceTransaction[]; buyingPower: number; currency: string; note: string }> {
+    return this.fetch(`/users/balance-history/?limit=${limit}`);
   }
 
   /** Leveraged positions use a separate simulated margin ledger. */
