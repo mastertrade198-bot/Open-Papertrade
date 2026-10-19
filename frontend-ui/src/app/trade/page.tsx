@@ -362,10 +362,10 @@ function TradePageContent() {
   return (
     <div className="flex h-full bg-[var(--bg-primary)]">
       <Sidebar />
-      <main className="flex-1 flex flex-col gap-5 py-6 px-6 xl:px-8 overflow-auto">
+      <main className="flex-1 min-w-0 flex flex-col gap-3 py-4 px-3 sm:px-5 xl:px-7 overflow-auto">
         <PageHeader
           title="Negociar"
-          subtitle="Pesquise ações ou criptomoedas para negociar"
+          subtitle="Terminal de negociação simulada · Ações, ETFs, criptomoedas, commodities e índices"
         />
 
         {/* Success/Error Message */}
@@ -387,7 +387,7 @@ function TradePageContent() {
         )}
 
         {/* Main Trade Area */}
-        <div className="flex flex-col xl:flex-row gap-4 items-start shrink-0 min-w-0">
+        <div className="flex flex-col xl:flex-row gap-3 items-start shrink-0 min-w-0">
           {/* Left Panel - Stock Selection */}
           <div className="flex-1 min-w-0 flex flex-col gap-3">
             {/* Compact trading instrument toolbar */}
