@@ -106,9 +106,9 @@ class SiteSettingsAdmin(ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(ModelAdmin):
-    list_display = ['name', 'email', 'display_verified', 'display_buying_power', 'display_plan', 'display_admin', 'display_reports_link', 'created_at']
+    list_display = ['name', 'email', 'display_buying_power', 'display_admin', 'created_at']
     search_fields = ['name', 'email', 'username']
-    list_filter = ['plan', 'is_email_verified', 'is_2fa_enabled', 'is_admin', 'created_at']
+    list_filter = ['is_admin', 'created_at']
     readonly_fields = ['id', 'created_at', 'updated_at', 'password_changed_at', 'is_2fa_enabled']
     fieldsets = [
         ("Profile", {"fields": ["id", "name", "username", "email", "avatar_url"]}),
@@ -234,146 +234,13 @@ class UserProfileAdmin(ModelAdmin):
         return format_html('<a href="{}" style="white-space:nowrap">View Reports</a>', url)
 
 
-@admin.register(UserSettings)
-class UserSettingsAdmin(ModelAdmin):
-    list_display = ['user', 'theme', 'default_order_type', 'notify_price_alerts']
-    list_filter = ['theme', 'default_order_type']
-    search_fields = ['user__name', 'user__email']
 
 
-@admin.register(Achievement)
-class AchievementAdmin(ModelAdmin):
-    list_display = ['id', 'name', 'icon', 'requirement_type', 'requirement_value']
-    search_fields = ['name', 'description']
-    list_filter = ['requirement_type']
 
 
-@admin.register(UserAchievement)
-class UserAchievementAdmin(ModelAdmin):
-    list_display = ['user', 'achievement', 'unlocked_at']
-    list_filter = ['achievement', 'unlocked_at']
-    search_fields = ['user__name', 'achievement__name']
 
 
-@admin.register(Trade)
-class TradeAdmin(ModelAdmin):
-    list_display = ['user', 'symbol', 'display_trade_type', 'shares', 'display_price', 'display_total', 'currency', 'executed_at']
-    list_filter = ['trade_type', 'symbol', 'executed_at']
-    search_fields = ['symbol', 'user__name']
-    readonly_fields = ['id', 'executed_at']
-    date_hierarchy = 'executed_at'
-
-    @display(description="Type", label={"BUY": "success", "SELL": "danger"})
-    def display_trade_type(self, obj):
-        return obj.trade_type
-
-    @display(description="Price")
-    def display_price(self, obj):
-        return _fmt(obj.price, obj.currency)
-
-    @display(description="Total")
-    def display_total(self, obj):
-        return _fmt(obj.total, obj.currency)
 
 
-@admin.register(Holding)
-class HoldingAdmin(ModelAdmin):
-    list_display = ['user', 'symbol', 'name', 'shares', 'display_avg_cost', 'display_value', 'currency']
-    search_fields = ['symbol', 'user__name', 'name']
-    list_filter = ['symbol']
-
-    @display(description="Avg Cost")
-    def display_avg_cost(self, obj):
-        return _fmt(obj.avg_cost, obj.currency)
-
-    @display(description="Value")
-    def display_value(self, obj):
-        return _fmt(float(obj.shares) * float(obj.avg_cost), obj.currency)
 
 
-@admin.register(Watchlist)
-class WatchlistAdmin(ModelAdmin):
-    list_display = ['user', 'symbol', 'name', 'display_starred', 'added_at']
-    list_filter = ['starred', 'added_at']
-    search_fields = ['symbol', 'user__name']
-
-    @display(description="Starred", boolean=True)
-    def display_starred(self, obj):
-        return obj.starred
-
-
-@admin.register(PriceAlert)
-class PriceAlertAdmin(ModelAdmin):
-    list_display = ['user', 'symbol', 'condition', 'display_target', 'display_enabled', 'display_triggered']
-    list_filter = ['condition', 'enabled', 'triggered']
-    search_fields = ['symbol', 'user__name']
-
-    @display(description="Target")
-    def display_target(self, obj):
-        try:
-            cur = obj.user.settings.currency
-        except UserSettings.DoesNotExist:
-            cur = 'USD'
-        return _fmt(obj.target_price, cur)
-
-    @display(description="Enabled", boolean=True)
-    def display_enabled(self, obj):
-        return obj.enabled
-
-    @display(description="Triggered", boolean=True)
-    def display_triggered(self, obj):
-        return obj.triggered
-
-
-@admin.register(APIKey)
-class APIKeyAdmin(ModelAdmin):
-    list_display = ['user', 'name', 'key_prefix', 'display_active', 'last_used_at', 'created_at']
-    list_filter = ['is_active', 'created_at']
-    search_fields = ['name', 'user__name', 'user__email', 'key_prefix']
-    readonly_fields = ['id', 'key_prefix', 'key_hash', 'created_at']
-
-    @display(description="Active", boolean=True)
-    def display_active(self, obj):
-        return obj.is_active
-
-
-@admin.register(LimitOrder)
-class LimitOrderAdmin(ModelAdmin):
-    list_display = ['user', 'symbol', 'display_trade_type', 'display_status', 'display_limit_price', 'shares', 'created_at']
-    list_filter = ['trade_type', 'status', 'created_at']
-    search_fields = ['symbol', 'user__name']
-    readonly_fields = ['id', 'created_at', 'filled_at']
-
-    @display(description="Type", label={"BUY": "success", "SELL": "danger"})
-    def display_trade_type(self, obj):
-        return obj.trade_type
-
-    @display(description="Status", label={"PENDING": "info", "FILLED": "success", "CANCELLED": "warning", "EXPIRED": "danger"})
-    def display_status(self, obj):
-        return obj.status
-
-    @display(description="Limit Price")
-    def display_limit_price(self, obj):
-        return _fmt(obj.limit_price, obj.currency)
-
-
-# ── Backtesting ──────────────────────────────────────────────────
-
-@admin.register(Strategy)
-class StrategyAdmin(ModelAdmin):
-    list_display = ("name", "owner", "is_public", "updated_at")
-    list_filter = ("is_public",)
-    search_fields = ("name", "description", "owner__username", "owner__email")
-    readonly_fields = ("created_at", "updated_at")
-
-
-@admin.register(Backtest)
-class BacktestAdmin(ModelAdmin):
-    list_display = ("strategy_name", "symbol", "owner", "start_date", "end_date", "created_at")
-    list_filter = ("symbol",)
-    search_fields = ("strategy_name", "symbol", "owner__username", "owner__email")
-    readonly_fields = ("created_at", "results", "config_snapshot")
-    date_hierarchy = "created_at"
-
-
-from . import position_admin  # Register simulated position administration.
