@@ -112,6 +112,24 @@ USD_CRYPTO_SYMBOLS = (
 ).split()
 
 
+# USD-quoted commodity futures. Prices are indicative underlying prices,
+# not executable futures contracts or contract-size adjusted notionals.
+USD_COMMODITIES = {
+    'GC=F': 'Ouro',
+    'SI=F': 'Prata',
+    'CL=F': 'Petróleo WTI',
+    'BZ=F': 'Petróleo Brent',
+    'NG=F': 'Gás Natural',
+    'HG=F': 'Cobre',
+    'ZC=F': 'Milho',
+    'ZW=F': 'Trigo',
+    'ZS=F': 'Soja',
+    'KC=F': 'Café',
+    'SB=F': 'Açúcar',
+    'CT=F': 'Algodão',
+}
+
+
 class AssetCatalogView(APIView):
     """Browsable USD-only catalog with pagination and verified discovered symbols."""
 
@@ -126,6 +144,12 @@ class AssetCatalogView(APIView):
         ):
             for symbol in symbols:
                 assets[symbol] = {'symbol': symbol, 'name': symbol, 'category': category, 'currency': 'USD'}
+
+        for symbol, name in USD_COMMODITIES.items():
+            assets[symbol] = {
+                'symbol': symbol, 'name': name,
+                'category': 'Commodities', 'currency': 'USD',
+            }
 
         for asset in TradableAsset.objects.filter(currency='USD'):
             assets[asset.symbol] = {
@@ -159,7 +183,7 @@ class AssetCatalogView(APIView):
         import re
 
         symbol = str(request.data.get('symbol', '')).strip().upper()
-        if not re.fullmatch(r'[A-Z0-9][A-Z0-9.\\-]{0,29}', symbol):
+        if not re.fullmatch(r'[A-Z0-9][A-Z0-9.\\=\\-]{0,29}', symbol):
             return Response({'error': 'Símbolo inválido'}, status=status.HTTP_400_BAD_REQUEST)
 
         lookup_symbol = symbol
@@ -171,7 +195,7 @@ class AssetCatalogView(APIView):
 
         name = str(result.quote.name or symbol)[:200]
         is_crypto = symbol.endswith('-USD') or str(request.data.get('type', '')).upper() == 'CRYPTOCURRENCY'
-        category = 'Criptomoedas' if is_crypto else 'Ações'
+        category = 'Commodities' if symbol in USD_COMMODITIES else ('Criptomoedas' if is_crypto else 'Ações')
         display_symbol = symbol[:-4] if symbol.endswith('-USD') else symbol
         asset, _ = TradableAsset.objects.update_or_create(
             symbol=display_symbol,
