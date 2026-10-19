@@ -147,7 +147,7 @@ export default function PortfolioPage() {
         <main className="flex-1 flex flex-col gap-7 py-8 px-10 overflow-auto">
           <div className="flex items-start justify-between">
             <PageHeader
-              title="Portfolio"
+              title="Carteira"
               subtitle="Acompanhe seus ativos e o desempenho dos investimentos"
             />
 
@@ -224,7 +224,7 @@ export default function PortfolioPage() {
       <Sidebar />
       <main className="flex-1 flex flex-col gap-6 py-8 px-10 overflow-auto">
         <PageHeader
-          title="Portfolio"
+          title="Carteira"
           subtitle="Acompanhe seus ativos e o desempenho dos investimentos"
         />
 
