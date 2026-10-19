@@ -337,21 +337,22 @@ function TradePageContent() {
         )}
 
         {/* Main Trade Area */}
-        <div className="flex gap-5 items-start shrink-0 min-w-0">
+        <div className="flex flex-col xl:flex-row gap-4 items-start shrink-0 min-w-0">
           {/* Left Panel - Stock Selection */}
           <div className="flex-1 min-w-0 flex flex-col gap-3">
-            {/* Asset selection from currently loaded market catalog */}
-            <div className="relative">
+            {/* Compact trading instrument toolbar */}
+            <div className="flex flex-col md:flex-row gap-2.5 items-stretch">
+            <div className="relative min-w-0 md:w-[245px] md:shrink-0">
               <button
                 type="button"
                 aria-expanded={showAssetMenu}
                 aria-haspopup="listbox"
                 onClick={() => setShowAssetMenu((open) => !open)}
-                className="w-full flex items-center justify-between gap-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-2.5 text-left hover:border-[var(--accent-primary)]"
+                className="h-12 w-full flex items-center justify-between gap-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-1.5 text-left hover:border-[var(--accent-primary)]"
               >
                 <span className="min-w-0">
-                  <span className="block text-xs text-[var(--text-muted)]">Selecionar ativo</span>
-                  <span className="block truncate font-semibold text-[var(--text-primary)]">{selectedSymbol} — {selectedQuote?.name || "Ativo selecionado"}</span>
+                  <span className="block text-[10px] text-[var(--text-muted)]">Selecionar ativo</span>
+                  <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">{selectedSymbol} — {selectedQuote?.name || "Ativo selecionado"}</span>
                 </span>
                 <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
               </button>
@@ -377,15 +378,14 @@ function TradePageContent() {
               )}
             </div>
 
-            {/* Search Bar */}
-            <div className="relative">
-              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[var(--bg-card)] border border-[var(--border-primary)] focus-within:border-[var(--accent-primary)] transition-colors">
+            <div className="relative min-w-0 flex-1">
+              <div className="flex h-12 items-center gap-3 px-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-primary)] focus-within:border-[var(--accent-primary)] transition-colors">
                 <Search size={20} className="text-[var(--text-muted)]" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
-                  placeholder="Pesquise por nome ou símbolo (ex.: AAPL, Tesla, BTC)..."
+                  placeholder="Buscar ativo por nome ou símbolo..."
                   className="min-w-0 flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
                 />
                 {searchQuery && (
@@ -455,9 +455,11 @@ function TradePageContent() {
               )}
             </div>
 
+            </div>
+
             {/* Selected Stock Card */}
-            <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)]">
-              <div className="flex items-start justify-between gap-4 mb-3">
+            <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] overflow-hidden">
+              <div className="flex items-center justify-between gap-4 px-5 py-4">
                 <div>
                   <div className="flex items-center gap-3">
                     <span className="font-mono text-xl font-bold text-[var(--text-primary)]">
@@ -496,7 +498,7 @@ function TradePageContent() {
 
               {/* Stock Stats */}
               {selectedQuote && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 pt-3 border-t border-[var(--border-primary)]">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 px-5 py-3 bg-[var(--bg-card-inner)] border-t border-[var(--border-primary)]">
                   <div>
                     <span className="text-[11px] text-[var(--text-muted)]">Abertura</span>
                     <div className="font-mono text-sm text-[var(--text-primary)]">
@@ -526,7 +528,7 @@ function TradePageContent() {
 
               {/* Holding info */}
               {selectedHolding && (
-                <div className="mt-4 pt-4 border-t border-[var(--border-primary)]">
+                <div className="px-5 py-3 border-t border-[var(--border-primary)]">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-[var(--text-muted)]">Sua posição</span>
                     <div className="text-right">
@@ -549,7 +551,7 @@ function TradePageContent() {
           </div>
 
           {/* Right Panel - Order Form */}
-          <div className="w-[300px] shrink-0 flex flex-col gap-2">
+          <div className="w-full xl:w-[300px] shrink-0 flex flex-col gap-2">
             {/* Order Form */}
             <div className="bg-[var(--bg-card)] rounded-xl p-3 border border-[var(--border-primary)] flex flex-col gap-3">
               {/* Prominent available balance above order direction */}
