@@ -91,7 +91,7 @@ export default function Dashboard() {
   const losers = [...stocks].sort((a, b) => a.changePercent - b.changePercent).slice(0, 3);
 
   // Starred watchlist items
-  const starredLista de acompanhamento = watchlist.filter((w) => w.starred).slice(0, 4);
+  const starredWatchlist = watchlist.filter((w) => w.starred).slice(0, 4);
 
   // Portfolio allocation - detect crypto by checking against loaded crypto symbols
   const cryptoSymbolSet = new Set(crypto.map((c) => c.symbol));
@@ -196,7 +196,7 @@ export default function Dashboard() {
 
         {/* Main Stats Row */}
         <div className="grid grid-cols-4 gap-4">
-          {/* Patrimônio total */}
+          {/* Total Portfolio */}
           <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-[var(--text-muted)]">Patrimônio total</span>
@@ -220,7 +220,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Retorno total / Total investido */}
+          {/* Total Returns / Total Invested */}
           {settings.showProfitLoss ? (
             <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3">
               <span className="text-xs font-medium text-[var(--text-muted)]">Retorno total</span>
@@ -253,7 +253,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {/* Saldo disponível */}
+          {/* Buying Power */}
           <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3">
             <span className="text-xs font-medium text-[var(--text-muted)]">Saldo disponível</span>
             <span className="font-mono text-[28px] font-semibold text-[var(--text-primary)] tracking-tight">
@@ -267,7 +267,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Posições abertas */}
+          {/* Active Positions */}
           <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3">
             <span className="text-xs font-medium text-[var(--text-muted)]">Posições abertas</span>
             <span className="font-mono text-[28px] font-semibold text-[var(--accent-primary)] tracking-tight">
@@ -286,7 +286,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-3 gap-5">
           {/* Left Column - Holdings & Performance */}
           <div className="col-span-2 flex flex-col gap-5">
-            {/* Principais ativos */}
+            {/* Top Holdings */}
             <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] flex flex-col overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
                 <div className="flex items-center gap-2">
@@ -294,7 +294,7 @@ export default function Dashboard() {
                   <span className="text-sm font-semibold text-[var(--text-primary)]">Principais ativos</span>
                 </div>
                 <Link href="/portfolio" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline flex items-center gap-1">
-                  Ver todos <ChevronRight size={12} />
+                  View all <ChevronRight size={12} />
                 </Link>
               </div>
 
@@ -307,7 +307,7 @@ export default function Dashboard() {
                     href="/trade"
                     className="mt-4 px-4 py-2 rounded-lg bg-[var(--accent-primary)] text-xs font-semibold text-black hover:brightness-110 transition-all"
                   >
-                    Faça sua primeira operação
+                    Make Your First Trade
                   </Link>
                 </div>
               ) : (
@@ -351,7 +351,7 @@ export default function Dashboard() {
             {/* Best/Worst Performers */}
             {holdings.length > 0 && settings.showProfitLoss && (
               <div className="grid grid-cols-2 gap-4">
-                {/* Melhor desempenho */}
+                {/* Best Performer */}
                 <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)]">
                   <div className="flex items-center gap-2 mb-4">
                     <div className="w-6 h-6 rounded-md bg-[var(--accent-green)]/20 flex items-center justify-center">
@@ -401,7 +401,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Resumo semanal */}
+            {/* Weekly Summary */}
             {notifications.weeklyReport && (
               <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] p-5">
                 <div className="flex items-center gap-2 mb-4">
@@ -442,7 +442,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Destaques do mercado */}
+            {/* Market Movers */}
             {notifications.marketNews && (
               <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] flex flex-col overflow-hidden">
                 <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
@@ -451,7 +451,7 @@ export default function Dashboard() {
                     <span className="text-sm font-semibold text-[var(--text-primary)]">Destaques do mercado</span>
                   </div>
                   <Link href="/markets" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline flex items-center gap-1">
-                    Ver mercados <ChevronRight size={12} />
+                    View markets <ChevronRight size={12} />
                   </Link>
                 </div>
 
@@ -498,16 +498,16 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Right Column - Alocação, Lista de acompanhamento, Recent */}
+          {/* Right Column - Allocation, Watchlist, Recent */}
           <div className="flex flex-col gap-5">
-            {/* Portfolio Alocação */}
+            {/* Portfolio Allocation */}
             <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)]">
               <div className="flex items-center gap-2 mb-4">
                 <PieChart size={16} className="text-[var(--accent-primary)]" />
-                <span className="text-sm font-semibold text-[var(--text-primary)]">Alocação</span>
+                <span className="text-sm font-semibold text-[var(--text-primary)]">Allocation</span>
               </div>
 
-              {/* Alocação Bar */}
+              {/* Allocation Bar */}
               <div className="h-3 rounded-full overflow-hidden flex mb-4 bg-[var(--bg-muted)]">
                 {allocation.map((item, idx) => (
                   item.percent > 0 && (
@@ -540,29 +540,29 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Lista de acompanhamento Highlights */}
+            {/* Watchlist Highlights */}
             <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] flex flex-col overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
                 <div className="flex items-center gap-2">
                   <Star size={16} className="text-[var(--accent-primary)]" />
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">Lista de acompanhamento</span>
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">Watchlist</span>
                 </div>
                 <Link href="/watchlist" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline flex items-center gap-1">
-                  Ver todos <ChevronRight size={12} />
+                  View all <ChevronRight size={12} />
                 </Link>
               </div>
 
               {watchlist.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center px-4">
                   <Star size={24} className="text-[var(--text-dim)] mb-2" />
-                  <span className="text-xs text-[var(--text-muted)]">Nenhum ativo na lista</span>
+                  <span className="text-xs text-[var(--text-muted)]">No stocks in watchlist</span>
                   <Link href="/watchlist" className="text-[11px] text-[var(--accent-primary)] mt-1 hover:underline">
-                    Adicione ativos para acompanhar
+                    Add stocks to watch
                   </Link>
                 </div>
               ) : (
                 <div className="divide-y divide-[var(--border-primary)]">
-                  {(starredLista de acompanhamento.length > 0 ? starredLista de acompanhamento : watchlist.slice(0, 4)).map((item) => (
+                  {(starredWatchlist.length > 0 ? starredWatchlist : watchlist.slice(0, 4)).map((item) => (
                     <div
                       key={item.symbol}
                       onClick={() => router.push(`/trade?symbol=${item.symbol}`)}
@@ -594,7 +594,7 @@ export default function Dashboard() {
                   <span className="text-sm font-semibold text-[var(--text-primary)]">Atividade recente</span>
                 </div>
                 <Link href="/history" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline flex items-center gap-1">
-                  Ver todos <ChevronRight size={12} />
+                  View all <ChevronRight size={12} />
                 </Link>
               </div>
 
@@ -603,7 +603,7 @@ export default function Dashboard() {
                   <Target size={24} className="text-[var(--text-dim)] mb-2" />
                   <span className="text-xs text-[var(--text-muted)]">Nenhuma transação ainda</span>
                   <Link href="/trade" className="text-[11px] text-[var(--accent-primary)] mt-1 hover:underline">
-                    Começar a negociar
+                    Start trading
                   </Link>
                 </div>
               ) : (
@@ -654,7 +654,7 @@ export default function Dashboard() {
             </div>
             <div>
               <div className="text-sm font-medium text-[var(--text-primary)]">Nova operação</div>
-              <div className="text-xs text-[var(--text-muted)]">Compre ou venda ativos</div>
+              <div className="text-xs text-[var(--text-muted)]">Buy or sell stocks</div>
             </div>
           </Link>
 
@@ -667,7 +667,7 @@ export default function Dashboard() {
             </div>
             <div>
               <div className="text-sm font-medium text-[var(--text-primary)]">Markets</div>
-              <div className="text-xs text-[var(--text-muted)]">Explore ações e criptomoedas</div>
+              <div className="text-xs text-[var(--text-muted)]">Explore stocks & crypto</div>
             </div>
           </Link>
 
@@ -680,7 +680,7 @@ export default function Dashboard() {
             </div>
             <div>
               <div className="text-sm font-medium text-[var(--text-primary)]">Portfolio</div>
-              <div className="text-xs text-[var(--text-muted)]">Veja seus ativos</div>
+              <div className="text-xs text-[var(--text-muted)]">View your holdings</div>
             </div>
           </Link>
 
@@ -693,7 +693,7 @@ export default function Dashboard() {
             </div>
             <div>
               <div className="text-sm font-medium text-[var(--text-primary)]">History</div>
-              <div className="text-xs text-[var(--text-muted)]">Transações anteriores</div>
+              <div className="text-xs text-[var(--text-muted)]">Past transactions</div>
             </div>
           </Link>
         </div>
