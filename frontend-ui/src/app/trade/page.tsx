@@ -23,7 +23,7 @@ import StockChart from "@/components/StockChart";
 import StockNews from "@/components/StockNews";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { formatCurrency, formatPercent, formatTime, getMarketStatus, getMarketStatusLocal, MarketStatus } from "@/lib/utils";
-import { stockAPI, StockQuote, SearchResult } from "@/lib/api";
+import { stockAPI, userAPI, StockQuote, SearchResult, SimulatedPosition } from "@/lib/api";
 
 export default function TradePage() {
   return (
@@ -42,7 +42,6 @@ function TradePageContent() {
     buyingPower,
     transactions,
     settings,
-    executeTrade,
     getStockBySymbol,
     market,
   } = usePortfolio();
@@ -58,10 +57,30 @@ function TradePageContent() {
   const [selectedQuote, setSelectedQuote] = useState<StockQuote | null>(null);
   const [orderType, setOrderType] = useState<"BUY" | "SELL">("BUY");
   const [quantity, setQuantity] = useState(1);
+  const [leverage, setLeverage] = useState(10);
+  const [marginBalance, setMarginBalance] = useState<number | null>(null);
+  const [positions, setPositions] = useState<SimulatedPosition[]>([]);
+  const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
 
-  // Todas as operações são executadas a mercado
+  const refreshPositions = useCallback(async () => {
+    try {
+      const data = await userAPI.getPositions();
+      setMarginBalance(data.buyingPower);
+      setPositions(data.positions);
+    } catch (error) {
+      console.error("Failed to load simulated positions:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshPositions();
+    const interval = window.setInterval(() => void refreshPositions(), 15000);
+    return () => window.clearInterval(interval);
+  }, [refreshPositions]);
+
+  // All orders in this panel open leveraged simulated positions.
 
   // Confirm dialog state
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -194,87 +213,45 @@ function TradePageContent() {
     }
   };
 
-  // Actually execute the trade/order
+  // Execute an isolated-margin paper position; BUY=LONG, SELL=SHORT.
   const executeTradeOrOrder = async () => {
-  setShowConfirmDialog(false);
-
-  if (!currentPrice) return;
-
-  const stockName =
-    selectedQuote?.name ||
-    getStockBySymbol(selectedSymbol)?.name ||
-    selectedSymbol;
-
-  const success = await executeTrade(
-    orderType,
-    selectedSymbol,
-    stockName,
-    quantity,
-    currentPrice,
-    sourceCurrency
-  );
-
-  if (success) {
-    setMessage({
-      type: "success",
-      text: `${orderType === "BUY" ? "Bought" : "Sold"} ${quantity} ${selectedSymbol} @ ${formatCurrency(currentPrice)}`,
-    });
-    setQuantity(1);
-    fetchQuote(selectedSymbol);
-  } else {
-    setMessage({
-      type: "error",
-      text: orderType === "BUY" ? "Insufficient buying power" : "Insufficient shares",
-    });
-  }
-
-  setTimeout(() => setMessage(null), 4000);
-};
-
-
-  // Can trade validation
-  const canTrade = useMemo(() => {
-    if (!marketStatus.isOpen) return false;
-    if (quantity < 1) return false;
-    if (!currentPrice) return false;
-
-    if (orderType === "BUY") {
-      return estimatedTotal <= buyingPower;
-    }
-
-    return !!(selectedHolding && selectedHolding.shares >= quantity);
-  }, [
-    orderType,
-    estimatedTotal,
-    buyingPower,
-    selectedHolding,
-    quantity,
-    currentPrice,
-    marketStatus.isOpen,
-  ]);
-
-  // Quick quantity buttons
-  const setQuantityPercent = (percent: number) => {
-    if (orderType === "BUY" && currentPrice > 0) {
-      const maxShares = Math.floor((buyingPower * percent) / currentPrice);
-      setQuantity(Math.max(1, maxShares));
-    } else if (orderType === "SELL" && selectedHolding) {
-      const shares = Math.floor(selectedHolding.shares * percent);
-      setQuantity(Math.max(1, shares));
+    setShowConfirmDialog(false);
+    if (!canTrade || submitting) return;
+    setSubmitting(true);
+    try {
+      await userAPI.openPosition({
+        symbol: selectedSymbol,
+        side: orderType === "BUY" ? "LONG" : "SHORT",
+        quantity,
+        leverage,
+      });
+      setMessage({ type: "success", text: `${orderType} ${quantity} ${selectedSymbol} · ${leverage}x — posição simulada aberta` });
+      setQuantity(1);
+      await refreshPositions();
+    } catch (error) {
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "Falha ao abrir posição simulada." });
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  // Button text
+  const estimatedMargin = leverage > 0 ? estimatedTotal / leverage : Infinity;
+  const canTrade = marketStatus.isOpen && sourceCurrency === "USD" && Number.isFinite(quantity) && quantity > 0 &&
+    Number.isFinite(leverage) && leverage >= 1 && leverage <= 100 && currentPrice > 0 &&
+    marginBalance !== null && estimatedMargin > 0 && estimatedMargin <= marginBalance && !submitting;
+
+  const setQuantityPercent = (percent: number) => {
+    if (currentPrice <= 0 || marginBalance === null) return;
+    const maxShares = Math.floor((marginBalance * leverage * percent) / currentPrice);
+    setQuantity(Math.max(1, maxShares));
+  };
+
   const getButtonText = () => {
-    if (!marketStatus.isOpen) {
-      return `${marketStatus.marketName} Market Closed`;
-    }
-
-    if (!canTrade) {
-      return orderType === "BUY" ? "Insufficient Funds" : "Insufficient Shares";
-    }
-
-    return `${orderType === "BUY" ? "Buy" : "Sell"} ${quantity} ${selectedSymbol}`;
+    if (!marketStatus.isOpen) return `${marketStatus.marketName} Market Closed`;
+    if (sourceCurrency !== "USD") return "Only USD assets supported";
+    if (marginBalance === null) return "Loading margin balance";
+    if (estimatedMargin > marginBalance) return "Insufficient Margin";
+    return `${orderType} ${quantity} ${selectedSymbol} · ${leverage}x`;
   };
 
   return (
@@ -285,7 +262,7 @@ function TradePageContent() {
           title="Trade"
           subtitle="Search any stock or crypto to start trading"
         />
-        <a href="/positions" className="inline-flex w-fit items-center rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] hover:opacity-80">Operações alavancadas (simuladas) →</a>
+        <a href="/positions" className="inline-flex w-fit items-center rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] hover:opacity-80">Ver e encerrar posições simuladas →</a>
 
         {/* Success/Error Message */}
         {message && (
@@ -527,11 +504,7 @@ function TradePageContent() {
                   <span className="text-xs font-medium text-[var(--text-muted)]">
                     Quantity
                   </span>
-                  {orderType === "SELL" && selectedHolding && (
-                    <span className="text-[11px] text-[var(--text-muted)]">
-                      Max: {selectedHolding.shares}
-                    </span>
-                  )}
+
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -553,6 +526,12 @@ function TradePageContent() {
                     <Plus size={18} />
                   </button>
                 </div>
+
+                <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">Leverage (1–100x)
+                  <select value={leverage} onChange={(e) => setLeverage(Number(e.target.value))} className="p-3 rounded-lg border border-[var(--border-muted)] bg-[var(--bg-card)] text-[var(--text-primary)]">
+                    {[1, 2, 5, 10, 20, 25, 50, 100].map((value) => <option key={value} value={value}>{value}x</option>)}
+                  </select>
+                </label>
 
                 {/* Quick Quantity Buttons */}
                 <div className="flex gap-2 mt-1">
@@ -587,10 +566,10 @@ function TradePageContent() {
                 <div className="h-px bg-[var(--border-primary)]" />
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-[var(--text-primary)]">
-                    Estimated Total
+                    Estimated Margin
                   </span>
                   <span className="font-mono text-lg font-bold text-[var(--text-primary)]">
-                    {formatCurrency(estimatedTotal, false, { sourceCurrency })}
+                    {formatCurrency(estimatedMargin, false, { sourceCurrency })}
                   </span>
                 </div>
               </div>
@@ -598,14 +577,10 @@ function TradePageContent() {
               {/* Available Balance */}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-[var(--text-muted)]">
-                  {orderType === "BUY" ? "Buying Power" : "Available Shares"}
+                  Available Margin (USD)
                 </span>
                 <span className="font-mono text-[var(--text-primary)]">
-                  {orderType === "BUY"
-                    ? formatCurrency(buyingPower, false, { convertFromUSD: false })
-                    : selectedHolding
-                    ? selectedHolding.shares
-                    : 0}
+                  {marginBalance === null ? "—" : formatCurrency(marginBalance, false, { convertFromUSD: false })}
                 </span>
               </div>
 
@@ -681,7 +656,7 @@ function TradePageContent() {
               <div className="flex items-center gap-2">
                 <AlertTriangle size={18} className="text-[var(--accent-primary)]" />
                 <span className="text-base font-semibold text-[var(--text-primary)]">
-                  Confirm Trade
+                  Confirm Leveraged Trade
                 </span>
               </div>
               <button
@@ -705,7 +680,7 @@ function TradePageContent() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-[var(--text-muted)]">Order Type</span>
-                <span className="text-sm text-[var(--text-primary)]">MARKET</span>
+                <span className="text-sm text-[var(--text-primary)]">LEVERAGED MARKET · {leverage}x</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-[var(--text-muted)]">
@@ -721,9 +696,9 @@ function TradePageContent() {
               </div>
               <div className="h-px bg-[var(--border-primary)]" />
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-[var(--text-primary)]">Estimated Total</span>
+                <span className="text-sm font-medium text-[var(--text-primary)]">Estimated Margin</span>
                 <span className="font-mono text-lg font-bold text-[var(--text-primary)]">
-                  {formatCurrency(estimatedTotal, false, { sourceCurrency })}
+                  {formatCurrency(estimatedMargin, false, { sourceCurrency })}
                 </span>
               </div>
             </div>
@@ -737,13 +712,14 @@ function TradePageContent() {
               </button>
               <button
                 onClick={executeTradeOrOrder}
+                disabled={submitting || !canTrade}
                 className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all ${
                   orderType === "BUY"
                     ? "bg-[var(--accent-green)] text-black hover:brightness-110"
                     : "bg-[var(--accent-red)] text-white hover:brightness-110"
                 }`}
               >
-                Confirm {orderType === "BUY" ? "Buy" : "Sell"}
+                Confirm {orderType === "BUY" ? "Buy" : "Sell"} · {leverage}x
               </button>
             </div>
           </div>
