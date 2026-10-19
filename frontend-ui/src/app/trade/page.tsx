@@ -56,7 +56,9 @@ function TradePageContent() {
   const [selectedSymbol, setSelectedSymbol] = useState(market === "IN" ? "RELIANCE.NS" : "AAPL");
   const [selectedQuote, setSelectedQuote] = useState<StockQuote | null>(null);
   const [orderType, setOrderType] = useState<"BUY" | "SELL">("BUY");
-  const [quantity, setQuantity] = useState(1);
+  const [marginInput, setMarginInput] = useState("100.00");
+  const [stopLossInput, setStopLossInput] = useState("");
+  const [takeProfitInput, setTakeProfitInput] = useState("");
   const [leverage, setLeverage] = useState(10);
   const [marginBalance, setMarginBalance] = useState<number | null>(null);
   const [positions, setPositions] = useState<SimulatedPosition[]>([]);
@@ -134,7 +136,9 @@ function TradePageContent() {
 // Use selected quote price or fall back to context
   const currentPrice = selectedQuote?.price || getStockBySymbol(selectedSymbol)?.price || 0;
   const effectivePrice = currentPrice;
-  const estimatedTotal = quantity * effectivePrice;
+  const margin = Number(marginInput);
+  const quantity = currentPrice > 0 && leverage > 0 && Number.isFinite(margin) ? (margin * leverage) / currentPrice : 0;
+  const estimatedTotal = margin * leverage;
   const sourceCurrency = selectedQuote?.currency || getStockBySymbol(selectedSymbol)?.currency || 'USD';
 
   // Recent transactions
@@ -239,11 +243,12 @@ function TradePageContent() {
       await userAPI.openPosition({
         symbol: selectedSymbol,
         side: orderType === "BUY" ? "LONG" : "SHORT",
-        quantity,
+        margin,
         leverage,
+        stopLoss: stopLossInput.trim() ? Number(stopLossInput) : null,
+        takeProfit: takeProfitInput.trim() ? Number(takeProfitInput) : null,
       });
-      setMessage({ type: "success", text: `${orderType} ${quantity} ${selectedSymbol} · ${leverage}x — posição simulada aberta` });
-      setQuantity(1);
+      setMessage({ type: "success", text: `${orderType} ${selectedSymbol} · USD ${margin.toFixed(2)} de margem · ${leverage}x — posição simulada aberta` });
       await refreshPositions();
     } catch (error) {
       setMessage({ type: "error", text: error instanceof Error ? error.message : "Falha ao abrir posição simulada." });
@@ -252,23 +257,28 @@ function TradePageContent() {
     }
   };
 
-  const estimatedMargin = leverage > 0 ? estimatedTotal / leverage : Infinity;
-  const canTrade = marketStatus.isOpen && sourceCurrency === "USD" && Number.isFinite(quantity) && quantity > 0 &&
+  const estimatedMargin = margin;
+  const stopLoss = stopLossInput.trim() ? Number(stopLossInput) : null;
+  const takeProfit = takeProfitInput.trim() ? Number(takeProfitInput) : null;
+  const validStopLoss = stopLoss === null || (Number.isFinite(stopLoss) && stopLoss > 0 && (orderType === "BUY" ? stopLoss < currentPrice : stopLoss > currentPrice));
+  const validTakeProfit = takeProfit === null || (Number.isFinite(takeProfit) && takeProfit > 0 && (orderType === "BUY" ? takeProfit > currentPrice : takeProfit < currentPrice));
+  const canTrade = marketStatus.isOpen && sourceCurrency === "USD" && Number.isFinite(margin) &&
+    margin >= 0.01 && Math.round(margin * 100) === margin * 100 &&
     Number.isFinite(leverage) && leverage >= 1 && leverage <= 100 && currentPrice > 0 &&
-    marginBalance !== null && estimatedMargin > 0 && estimatedMargin <= marginBalance && !submitting;
+    marginBalance !== null && margin <= marginBalance && validStopLoss && validTakeProfit && !submitting;
 
-  const setQuantityPercent = (percent: number) => {
-    if (currentPrice <= 0 || marginBalance === null) return;
-    const maxShares = Math.floor((marginBalance * leverage * percent) / currentPrice);
-    setQuantity(Math.max(1, maxShares));
+  const setMarginPercent = (percent: number) => {
+    if (marginBalance === null) return;
+    setMarginInput((Math.floor(marginBalance * percent * 100) / 100).toFixed(2));
   };
 
   const getButtonText = () => {
     if (!marketStatus.isOpen) return `${marketStatus.marketName} Market Closed`;
     if (sourceCurrency !== "USD") return "Only USD assets supported";
     if (marginBalance === null) return "Loading margin balance";
-    if (estimatedMargin > marginBalance) return "Insufficient Margin";
-    return `${orderType} ${quantity} ${selectedSymbol} · ${leverage}x`;
+    if (!validStopLoss || !validTakeProfit) return "Invalid SL / TP price";
+    if (margin > marginBalance) return "Insufficient Margin";
+    return `${orderType} ${selectedSymbol} · $${Number.isFinite(margin) ? margin.toFixed(2) : "0.00"} margin · ${leverage}x`;
   };
 
   return (
@@ -512,52 +522,36 @@ function TradePageContent() {
                 </div>
               )}
 
-              {/* Quantity */}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-[var(--text-muted)]">
-                    Quantity
-                  </span>
-
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-12 h-12 rounded-lg bg-[var(--bg-card-inner)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors"
-                  >
-                    <Minus size={18} />
-                  </button>
-                  <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className="flex-1 px-4 py-3 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-lg text-center text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]"
-                  />
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="w-12 h-12 rounded-lg bg-[var(--bg-card-inner)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors"
-                  >
-                    <Plus size={18} />
-                  </button>
-                </div>
-
-                <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">Leverage (1–100x)
-                  <select value={leverage} onChange={(e) => setLeverage(Number(e.target.value))} className="p-3 rounded-lg border border-[var(--border-muted)] bg-[var(--bg-card)] text-[var(--text-primary)]">
-                    {[1, 2, 5, 10, 20, 25, 50, 100].map((value) => <option key={value} value={value}>{value}x</option>)}
+              {/* Exact margin, leverage and optional exit price levels */}
+              <div className="flex flex-col gap-3">
+                <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
+                  Margin (USD)
+                  <input type="number" min="0.01" step="0.01" value={marginInput} onChange={(e) => setMarginInput(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-lg text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
+                </label>
+                <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
+                  Leverage (1–100x)
+                  <select value={leverage} onChange={(e) => setLeverage(Number(e.target.value))}
+                    className="p-3 rounded-lg border border-[var(--border-muted)] bg-[var(--bg-card)] text-[var(--text-primary)]">
+                    {[1, 2, 5, 10, 20, 25, 50, 100].map(value => <option key={value} value={value}>{value}x</option>)}
                   </select>
                 </label>
-
-                {/* Quick Quantity Buttons */}
-                <div className="flex gap-2 mt-1">
-                  {[0.25, 0.5, 0.75, 1].map((pct) => (
-                    <button
-                      key={pct}
-                      onClick={() => setQuantityPercent(pct)}
-                      className="flex-1 py-1.5 rounded-md text-[11px] font-medium bg-[var(--bg-card-inner)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)] hover:text-[var(--text-primary)] transition-colors"
-                    >
-                      {pct * 100}%
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
+                    Stop Loss (price)
+                    <input type="number" min="0.000001" step="any" placeholder="Optional" value={stopLossInput} onChange={(e) => setStopLossInput(e.target.value)}
+                      className="min-w-0 w-full px-3 py-3 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-sm text-[var(--text-primary)]" />
+                  </label>
+                  <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
+                    Take Profit (price)
+                    <input type="number" min="0.000001" step="any" placeholder="Optional" value={takeProfitInput} onChange={(e) => setTakeProfitInput(e.target.value)}
+                      className="min-w-0 w-full px-3 py-3 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-sm text-[var(--text-primary)]" />
+                  </label>
+                </div>
+                {(!validStopLoss || !validTakeProfit) && <p className="text-xs text-[var(--accent-red)]">BUY: SL below and TP above market price. SELL: SL above and TP below.</p>}
+                <div className="flex gap-2">
+                  {[0.25, 0.5, 0.75, 1].map(pct => <button key={pct} type="button" onClick={() => setMarginPercent(pct)}
+                    className="flex-1 py-1.5 rounded-md text-[11px] bg-[var(--bg-card-inner)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]">{pct * 100}%</button>)}
                 </div>
               </div>
 
@@ -572,9 +566,9 @@ function TradePageContent() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[var(--text-muted)]">Quantity</span>
+                  <span className="text-sm text-[var(--text-muted)]">Estimated Quantity</span>
                   <span className="font-mono text-sm text-[var(--text-primary)]">
-                    {quantity}
+                    {quantity > 0 ? quantity.toFixed(8) : "—"}
                   </span>
                 </div>
                 <div className="h-px bg-[var(--border-primary)]" />
@@ -753,9 +747,10 @@ function TradePageContent() {
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-[var(--text-muted)]">Quantity</span>
-                <span className="font-mono text-sm text-[var(--text-primary)]">{quantity}</span>
+                <span className="text-sm text-[var(--text-muted)]">Estimated Quantity</span>
+                <span className="font-mono text-sm text-[var(--text-primary)]">{quantity.toFixed(8)}</span>
               </div>
+              <div className="flex items-center justify-between"><span className="text-sm text-[var(--text-muted)]">Stop Loss / Take Profit</span><span className="font-mono text-xs text-[var(--text-primary)]">{stopLossInput || "—"} / {takeProfitInput || "—"}</span></div>
               <div className="h-px bg-[var(--border-primary)]" />
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-[var(--text-primary)]">Estimated Margin</span>
