@@ -197,7 +197,7 @@ export default function WatchlistPage() {
         <main className="flex-1 flex flex-col gap-7 py-8 px-10 overflow-auto">
           <PageHeader
             title="Watchlist"
-            subtitle="Track your favorite stocks and set price alerts"
+            subtitle="Acompanhe seus ativos favoritos e configure alertas de preço"
           />
 
           <div className="flex-1 flex items-center justify-center">
@@ -207,7 +207,7 @@ export default function WatchlistPage() {
               </div>
               <div>
                 <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">
-                  Your watchlist is empty
+                  Sua lista está vazia
                 </h2>
                 <p className="text-sm text-[var(--text-muted)]">
                   Start tracking stocks by searching and adding them to your watchlist.
@@ -224,7 +224,7 @@ export default function WatchlistPage() {
                       type="text"
                       value={searchQuery}
                       onChange={(e) => handleSearch(e.target.value)}
-                      placeholder="Search for a stock to add..."
+                      placeholder="Pesquise um ativo para adicionar..."
                       className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
                     />
                     {isSearching && <Loader2 size={16} className="text-[var(--text-muted)] animate-spin" />}
@@ -280,7 +280,7 @@ export default function WatchlistPage() {
       <main className="flex-1 flex flex-col gap-6 py-8 px-10 overflow-auto">
         <PageHeader
           title="Watchlist"
-          subtitle="Track your favorite stocks and set price alerts"
+          subtitle="Acompanhe seus ativos favoritos e configure alertas de preço"
           onPrimaryClick={() => router.push("/trade")}
         />
 
@@ -297,7 +297,7 @@ export default function WatchlistPage() {
           <div className="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)]">
             <div className="flex items-center gap-2 mb-2">
               <Eye size={14} className="text-[var(--text-muted)]" />
-              <span className="text-xs text-[var(--text-muted)]">Watching</span>
+              <span className="text-xs text-[var(--text-muted)]">Acompanhando</span>
             </div>
             <span className="font-mono text-2xl font-semibold text-[var(--text-primary)]">
               {watchlist.length}
@@ -307,7 +307,7 @@ export default function WatchlistPage() {
           <div className="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)]">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp size={14} className="text-[var(--accent-green)]" />
-              <span className="text-xs text-[var(--text-muted)]">Gainers</span>
+              <span className="text-xs text-[var(--text-muted)]">Altas</span>
             </div>
             <span className="font-mono text-2xl font-semibold text-[var(--accent-green)]">
               {upToday}
@@ -317,7 +317,7 @@ export default function WatchlistPage() {
           <div className="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)]">
             <div className="flex items-center gap-2 mb-2">
               <TrendingDown size={14} className="text-[var(--accent-red)]" />
-              <span className="text-xs text-[var(--text-muted)]">Losers</span>
+              <span className="text-xs text-[var(--text-muted)]">Quedas</span>
             </div>
             <span className="font-mono text-2xl font-semibold text-[var(--accent-red)]">
               {downToday}
@@ -327,7 +327,7 @@ export default function WatchlistPage() {
           <div className="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)]">
             <div className="flex items-center gap-2 mb-2">
               <Bell size={14} className="text-[var(--accent-primary)]" />
-              <span className="text-xs text-[var(--text-muted)]">Active Alerts</span>
+              <span className="text-xs text-[var(--text-muted)]">Alertas ativos</span>
             </div>
             <span className="font-mono text-2xl font-semibold text-[var(--accent-primary)]">
               {alerts.filter((a) => a.enabled).length}
@@ -349,7 +349,7 @@ export default function WatchlistPage() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
-                    placeholder="Search or add stocks..."
+                    placeholder="Pesquise ou adicione ativos..."
                     className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
                   />
                   {isSearching && <Loader2 size={14} className="text-[var(--text-muted)] animate-spin" />}
@@ -364,7 +364,7 @@ export default function WatchlistPage() {
                 {searchResults.length > 0 && (
                   <div className="absolute left-0 right-0 top-full mt-2 bg-[var(--bg-card)] rounded-lg border border-[var(--border-primary)] shadow-lg z-20 overflow-hidden">
                     <div className="px-3 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border-primary)]">
-                      Add to Watchlist
+                      Adicionar à lista
                     </div>
                     {searchResults.map((result) => (
                       <button
@@ -551,7 +551,7 @@ export default function WatchlistPage() {
               {alerts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <BellOff size={32} className="text-[var(--text-dim)] mb-3" />
-                  <span className="text-sm text-[var(--text-muted)] mb-1">No alerts set</span>
+                  <span className="text-sm text-[var(--text-muted)] mb-1">Nenhum alerta configurado</span>
                   <span className="text-xs text-[var(--text-dim)]">
                     Click the bell icon on any stock to create one
                   </span>
@@ -658,7 +658,7 @@ export default function WatchlistPage() {
             <div className="bg-[var(--bg-card)] rounded-xl p-6 w-[360px] border border-[var(--border-primary)]">
               <div className="flex items-center justify-between mb-5">
                 <span className="text-base font-semibold text-[var(--text-primary)]">
-                  Set Price Alert
+                  Configurar alerta de preço
                 </span>
                 <button
                   onClick={() => { setShowAddAlert(false); setSelectedSymbolForAlert(null); }}
@@ -687,7 +687,7 @@ export default function WatchlistPage() {
                           : "bg-[var(--bg-muted)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                       }`}
                     >
-                      Price goes above
+                      Preço acima de
                     </button>
                     <button
                       onClick={() => setNewAlertCondition("below")}
@@ -697,13 +697,13 @@ export default function WatchlistPage() {
                           : "bg-[var(--bg-muted)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                       }`}
                     >
-                      Price goes below
+                      Preço abaixo de
                     </button>
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs text-[var(--text-muted)] mb-1.5 block">Target Price</label>
+                  <label className="text-xs text-[var(--text-muted)] mb-1.5 block">Preço-alvo</label>
                   <input
                     type="number"
                     value={newAlertPrice}
@@ -718,7 +718,7 @@ export default function WatchlistPage() {
                   disabled={!newAlertPrice}
                   className="w-full py-3 rounded-lg bg-[var(--accent-primary)] text-sm font-semibold text-black hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Create Alert
+                  Criar alerta
                 </button>
               </div>
             </div>
