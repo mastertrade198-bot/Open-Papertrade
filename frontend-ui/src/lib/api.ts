@@ -41,7 +41,7 @@ export interface ProviderStatus {
   cacheSize: number;
 }
 
-export interface CatalogAsset { symbol: string; name: string; category: string; currency: "USD"; }
+export interface CatalogAsset { symbol: string; name: string; category: string; currency: "USD"; displaySymbol?: string; }
 export interface CatalogResponse { assets: CatalogAsset[]; count: number; page: number; pageSize: number; hasMore: boolean; currency: "USD"; }
 
 export interface SearchResult {
