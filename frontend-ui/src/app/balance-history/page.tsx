@@ -32,15 +32,15 @@ export default function BalanceHistoryPage() {
       <Sidebar />
       <main className="flex-1 min-w-0 overflow-y-auto p-5 md:p-8">
         <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-          <div><h1 className="text-2xl font-bold">Histórico de transações</h1><p className="text-sm text-[var(--text-muted)] mt-1">Entradas, saídas e alterações do saldo disponível.</p></div>
+          <div><h1 className="text-2xl font-bold">Extrato da conta</h1><p className="text-sm text-[var(--text-muted)] mt-1">Consulte as movimentações e os saldos da sua conta.</p></div>
           <button onClick={() => void load()} className="px-4 py-2 rounded-lg border border-[var(--border-primary)] hover:bg-[var(--bg-hover)]">Atualizar</button>
         </div>
         <div className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5 mb-6">
-          <p className="text-sm text-[var(--text-muted)]">Saldo disponível atual</p>
+          <p className="text-sm text-[var(--text-muted)]">Saldo disponível</p>
           <p className="text-2xl font-bold mt-1">{balance === null ? "—" : usd(balance)}</p>
         </div>
         <div className="flex flex-wrap gap-2 mb-4">
-          {([["ALL", "Todas"], ["CREDIT", "Entradas"], ["DEBIT", "Saídas"]] as const).map(([value, label]) => (
+          {([["ALL", "Todas as movimentações"], ["CREDIT", "Créditos"], ["DEBIT", "Débitos"]] as const).map(([value, label]) => (
             <button key={value} onClick={() => setFilter(value)} className={`px-4 py-2 rounded-lg text-sm border border-[var(--border-primary)] ${filter === value ? "bg-[var(--bg-hover)] font-semibold" : ""}`}>{label}</button>
           ))}
         </div>
@@ -48,12 +48,12 @@ export default function BalanceHistoryPage() {
         <div className="overflow-x-auto rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)]">
           <table className="w-full min-w-[740px] text-sm">
             <thead className="text-left text-[var(--text-muted)] border-b border-[var(--border-primary)]">
-              <tr>{["Data", "Tipo", "Descrição", "Valor", "Saldo anterior", "Saldo posterior"].map(h => <th key={h} className="px-4 py-3">{h}</th>)}</tr>
+              <tr>{["Data", "Movimentação", "Descrição", "Valor (USD)", "Saldo anterior", "Saldo após"].map(h => <th key={h} className="px-4 py-3">{h}</th>)}</tr>
             </thead>
             <tbody>
               {shown.map(t => <tr key={t.id} className="border-b border-[var(--border-primary)]">
                 <td className="px-4 py-3 whitespace-nowrap">{date(t.createdAt)}</td>
-                <td className="px-4 py-3">{t.amount >= 0 ? "Entrada" : "Saída"}</td>
+                <td className="px-4 py-3">{t.amount >= 0 ? "Crédito" : "Débito"}</td>
                 <td className="px-4 py-3">{t.description}</td>
                 <td className={`px-4 py-3 font-mono font-semibold ${t.amount >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{t.amount >= 0 ? "+" : ""}{usd(t.amount)}</td>
                 <td className="px-4 py-3 font-mono">{usd(t.balanceBefore)}</td>
