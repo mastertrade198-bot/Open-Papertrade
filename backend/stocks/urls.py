@@ -42,7 +42,4 @@ urlpatterns = [
     # Market indices (US/IN based on market param)
     path('indices/', views.MarketIndicesView.as_view(), name='indices'),
 
-    # Convenience endpoints - Indian markets
-    path('indian/', views.IndianStocksView.as_view(), name='indian-stocks'),
-    path('indian/indices/', views.IndianIndicesView.as_view(), name='indian-indices'),
 ]
