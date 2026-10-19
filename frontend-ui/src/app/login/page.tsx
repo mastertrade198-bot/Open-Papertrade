@@ -116,7 +116,7 @@ export default function LoginPage() {
             </div>
             <div className="flex flex-col gap-1">
               <span className="font-mono text-[32px] font-semibold text-[var(--accent-primary)]">
-                Live
+                Ao vivo
               </span>
               <span className="text-sm text-[var(--text-muted)]">
                 Cotações de mercado
@@ -230,7 +230,7 @@ export default function LoginPage() {
             {/* Email */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-[var(--text-primary)]">
-                Email
+                E-mail
               </label>
               <input
                 type="email"
@@ -245,7 +245,7 @@ export default function LoginPage() {
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-[var(--text-primary)]">
-                  Password
+                  Senha
                 </label>
                 <Link
                   href="/forgot-password"
