@@ -856,3 +856,31 @@ class PositionAuditLog(models.Model):
     class Meta:
         db_table = "position_audit_logs"
         ordering = ["-created_at"]
+
+
+class BalanceTransaction(models.Model):
+    """Immutable journal of changes to available account balance."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="balance_transactions")
+    amount = models.DecimalField(max_digits=20, decimal_places=2)
+    balance_before = models.DecimalField(max_digits=20, decimal_places=2)
+    balance_after = models.DecimalField(max_digits=20, decimal_places=2)
+    category = models.CharField(max_length=40, default="BALANCE_ADJUSTMENT")
+    description = models.CharField(max_length=255, default="Alteração de saldo")
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = "balance_transactions"
+        ordering = ["-created_at", "-id"]
+        indexes = [models.Index(fields=["user", "created_at"])]
+
+    def to_dict(self):
+        return {
+            "id": str(self.id),
+            "amount": float(self.amount),
+            "balanceBefore": float(self.balance_before),
+            "balanceAfter": float(self.balance_after),
+            "category": self.category,
+            "description": self.description,
+            "createdAt": self.created_at.isoformat(),
+        }
