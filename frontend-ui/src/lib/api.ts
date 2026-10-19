@@ -98,6 +98,9 @@ export interface UserProfile {
   name: string;
   username: string;
   email: string;
+  cpf: string;
+  dateOfBirth: string | null;
+  phone: string;
   initials: string;
   avatarUrl: string | null;
   buyingPower: number;
