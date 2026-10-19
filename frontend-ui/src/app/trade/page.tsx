@@ -549,16 +549,16 @@ function TradePageContent() {
           </div>
 
           {/* Right Panel - Order Form */}
-          <div className="w-[330px] shrink-0 flex flex-col gap-3">
+          <div className="w-[300px] shrink-0 flex flex-col gap-2">
             {/* Order Form */}
-            <div className="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] flex flex-col gap-3">
+            <div className="bg-[var(--bg-card)] rounded-xl p-3 border border-[var(--border-primary)] flex flex-col gap-3">
               {/* Prominent available balance above order direction */}
-              <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)] p-3" aria-live="polite">
+              <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)] p-2.5" aria-live="polite">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-[var(--text-muted)]">Saldo disponível (USD)</span>
                   <button type="button" onClick={() => void refreshPositions()} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]" title="Atualizar saldo disponível">Atualizar</button>
                 </div>
-                <div className="mt-2 font-mono text-2xl font-bold text-[var(--text-primary)] tabular-nums">
+                <div className="mt-1 font-mono text-xl font-bold text-[var(--text-primary)] tabular-nums">
                   {marginBalance === null ? "Carregando…" : formatCurrency(marginBalance, false, { convertFromUSD: false })}
                 </div>
                 <p className="mt-1 text-xs text-[var(--text-muted)]">Saldo disponível para margem das operações</p>
@@ -568,7 +568,7 @@ function TradePageContent() {
               <div className="flex p-1 rounded-lg bg-[var(--bg-card-inner)]">
                 <button
                   onClick={() => setOrderType("BUY")}
-                  className={`flex-1 py-3 rounded-md text-sm font-semibold transition-all ${
+                  className={`flex-1 py-2 rounded-md text-sm font-semibold transition-all ${
                     orderType === "BUY"
                       ? "bg-[var(--accent-green)] text-black shadow-lg"
                       : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -578,7 +578,7 @@ function TradePageContent() {
                 </button>
                 <button
                   onClick={() => setOrderType("SELL")}
-                  className={`flex-1 py-3 rounded-md text-sm font-semibold transition-all ${
+                  className={`flex-1 py-2 rounded-md text-sm font-semibold transition-all ${
                     orderType === "SELL"
                       ? "bg-[var(--accent-red)] text-white shadow-lg"
                       : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -590,7 +590,7 @@ function TradePageContent() {
 
               {/* Market Closed Banner (only for market orders) */}
               {!marketStatus.isOpen && (
-                <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-[#F59E0B20] border border-[#F59E0B40]">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-[#F59E0B20] border border-[#F59E0B40]">
                   <Clock size={16} className="text-[#F59E0B] shrink-0" />
                   <div>
                     <span className="text-sm font-medium text-[#F59E0B]">Mercado fechado</span>
@@ -604,25 +604,25 @@ function TradePageContent() {
                 <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
                   Margem (USD)
                   <input type="number" min="0.01" step="0.01" value={marginInput} onChange={(e) => setMarginInput(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-lg text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
+                    className="w-full px-3 py-2 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
                 </label>
                 <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
                   Alavancagem (1–100x)
                   <select value={leverage} onChange={(e) => setLeverage(Number(e.target.value))}
-                    className="p-3 rounded-lg border border-[var(--border-muted)] bg-[var(--bg-card)] text-[var(--text-primary)]">
+                    className="p-2 rounded-lg border border-[var(--border-muted)] bg-[var(--bg-card)] text-[var(--text-primary)]">
                     {[1, 2, 5, 10, 20, 25, 50, 100].map(value => <option key={value} value={value}>{value}x</option>)}
                   </select>
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                   <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
                     Stop Loss (%)
                     <input type="number" min="0.01" step="0.01" placeholder="Ex.: 2" value={stopLossInput} onChange={(e) => setStopLossInput(e.target.value)}
-                      className="min-w-0 w-full px-3 py-3 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-sm text-[var(--text-primary)]" />
+                      className="min-w-0 w-full px-2 py-2 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-sm text-[var(--text-primary)]" />
                   </label>
                   <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
                     Take Profit (%)
                     <input type="number" min="0.01" step="0.01" placeholder="Ex.: 5" value={takeProfitInput} onChange={(e) => setTakeProfitInput(e.target.value)}
-                      className="min-w-0 w-full px-3 py-3 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-sm text-[var(--text-primary)]" />
+                      className="min-w-0 w-full px-2 py-2 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-sm text-[var(--text-primary)]" />
                   </label>
                 </div>
                 <p className="text-[11px] text-[var(--text-muted)]">Percentual de variação do preço do ativo (não da margem). A alavancagem amplia o resultado sobre a margem.</p>
