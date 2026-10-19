@@ -130,6 +130,19 @@ USD_COMMODITIES = {
 }
 
 
+USD_COMMODITY_LABELS = dict(zip(USD_COMMODITIES, (
+    'XAU/USD', 'XAG/USD', 'WTI/USD', 'BRENT/USD', 'NATGAS/USD', 'COPPER/USD',
+    'CORN/USD', 'WHEAT/USD', 'SOY/USD', 'COFFEE/USD', 'SUGAR/USD', 'COTTON/USD'
+)))
+USD_INDEX_LABELS = {
+    '^GSPC': ('S&P 500', 'SPX500'),
+    '^IXIC': ('Nasdaq Composite', 'NASDAQ'),
+    '^DJI': ('Dow Jones', 'US30'),
+    '^RUT': ('Russell 2000', 'US2000'),
+    '^NDX': ('Nasdaq 100', 'NAS100'),
+}
+
+
 class AssetCatalogView(APIView):
     """Browsable USD-only catalog with pagination and verified discovered symbols."""
 
