@@ -88,8 +88,8 @@ class PositionAdmin(ModelAdmin):
     list_filter = ('status', 'side', 'currency')
     search_fields = ('symbol', 'user__username', 'user__email', '=id')
     list_select_related = ('user',)
-    readonly_fields = ('id', 'user', 'symbol', 'name', 'side', 'status', 'currency', 'notional_value', 'exit_price', 'realized_pnl', 'opened_at', 'closed_at', 'updated_at')
-    fields = ('id', 'user', 'symbol', 'name', 'side', 'status', 'currency', *EDIT_FIELDS, 'notional_value', 'reason', 'version', 'exit_price', 'realized_pnl', 'opened_at', 'closed_at', 'updated_at')
+    readonly_fields = ('id', 'user', 'symbol', 'name', 'side', 'status', 'currency', 'notional_value', 'stop_loss', 'take_profit', 'exit_price', 'realized_pnl', 'opened_at', 'closed_at', 'updated_at')
+    fields = ('id', 'user', 'symbol', 'name', 'side', 'status', 'currency', *EDIT_FIELDS, 'notional_value', 'stop_loss', 'take_profit', 'reason', 'version', 'exit_price', 'realized_pnl', 'opened_at', 'closed_at', 'updated_at')
     inlines = (PositionAuditInline,)
     actions = None
     save_as = False
