@@ -91,6 +91,95 @@ class BulkQuoteView(APIView):
         })
 
 
+
+# Curated USD symbols are listed without downloading quotes for every menu open.
+# Discovered instruments are stored after a USD quote is verified.
+USD_STOCK_SYMBOLS = (
+    "AAPL MSFT NVDA AMZN GOOGL GOOG META TSLA BRK-B AVGO JPM V WMT LLY "
+    "MA ORCL COST NFLX HD PG JNJ ABBV BAC KO CRM CVX XOM UNH MRK CSCO "
+    "IBM ADBE AMD INTC QCOM TXN AMAT MU PANW CRWD PLTR UBER ABNB DIS "
+    "PYPL SQ SHOP COIN HOOD ROKU SPOT SNAP PINS NKE SBUX MCD BA CAT "
+    "GE F GM T UAL DAL AAL PFE TMO DHR GILD AMGN ISRG NOW SNOW NET "
+    "DDOG MDB ZS OKTA DOCU RBLX SOFI RIVN LCID NIO"
+).split()
+USD_ETF_SYMBOLS = (
+    "SPY QQQ VOO IVV VTI DIA IWM SCHD VGT XLK XLF XLE XLV XLY XLP "
+    "XLI XLU XLB XLRE XLC ARKK GLD SLV TLT HYG LQD EEM EFA"
+).split()
+USD_CRYPTO_SYMBOLS = (
+    "BTC ETH SOL XRP BNB ADA DOGE AVAX LINK SHIB DOT LTC BCH UNI "
+    "AAVE ATOM NEAR ICP FIL ETC XLM ALGO HBAR PEPE"
+).split()
+
+
+class AssetCatalogView(APIView):
+    """Browsable USD-only catalog with pagination and verified discovered symbols."""
+
+    def get(self, request):
+        from .models import TradableAsset
+
+        assets = {}
+        for category, symbols in (
+            ('Ações', USD_STOCK_SYMBOLS),
+            ('ETFs', USD_ETF_SYMBOLS),
+            ('Criptomoedas', USD_CRYPTO_SYMBOLS),
+        ):
+            for symbol in symbols:
+                assets[symbol] = {'symbol': symbol, 'name': symbol, 'category': category, 'currency': 'USD'}
+
+        for asset in TradableAsset.objects.filter(currency='USD'):
+            assets[asset.symbol] = {
+                'symbol': asset.symbol, 'name': asset.name,
+                'category': asset.category, 'currency': 'USD',
+            }
+
+        category = request.query_params.get('category', '').strip()
+        query = request.query_params.get('q', '').strip().lower()
+        results = sorted(assets.values(), key=lambda a: (a['category'], a['symbol']))
+        if category:
+            results = [a for a in results if a['category'] == category]
+        if query:
+            results = [a for a in results if query in a['symbol'].lower() or query in a['name'].lower()]
+        try:
+            page = max(1, int(request.query_params.get('page', '1')))
+        except (TypeError, ValueError):
+            page = 1
+        page_size = 50
+        total = len(results)
+        return Response({
+            'assets': results[(page - 1) * page_size:page * page_size],
+            'count': total, 'page': page, 'pageSize': page_size,
+            'hasMore': page * page_size < total,
+            'currency': 'USD',
+        })
+
+    def post(self, request):
+        """Add an instrument found via search only if its quote is actually in USD."""
+        from .models import TradableAsset
+        import re
+
+        symbol = str(request.data.get('symbol', '')).strip().upper()
+        if not re.fullmatch(r'[A-Z0-9][A-Z0-9.\\-]{0,29}', symbol):
+            return Response({'error': 'Símbolo inválido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        lookup_symbol = symbol
+        service = get_stock_service()
+        result = service.get_quote(lookup_symbol)
+        if (not result.success or not result.quote or
+                str(result.quote.currency or '').upper() != 'USD'):
+            return Response({'error': 'Ativo sem cotação USD confirmada'}, status=status.HTTP_400_BAD_REQUEST)
+
+        name = str(result.quote.name or symbol)[:200]
+        is_crypto = symbol.endswith('-USD') or str(request.data.get('type', '')).upper() == 'CRYPTOCURRENCY'
+        category = 'Criptomoedas' if is_crypto else 'Ações'
+        display_symbol = symbol[:-4] if symbol.endswith('-USD') else symbol
+        asset, _ = TradableAsset.objects.update_or_create(
+            symbol=display_symbol,
+            defaults={'name': name, 'category': category, 'currency': 'USD'},
+        )
+        return Response({'symbol': asset.symbol, 'name': asset.name, 'category': asset.category, 'currency': 'USD'})
+
+
 class SymbolSearchView(APIView):
     """
     Search for stock symbols.
