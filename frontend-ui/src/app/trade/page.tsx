@@ -20,7 +20,7 @@ import Sidebar from "@/components/Sidebar";
 import PageHeader from "@/components/PageHeader";
 import MetricCard from "@/components/MetricCard";
 import StockChart from "@/components/StockChart";
-import StockNews from "@/components/StockNews";
+
 import { usePortfolio } from "@/context/PortfolioContext";
 import { formatCurrency, formatPercent, formatTime, getMarketStatus, getMarketStatusLocal, MarketStatus } from "@/lib/utils";
 import { stockAPI, userAPI, StockQuote, SearchResult, SimulatedPosition } from "@/lib/api";
@@ -471,8 +471,6 @@ function TradePageContent() {
             {/* Price Chart */}
             <StockChart symbol={selectedSymbol} />
 
-            {/* Stock News */}
-            <StockNews symbol={selectedSymbol} />
           </div>
 
           {/* Right Panel - Order Form */}
