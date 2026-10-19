@@ -107,12 +107,14 @@ class PositionAdmin(ModelAdmin):
         if before == after:
             return
         owner = form.owner
+        previous_buying_power = owner.buying_power
         owner.buying_power = form.new_balance
         owner.save(update_fields=['buying_power', 'updated_at'])
         obj.save()
-        actor = UserProfile.objects.filter(email__iexact=request.user.email).first() if request.user.email else None
+        # Django auth users and trading UserProfile accounts are distinct identities.
+        # Do not infer an audit actor from a matching email address.
         PositionAuditLog.objects.create(
-            position=obj, actor=actor, action='ADMIN_EDIT', old_values={**before, 'buying_power': str(form.owner.buying_power + obj.margin - old.margin)},
+            position=obj, actor=None, action='ADMIN_EDIT', old_values={**before, 'buying_power': str(previous_buying_power)},
             new_values={**after, 'buying_power': str(owner.buying_power), '_reason': form.cleaned_data['reason'], '_actor': {'id': str(request.user.pk), 'username': request.user.get_username()}},
         )
 
