@@ -105,9 +105,9 @@ export default function Dashboard() {
   const totalValue = stockValue + cryptoValue + cashValue;
 
   const allocation = [
-    { label: "Stocks", value: stockValue, percent: totalValue > 0 ? (stockValue / totalValue) * 100 : 0, color: "var(--accent-primary)" },
-    { label: "Crypto", value: cryptoValue, percent: totalValue > 0 ? (cryptoValue / totalValue) * 100 : 0, color: "var(--accent-green)" },
-    { label: "Cash", value: cashValue, percent: totalValue > 0 ? (cashValue / totalValue) * 100 : 0, color: "var(--text-muted)" },
+    { label: "Ações", value: stockValue, percent: totalValue > 0 ? (stockValue / totalValue) * 100 : 0, color: "var(--accent-primary)" },
+    { label: "Criptomoedas", value: cryptoValue, percent: totalValue > 0 ? (cryptoValue / totalValue) * 100 : 0, color: "var(--accent-green)" },
+    { label: "Saldo", value: cashValue, percent: totalValue > 0 ? (cashValue / totalValue) * 100 : 0, color: "var(--text-muted)" },
   ];
 
   const handleRefresh = async () => {
@@ -126,7 +126,7 @@ export default function Dashboard() {
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-3">
               <h1 className="font-serif text-[32px] font-medium tracking-[-1px] text-[var(--text-primary)]">
-                Welcome back{user.name ? `, ${user.name.split(" ")[0]}` : ""}
+                Bem-vindo de volta{user.name ? `, ${user.name.split(" ")[0]}` : ""}
               </h1>
               {lastUpdated && (
                 <span className="text-xs text-[var(--text-dim)] flex items-center gap-1.5">
@@ -136,7 +136,7 @@ export default function Dashboard() {
               )}
             </div>
             <p className="text-sm text-[var(--text-muted)]">
-              Here's your portfolio overview for today
+              Confira o resumo da sua carteira de hoje
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -215,7 +215,7 @@ export default function Dashboard() {
                 <ArrowDownRight size={14} className="text-[var(--accent-red)]" />
               )}
               <span className={`text-xs font-medium ${dayGain >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                {dayGain >= 0 ? "+" : ""}{formatCurrency(dayGain, false)} ({formatPercent(dayGainPercent)}) today
+                {dayGain >= 0 ? "+" : ""}{formatCurrency(dayGain, false)} ({formatPercent(dayGainPercent)}) hoje
               </span>
             </div>
           </div>
@@ -234,7 +234,7 @@ export default function Dashboard() {
                   <TrendingDown size={14} className="text-[var(--accent-red)]" />
                 )}
                 <span className={`text-xs font-medium ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                  {formatPercent(returnsPercent)} all time
+                  {formatPercent(returnsPercent)} desde o início
                 </span>
               </div>
             </div>
@@ -262,7 +262,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-1.5">
               <Wallet size={14} className="text-[var(--text-muted)]" />
               <span className="text-xs text-[var(--text-muted)]">
-                Available to trade
+                Disponível para negociar
               </span>
             </div>
           </div>
@@ -294,7 +294,7 @@ export default function Dashboard() {
                   <span className="text-sm font-semibold text-[var(--text-primary)]">Principais ativos</span>
                 </div>
                 <Link href="/portfolio" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline flex items-center gap-1">
-                  View all <ChevronRight size={12} />
+                  Ver todos <ChevronRight size={12} />
                 </Link>
               </div>
 
@@ -307,7 +307,7 @@ export default function Dashboard() {
                     href="/trade"
                     className="mt-4 px-4 py-2 rounded-lg bg-[var(--accent-primary)] text-xs font-semibold text-black hover:brightness-110 transition-all"
                   >
-                    Make Your First Trade
+                    Faça sua primeira operação
                   </Link>
                 </div>
               ) : (
@@ -451,7 +451,7 @@ export default function Dashboard() {
                     <span className="text-sm font-semibold text-[var(--text-primary)]">Destaques do mercado</span>
                   </div>
                   <Link href="/markets" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline flex items-center gap-1">
-                    View markets <ChevronRight size={12} />
+                    Ver mercados <ChevronRight size={12} />
                   </Link>
                 </div>
 
@@ -548,7 +548,7 @@ export default function Dashboard() {
                   <span className="text-sm font-semibold text-[var(--text-primary)]">Lista de acompanhamento</span>
                 </div>
                 <Link href="/watchlist" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline flex items-center gap-1">
-                  View all <ChevronRight size={12} />
+                  Ver todos <ChevronRight size={12} />
                 </Link>
               </div>
 
@@ -594,7 +594,7 @@ export default function Dashboard() {
                   <span className="text-sm font-semibold text-[var(--text-primary)]">Atividade recente</span>
                 </div>
                 <Link href="/history" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline flex items-center gap-1">
-                  View all <ChevronRight size={12} />
+                  Ver todos <ChevronRight size={12} />
                 </Link>
               </div>
 
@@ -620,10 +620,10 @@ export default function Dashboard() {
                         </div>
                         <div>
                           <div className="text-xs font-medium text-[var(--text-primary)]">
-                            {tx.type} {tx.symbol}
+                            {tx.type === "BUY" ? "COMPRA" : "VENDA"} {tx.symbol}
                           </div>
                           <div className="text-[10px] text-[var(--text-dim)]">
-                            {tx.shares} shares @ {formatCurrency(tx.price, false)}
+                            {tx.shares} unidades a {formatCurrency(tx.price, false)}
                           </div>
                         </div>
                       </div>
@@ -632,7 +632,7 @@ export default function Dashboard() {
                           {tx.type === "BUY" ? "-" : "+"}{formatCurrency(tx.total, false)}
                         </div>
                         <div className="text-[10px] text-[var(--text-dim)]">
-                          {formatDateTime(tx.date)}
+                          {new Date(tx.date).toLocaleString("pt-BR")}
                         </div>
                       </div>
                     </div>
