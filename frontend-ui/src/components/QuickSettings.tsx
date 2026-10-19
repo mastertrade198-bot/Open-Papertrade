@@ -11,7 +11,6 @@ const CURRENCIES: { code: string; name: string }[] = [
 
 const MARKETS: { code: string; name: string; flag: string }[] = [
   { code: "US", name: "United States", flag: "🇺🇸" },
-  { code: "IN", name: "India", flag: "🇮🇳" },
 ];
 
 const THEMES: { code: "DARK" | "LIGHT" | "AUTO"; label: string; icon: typeof Moon }[] = [
