@@ -7,12 +7,12 @@ import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
-  const [email, setE-mail] = useState("");
-  const [password, setSenha] = useState("");
-  const [showSenha, setShowSenha] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [unverifiedE-mail, setUnverifiedE-mail] = useState("");
+  const [unverifiedEmail, setUnverifiedEmail] = useState("");
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
   const [twoFactorRequired, setTwoFactorRequired] = useState(false);
@@ -25,7 +25,7 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-    setUnverifiedE-mail("");
+    setUnverifiedEmail("");
     setResendMessage("");
     try {
       const result = await login(email, password);
@@ -40,7 +40,7 @@ export default function LoginPage() {
       setError(message);
       // Check if it's an unverified email error
       if (message.toLowerCase().includes("verify your email")) {
-        setUnverifiedE-mail(email);
+        setUnverifiedEmail(email);
       }
     } finally {
       setIsLoading(false);
@@ -65,7 +65,7 @@ export default function LoginPage() {
     setResendLoading(true);
     setResendMessage("");
     try {
-      const message = await resendVerification(unverifiedE-mail);
+      const message = await resendVerification(unverifiedEmail);
       setResendMessage(message);
     } catch (err) {
       setResendMessage(err instanceof Error ? err.message : "Failed to resend");
@@ -164,7 +164,7 @@ export default function LoginPage() {
           <form onSubmit={handle2FASubmit} className="flex flex-col gap-8 w-full max-w-[360px]">
             <div className="flex flex-col items-center lg:items-start gap-2">
               <h2 className="font-serif text-[32px] font-medium text-[var(--text-primary)]">
-                Autenticação em dois fatores
+                Two-Factor Authentication
               </h2>
               <p className="text-[15px] text-[var(--text-muted)]">
                 Enter the 6-digit code from your authenticator app, or a backup code
@@ -173,7 +173,7 @@ export default function LoginPage() {
 
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-[var(--text-primary)]">
-                Código de verificação
+                Verification Code
               </label>
               <input
                 type="text"
@@ -210,7 +210,7 @@ export default function LoginPage() {
               }}
               className="text-sm font-medium text-[var(--accent-primary)] hover:opacity-80 transition-opacity"
             >
-              Voltar ao login
+              Back to login
             </button>
           </form>
         ) : (
@@ -218,34 +218,34 @@ export default function LoginPage() {
           {/* Form Header */}
           <div className="flex flex-col items-center lg:items-start gap-2">
             <h2 className="font-serif text-[32px] font-medium text-[var(--text-primary)]">
-              Bem-vindo de volta
+              Welcome back
             </h2>
             <p className="text-[15px] text-[var(--text-muted)]">
-              Entre na sua conta
+              Log in to your account
             </p>
           </div>
 
           {/* Form Fields */}
           <div className="flex flex-col gap-5">
-            {/* E-mail */}
+            {/* Email */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-[var(--text-primary)]">
-                E-mail
+                Email
               </label>
               <input
                 type="email"
                 placeholder="Digite seu e-mail"
                 value={email}
-                onChange={(e) => setE-mail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-lg border border-[var(--border-muted)] bg-transparent px-4 py-3.5 text-[15px] text-[var(--text-primary)] placeholder-[var(--text-dim)] outline-none focus:border-[var(--accent-primary)] transition-colors"
               />
             </div>
 
-            {/* Senha */}
+            {/* Password */}
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-[var(--text-primary)]">
-                  Senha
+                  Password
                 </label>
                 <Link
                   href="/forgot-password"
@@ -256,18 +256,18 @@ export default function LoginPage() {
               </div>
               <div className="relative">
                 <input
-                  type={showSenha ? "text" : "password"}
+                  type={showPassword ? "text" : "password"}
                   placeholder="Digite sua senha"
                   value={password}
-                  onChange={(e) => setSenha(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-lg border border-[var(--border-muted)] bg-transparent px-4 py-3.5 pr-12 text-[15px] text-[var(--text-primary)] placeholder-[var(--text-dim)] outline-none focus:border-[var(--accent-primary)] transition-colors"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowSenha(!showSenha)}
+                  onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-dim)] hover:text-[var(--text-secondary)] transition-colors"
                 >
-                  {showSenha ? <Eye size={20} /> : <EyeOff size={20} />}
+                  {showPassword ? <Eye size={20} /> : <EyeOff size={20} />}
                 </button>
               </div>
             </div>
@@ -277,7 +277,7 @@ export default function LoginPage() {
           {error && (
             <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
               {error}
-              {unverifiedE-mail && (
+              {unverifiedEmail && (
                 <div className="mt-2 pt-2 border-t border-red-500/20">
                   <button
                     onClick={handleResend}
@@ -314,7 +314,7 @@ export default function LoginPage() {
               href="/signup"
               className="text-sm font-semibold text-[var(--accent-primary)] hover:opacity-80 transition-opacity"
             >
-              Cadastre-se
+              Sign up
             </Link>
           </div>
 
