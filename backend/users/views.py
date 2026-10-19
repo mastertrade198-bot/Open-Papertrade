@@ -92,6 +92,27 @@ class UserProfileView(APIView):
                     )
                 user.username = new_username
 
+        if 'cpf' in data:
+            cpf = str(data['cpf']).strip()
+            if cpf and not re.fullmatch(r'\d{11}', cpf):
+                return Response({'error': 'CPF deve conter 11 dígitos'}, status=status.HTTP_400_BAD_REQUEST)
+            user.cpf = cpf
+        if 'phone' in data:
+            phone = str(data['phone']).strip()
+            if len(phone) > 20:
+                return Response({'error': 'Telefone muito longo'}, status=status.HTTP_400_BAD_REQUEST)
+            user.phone = phone
+        if 'dateOfBirth' in data:
+            from datetime import date
+            raw_date = data['dateOfBirth']
+            try:
+                birth_date = date.fromisoformat(raw_date) if raw_date else None
+            except (TypeError, ValueError):
+                return Response({'error': 'Data de nascimento inválida'}, status=status.HTTP_400_BAD_REQUEST)
+            if birth_date and birth_date > date.today():
+                return Response({'error': 'Data de nascimento não pode ser futura'}, status=status.HTTP_400_BAD_REQUEST)
+            user.date_of_birth = birth_date
+
         user.save()
         return Response(user.to_dict())
 
