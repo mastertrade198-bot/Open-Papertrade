@@ -89,6 +89,20 @@ class SignupView(APIView):
         password = data.get('password', '')
         username = data.get('username', '').strip().lower()
         currency = data.get('currency', 'USD').strip().upper()
+        cpf = str(data.get('cpf', '')).strip()
+        phone = str(data.get('phone', '')).strip()
+        birth_date = data.get('dateOfBirth') or None
+        from datetime import date
+        try:
+            birth_date = date.fromisoformat(birth_date) if birth_date else None
+        except (TypeError, ValueError):
+            return Response({'error': 'Data de nascimento inválida'}, status=status.HTTP_400_BAD_REQUEST)
+        if cpf and (not re.fullmatch(r'\d{11}', cpf)):
+            return Response({'error': 'CPF deve conter 11 dígitos'}, status=status.HTTP_400_BAD_REQUEST)
+        if phone and len(phone) > 20:
+            return Response({'error': 'Telefone muito longo'}, status=status.HTTP_400_BAD_REQUEST)
+        if birth_date and birth_date > date.today():
+            return Response({'error': 'Data de nascimento não pode ser futura'}, status=status.HTTP_400_BAD_REQUEST)
 
         if not name or not email or not password:
             return Response(
@@ -128,7 +142,7 @@ class SignupView(APIView):
         if not username:
             username = generate_username(name)
 
-        user = UserProfile(name=name, username=username, email=email)
+        user = UserProfile(name=name, username=username, email=email, cpf=cpf, phone=phone, date_of_birth=birth_date)
         user.set_password(password)
         buying_power = site_settings.get_buying_power(currency)
         user.buying_power = buying_power
