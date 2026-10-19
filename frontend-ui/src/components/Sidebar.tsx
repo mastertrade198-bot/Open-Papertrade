@@ -7,6 +7,8 @@ import { LayoutDashboard, TrendingUp, Wallet, Repeat, History, Star, Settings, L
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useAuth } from "@/context/AuthContext";
 import { API_HOST } from "@/lib/api";
+import QuickSettings from "./QuickSettings";
+import { RefreshCw } from "lucide-react";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Painel", href: "/" },
@@ -22,7 +24,13 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = usePortfolio();
+  const { user, refreshPrices, isLoading } = usePortfolio();
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = async () => {
+    if (refreshing || isLoading) return;
+    setRefreshing(true);
+    try { await refreshPrices(); } finally { setRefreshing(false); }
+  };
   const { logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
@@ -54,7 +62,8 @@ export default function Sidebar() {
           })}
         </nav>
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <span className="hidden rounded-md border border-[var(--border-primary)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--text-secondary)] sm:inline-flex">Simulação · USD</span>
+          <QuickSettings />
+          <button type="button" onClick={() => void handleRefresh()} disabled={refreshing || isLoading} aria-label="Atualizar cotações" title="Atualizar cotações" className="rounded-lg border border-[var(--border-primary)] p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50"><RefreshCw size={15} className={refreshing || isLoading ? "animate-spin" : ""} /></button>
           <div className="relative">
             <button type="button" onClick={() => setAccountOpen(v => !v)} aria-expanded={accountOpen}
               className="flex items-center gap-2 rounded-lg border border-[var(--border-primary)] px-2 py-1.5 text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
