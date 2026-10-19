@@ -4,7 +4,6 @@ import { useState, useEffect, ReactNode } from "react";
 import { Search, Plus, Download } from "lucide-react";
 import ConnectionStatus from "./ConnectionStatus";
 import SearchModal from "./SearchModal";
-import QuickSettings from "./QuickSettings";
 
 interface PageHeaderProps {
   title: string;
@@ -51,8 +50,6 @@ export default function PageHeader({
           <p className="text-sm text-[var(--text-muted)]">{subtitle}</p>
         </div>
         <div className="flex items-center gap-3">
-          <QuickSettings />
-          <div className="w-px h-6 bg-[var(--border-primary)]" />
           {extraActions}
           {/* Search Button */}
           <button
