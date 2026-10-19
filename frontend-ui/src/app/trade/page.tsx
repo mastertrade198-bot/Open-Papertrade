@@ -40,6 +40,7 @@ function TradePageContent() {
     crypto,
     holdings,
     buyingPower,
+    refreshUserData,
     settings,
     getStockBySymbol,
     market,
@@ -105,9 +106,10 @@ function TradePageContent() {
     if (!window.confirm("Encerrar esta posição pelo preço atual?")) return;
     setClosingPositionId(id);
     try {
-      await userAPI.closePosition(id);
-      setMessage({ type: "success", text: "Posição encerrada." });
-      await refreshPositions();
+      const result = await userAPI.closePosition(id);
+      setMarginBalance(result.buyingPower);
+      setMessage({ type: "success", text: `Posição encerrada. Resultado: ${result.position.realizedPnl !== null && result.position.realizedPnl !== undefined ? formatCurrency(result.position.realizedPnl, false, { convertFromUSD: false }) : "indisponível"}. Saldo disponível atualizado.` });
+      await Promise.all([refreshPositions(), refreshUserData()]);
     } catch (error) {
       setMessage({ type: "error", text: error instanceof Error ? error.message : "Falha ao encerrar posição." });
     } finally {
@@ -269,7 +271,7 @@ function TradePageContent() {
         takeProfit,
       });
       setMessage({ type: "success", text: `${orderType} ${selectedSymbol} · USD ${margin.toFixed(2)} de margem · ${leverage}x — posição aberta` });
-      await refreshPositions();
+      await Promise.all([refreshPositions(), refreshUserData()]);
     } catch (error) {
       setMessage({ type: "error", text: error instanceof Error ? error.message : "Falha ao abrir posição." });
     } finally {
