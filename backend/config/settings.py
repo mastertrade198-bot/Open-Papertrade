@@ -227,7 +227,8 @@ UNFOLD = {
                 "separator": True,
                 "items": [
                     {"title": "Painel", "icon": "dashboard", "link": reverse_lazy("admin:index")},
-                    {"title": "Usuários", "icon": "person", "link": reverse_lazy("admin:users_userprofile_changelist")},
+                    {"title": "Clientes", "icon": "groups", "link": reverse_lazy("admin:users_userprofile_changelist")},
+                    {"title": "Usuários do Admin", "icon": "admin_panel_settings", "link": reverse_lazy("admin:auth_user_changelist")},
                 ],
             },
             {
