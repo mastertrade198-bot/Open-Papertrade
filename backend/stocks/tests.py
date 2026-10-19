@@ -15,6 +15,26 @@ class AssetCatalogTests(TestCase):
         self.assertLessEqual(len(data['assets']), 50)
         self.assertTrue(all(asset['currency'] == 'USD' for asset in data['assets']))
 
+    def test_commodities_category_contains_usd_futures(self):
+        response = self.client.get('/api/stocks/catalog/?category=Commodities')
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data['count'], 12)
+        self.assertTrue(all(item['currency'] == 'USD' for item in data['assets']))
+        self.assertIn('GC=F', [item['symbol'] for item in data['assets']])
+
+    def test_commodity_symbol_can_be_registered_after_usd_verification(self):
+        quote = SimpleNamespace(currency='USD', name='Gold Futures')
+        service = SimpleNamespace(get_quote=lambda symbol: SimpleNamespace(success=True, quote=quote))
+        with patch('stocks.views.get_stock_service', return_value=service):
+            response = self.client.post(
+                '/api/stocks/catalog/',
+                data='{"symbol":"GC=F"}',
+                content_type='application/json',
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['category'], 'Commodities')
+
     def test_verified_usd_symbol_is_persisted(self):
         quote = SimpleNamespace(currency='USD', name='Example Company')
         service = SimpleNamespace(get_quote=lambda symbol: SimpleNamespace(success=True, quote=quote))
