@@ -8,7 +8,7 @@ import { APP_CONFIG } from "@/config/app";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: `Open Papertrade - Painel de Negociação`,
+  title: `Master Trade - Painel de Negociação`,
   description: APP_CONFIG.tagline,
 };
 
