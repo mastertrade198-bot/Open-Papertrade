@@ -52,6 +52,9 @@ function TradePageContent() {
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
 
+  // Trade state
+  const [selectedSymbol, setSelectedSymbol] = useState("AAPL");
+  const [selectedQuote, setSelectedQuote] = useState<StockQuote | null>(null);
   const [showAssetMenu, setShowAssetMenu] = useState(false);
   const availableAssets = useMemo(() => {
     const bySymbol = new Map<string, { symbol: string; name: string; category: string }>();
@@ -69,9 +72,6 @@ function TradePageContent() {
     return Array.from(bySymbol.values()).sort((a, b) => a.category.localeCompare(b.category, "pt-BR") || a.symbol.localeCompare(b.symbol));
   }, [stocks, crypto, selectedSymbol, selectedQuote]);
 
-  // Trade state
-  const [selectedSymbol, setSelectedSymbol] = useState("AAPL");
-  const [selectedQuote, setSelectedQuote] = useState<StockQuote | null>(null);
   const [orderType, setOrderType] = useState<"BUY" | "SELL">("BUY");
   const [marginInput, setMarginInput] = useState("100.00");
   const [stopLossInput, setStopLossInput] = useState("");
