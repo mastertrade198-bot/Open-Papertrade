@@ -164,6 +164,15 @@ class AssetCatalogView(APIView):
                 'category': 'Commodities', 'currency': 'USD',
             }
 
+        for symbol, name in USD_COMMODITIES.items():
+            assets[symbol]['displaySymbol'] = USD_COMMODITY_LABELS[symbol]
+
+        for symbol, (name, display_symbol) in USD_INDEX_LABELS.items():
+            assets[symbol] = {
+                'symbol': symbol, 'name': name, 'category': 'Índices',
+                'currency': 'USD', 'displaySymbol': display_symbol,
+            }
+
         for asset in TradableAsset.objects.filter(currency='USD'):
             assets[asset.symbol] = {
                 'symbol': asset.symbol, 'name': asset.name,
@@ -176,7 +185,7 @@ class AssetCatalogView(APIView):
         if category:
             results = [a for a in results if a['category'] == category]
         if query:
-            results = [a for a in results if query in a['symbol'].lower() or query in a['name'].lower()]
+            results = [a for a in results if query in a['symbol'].lower() or query in a['name'].lower() or query in a.get('displaySymbol', '').lower()]
         try:
             page = max(1, int(request.query_params.get('page', '1')))
         except (TypeError, ValueError):
