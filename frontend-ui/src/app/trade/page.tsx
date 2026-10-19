@@ -40,7 +40,6 @@ function TradePageContent() {
     crypto,
     holdings,
     buyingPower,
-    transactions,
     settings,
     getStockBySymbol,
     market,
@@ -157,9 +156,6 @@ function TradePageContent() {
   const quantity = currentPrice > 0 && leverage > 0 && Number.isFinite(margin) ? (margin * leverage) / currentPrice : 0;
   const estimatedTotal = margin * leverage;
   const sourceCurrency = selectedQuote?.currency || getStockBySymbol(selectedSymbol)?.currency || 'USD';
-
-  // Recent transactions
-  const recentTrades = transactions.slice(0, 5);
 
 
   // Set symbol from URL query param
