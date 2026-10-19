@@ -202,7 +202,7 @@ export default function Dashboard() {
               <span className="text-xs font-medium text-[var(--text-muted)]">Patrimônio total</span>
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)] animate-pulse" />
-                <span className="text-[10px] font-medium text-[var(--accent-green)]">Live</span>
+                <span className="text-[10px] font-medium text-[var(--accent-green)]">Ao vivo</span>
               </div>
             </div>
             <span className="font-mono text-[28px] font-semibold text-[var(--text-primary)] tracking-tight">
@@ -395,7 +395,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-sm text-[var(--text-muted)]">All positions are profitable!</div>
+                    <div className="text-sm text-[var(--text-muted)]">Todas as posições estão positivas!</div>
                   )}
                 </div>
               </div>
@@ -470,7 +470,7 @@ export default function Dashboard() {
                           <span className="font-mono text-xs font-semibold text-[var(--accent-green)]">{formatPercent(stock.changePercent)}</span>
                         </div>
                       )) : (
-                        <span className="text-xs text-[var(--text-dim)] py-2">Loading...</span>
+                        <span className="text-xs text-[var(--text-dim)] py-2">Carregando...</span>
                       )}
                     </div>
                   </div>
@@ -489,7 +489,7 @@ export default function Dashboard() {
                           <span className="font-mono text-xs font-semibold text-[var(--accent-red)]">{formatPercent(stock.changePercent)}</span>
                         </div>
                       )) : (
-                        <span className="text-xs text-[var(--text-dim)] py-2">Loading...</span>
+                        <span className="text-xs text-[var(--text-dim)] py-2">Carregando...</span>
                       )}
                     </div>
                   </div>
@@ -504,7 +504,7 @@ export default function Dashboard() {
             <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)]">
               <div className="flex items-center gap-2 mb-4">
                 <PieChart size={16} className="text-[var(--accent-primary)]" />
-                <span className="text-sm font-semibold text-[var(--text-primary)]">Allocation</span>
+                <span className="text-sm font-semibold text-[var(--text-primary)]">Alocação</span>
               </div>
 
               {/* Allocation Bar */}
@@ -545,7 +545,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
                 <div className="flex items-center gap-2">
                   <Star size={16} className="text-[var(--accent-primary)]" />
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">Watchlist</span>
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">Lista de acompanhamento</span>
                 </div>
                 <Link href="/watchlist" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline flex items-center gap-1">
                   View all <ChevronRight size={12} />
@@ -555,7 +555,7 @@ export default function Dashboard() {
               {watchlist.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center px-4">
                   <Star size={24} className="text-[var(--text-dim)] mb-2" />
-                  <span className="text-xs text-[var(--text-muted)]">No stocks in watchlist</span>
+                  <span className="text-xs text-[var(--text-muted)]">Nenhum ativo na lista</span>
                   <Link href="/watchlist" className="text-[11px] text-[var(--accent-primary)] mt-1 hover:underline">
                     Add stocks to watch
                   </Link>
@@ -654,7 +654,7 @@ export default function Dashboard() {
             </div>
             <div>
               <div className="text-sm font-medium text-[var(--text-primary)]">Nova operação</div>
-              <div className="text-xs text-[var(--text-muted)]">Buy or sell stocks</div>
+              <div className="text-xs text-[var(--text-muted)]">Compre ou venda ações</div>
             </div>
           </Link>
 
@@ -666,8 +666,8 @@ export default function Dashboard() {
               <TrendingUp size={18} className="text-[var(--accent-green)]" />
             </div>
             <div>
-              <div className="text-sm font-medium text-[var(--text-primary)]">Markets</div>
-              <div className="text-xs text-[var(--text-muted)]">Explore stocks & crypto</div>
+              <div className="text-sm font-medium text-[var(--text-primary)]">Mercados</div>
+              <div className="text-xs text-[var(--text-muted)]">Explore ações e criptomoedas</div>
             </div>
           </Link>
 
@@ -679,8 +679,8 @@ export default function Dashboard() {
               <PieChart size={18} className="text-[var(--text-muted)]" />
             </div>
             <div>
-              <div className="text-sm font-medium text-[var(--text-primary)]">Portfolio</div>
-              <div className="text-xs text-[var(--text-muted)]">View your holdings</div>
+              <div className="text-sm font-medium text-[var(--text-primary)]">Carteira</div>
+              <div className="text-xs text-[var(--text-muted)]">Visualize seus ativos</div>
             </div>
           </Link>
 
@@ -692,8 +692,8 @@ export default function Dashboard() {
               <Clock size={18} className="text-[var(--text-dim)]" />
             </div>
             <div>
-              <div className="text-sm font-medium text-[var(--text-primary)]">History</div>
-              <div className="text-xs text-[var(--text-muted)]">Past transactions</div>
+              <div className="text-sm font-medium text-[var(--text-primary)]">Histórico</div>
+              <div className="text-xs text-[var(--text-muted)]">Transações anteriores</div>
             </div>
           </Link>
         </div>
