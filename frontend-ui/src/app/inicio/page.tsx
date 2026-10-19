@@ -11,11 +11,11 @@ export default function InicioPage() {
   return (
     <div className="min-h-screen bg-[#080d17] text-white">
       <header className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-6 lg:px-10">
-        <Link href="/inicio" className="flex items-center gap-3" aria-label="Página inicial Open Papertrade">
+        <Link href="/inicio" className="flex items-center gap-3" aria-label="Página inicial Master Trade">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-400/30 bg-cyan-400/10">
             <CandlestickChart className="h-5 w-5 text-cyan-300" />
           </div>
-          <span className="text-sm font-bold tracking-[0.2em] sm:text-base">OPEN <span className="text-cyan-300">PAPERTRADE</span></span>
+          <span className="text-sm font-bold tracking-[0.2em] sm:text-base">MASTER <span className="text-cyan-300">TRADE</span></span>
         </Link>
         <nav className="flex items-center gap-3">
           <Link href="/login" className="rounded-lg px-4 py-2 text-sm font-semibold text-slate-200 transition hover:text-white">Entrar</Link>
@@ -87,7 +87,7 @@ export default function InicioPage() {
         </section>
       </main>
       <footer className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-8 text-xs text-slate-500 lg:px-10">
-        <span>© {new Date().getFullYear()} Open Papertrade</span>
+        <span>© {new Date().getFullYear()} Master Trade</span>
         <span className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> Acesso protegido por autenticação <LockKeyhole className="h-3 w-3" /></span>
       </footer>
     </div>
