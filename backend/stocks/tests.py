@@ -35,6 +35,15 @@ class AssetCatalogTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['category'], 'Commodities')
 
+    def test_index_category_and_display_symbols(self):
+        indices = self.client.get('/api/stocks/catalog/?category=Índices')
+        self.assertEqual(indices.status_code, 200)
+        self.assertEqual(indices.json()['count'], 5)
+        self.assertTrue(all(a['currency'] == 'USD' for a in indices.json()['assets']))
+        commodities = self.client.get('/api/stocks/catalog/?category=Commodities')
+        gold = next(a for a in commodities.json()['assets'] if a['symbol'] == 'GC=F')
+        self.assertEqual(gold['displaySymbol'], 'XAU/USD')
+
     def test_verified_usd_symbol_is_persisted(self):
         quote = SimpleNamespace(currency='USD', name='Example Company')
         service = SimpleNamespace(get_quote=lambda symbol: SimpleNamespace(success=True, quote=quote))
