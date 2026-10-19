@@ -86,11 +86,11 @@ function TradePageContent() {
   const [positionsTab, setPositionsTab] = useState<"OPEN" | "CLOSED">("OPEN");
 
   const closeSimulatedPosition = async (id: string) => {
-    if (!window.confirm("Encerrar esta posição simulada pelo preço atual?")) return;
+    if (!window.confirm("Encerrar esta posição pelo preço atual?")) return;
     setClosingPositionId(id);
     try {
       await userAPI.closePosition(id);
-      setMessage({ type: "success", text: "Posição simulada encerrada." });
+      setMessage({ type: "success", text: "Posição encerrada." });
       await refreshPositions();
     } catch (error) {
       setMessage({ type: "error", text: error instanceof Error ? error.message : "Falha ao encerrar posição." });
@@ -247,10 +247,10 @@ function TradePageContent() {
         stopLoss: stopLossInput.trim() ? Number(stopLossInput) : null,
         takeProfit: takeProfitInput.trim() ? Number(takeProfitInput) : null,
       });
-      setMessage({ type: "success", text: `${orderType} ${selectedSymbol} · USD ${margin.toFixed(2)} de margem · ${leverage}x — posição simulada aberta` });
+      setMessage({ type: "success", text: `${orderType} ${selectedSymbol} · USD ${margin.toFixed(2)} de margem · ${leverage}x — posição aberta` });
       await refreshPositions();
     } catch (error) {
-      setMessage({ type: "error", text: error instanceof Error ? error.message : "Falha ao abrir posição simulada." });
+      setMessage({ type: "error", text: error instanceof Error ? error.message : "Falha ao abrir posição." });
     } finally {
       setSubmitting(false);
     }
@@ -286,7 +286,7 @@ function TradePageContent() {
       <main className="flex-1 flex flex-col gap-6 py-8 px-10 overflow-auto">
         <PageHeader
           title="Negociar"
-          subtitle="Pesquise ações ou criptomoedas para negociar com saldo fictício"
+          subtitle="Pesquise ações ou criptomoedas para negociar"
         />
 
         {/* Success/Error Message */}
@@ -495,8 +495,10 @@ function TradePageContent() {
                 <div className="mt-2 font-mono text-2xl font-bold text-[var(--text-primary)] tabular-nums">
                   {marginBalance === null ? "Carregando…" : formatCurrency(marginBalance, false, { convertFromUSD: false })}
                 </div>
-                <p className="mt-1 text-xs text-[var(--text-muted)]">Saldo fictício disponível para margem das operações</p>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">Saldo disponível para margem das operações</p>
               </div>
+
+              <p className="text-[11px] text-[var(--text-muted)]">Ambiente de demonstração: operações sem movimentação de dinheiro real.</p>
 
               {/* Buy/Sell Toggle */}
               <div className="flex p-1 rounded-lg bg-[var(--bg-card-inner)]">
