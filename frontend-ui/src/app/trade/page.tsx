@@ -299,9 +299,9 @@ function TradePageContent() {
         )}
 
         {/* Main Trade Area */}
-        <div className="flex gap-6 flex-1 min-h-0">
+        <div className="flex gap-6 items-start shrink-0 min-w-0">
           {/* Left Panel - Stock Selection */}
-          <div className="flex-1 flex flex-col gap-5">
+          <div className="flex-1 min-w-0 flex flex-col gap-5">
             {/* Search Bar */}
             <div className="relative">
               <div className="flex items-center gap-3 px-4 py-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-primary)] focus-within:border-[var(--accent-primary)] transition-colors">
@@ -476,7 +476,7 @@ function TradePageContent() {
           </div>
 
           {/* Right Panel - Order Form */}
-          <div className="w-[380px] flex flex-col gap-5">
+          <div className="w-[380px] shrink-0 flex flex-col gap-5">
             {/* Order Form */}
             <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)] flex flex-col gap-5">
               {/* Buy/Sell Toggle */}
@@ -662,7 +662,7 @@ function TradePageContent() {
             </div>
           </div>
         </div>
-        <div className="w-full min-w-0 space-y-3">
+        <div className="w-full min-w-0 shrink-0 space-y-3">
           <h2 className="text-lg font-semibold text-[var(--text-primary)]">Positions &amp; Trade History</h2>
             {/* Positions tab: the same positions opened by the Buy/Sell ticket. */}
             <section id="trade-positions" className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] overflow-hidden">
