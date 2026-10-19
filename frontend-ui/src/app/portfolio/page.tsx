@@ -21,6 +21,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import LeveragedTradeHistory from "@/components/LeveragedTradeHistory";
 import PageHeader from "@/components/PageHeader";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { formatCurrency, formatPercent } from "@/lib/utils";
@@ -652,6 +653,7 @@ export default function PortfolioPage() {
             </div>
           </div>
         </div>
+      <div className="mt-6"><LeveragedTradeHistory /></div>
       </main>
     </div>
   );
