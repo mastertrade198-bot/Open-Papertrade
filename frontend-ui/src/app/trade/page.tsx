@@ -244,8 +244,8 @@ function TradePageContent() {
         side: orderType === "BUY" ? "LONG" : "SHORT",
         margin,
         leverage,
-        stopLoss: stopLossInput.trim() ? Number(stopLossInput) : null,
-        takeProfit: takeProfitInput.trim() ? Number(takeProfitInput) : null,
+        stopLoss,
+        takeProfit,
       });
       setMessage({ type: "success", text: `${orderType} ${selectedSymbol} · USD ${margin.toFixed(2)} de margem · ${leverage}x — posição aberta` });
       await refreshPositions();
@@ -257,10 +257,16 @@ function TradePageContent() {
   };
 
   const estimatedMargin = margin;
-  const stopLoss = stopLossInput.trim() ? Number(stopLossInput) : null;
-  const takeProfit = takeProfitInput.trim() ? Number(takeProfitInput) : null;
-  const validStopLoss = stopLoss === null || (Number.isFinite(stopLoss) && stopLoss > 0 && (orderType === "BUY" ? stopLoss < currentPrice : stopLoss > currentPrice));
-  const validTakeProfit = takeProfit === null || (Number.isFinite(takeProfit) && takeProfit > 0 && (orderType === "BUY" ? takeProfit > currentPrice : takeProfit < currentPrice));
+  // Percentages describe the underlying asset's price movement from entry.
+  // Backend continues to receive absolute price levels.
+  const stopLossPercent = stopLossInput.trim() ? Number(stopLossInput) : null;
+  const takeProfitPercent = takeProfitInput.trim() ? Number(takeProfitInput) : null;
+  const stopLoss = stopLossPercent !== null && currentPrice > 0
+    ? currentPrice * (1 + (orderType === "BUY" ? -1 : 1) * stopLossPercent / 100) : null;
+  const takeProfit = takeProfitPercent !== null && currentPrice > 0
+    ? currentPrice * (1 + (orderType === "BUY" ? 1 : -1) * takeProfitPercent / 100) : null;
+  const validStopLoss = stopLossPercent === null || (Number.isFinite(stopLossPercent) && stopLossPercent > 0 && stopLoss !== null && stopLoss > 0);
+  const validTakeProfit = takeProfitPercent === null || (Number.isFinite(takeProfitPercent) && takeProfitPercent > 0 && takeProfit !== null && takeProfit > 0);
   const canTrade = marketStatus.isOpen && sourceCurrency === "USD" && Number.isFinite(margin) &&
     margin >= 0.01 && /^\d+(\.\d{1,2})?$/.test(marginInput) &&
     Number.isFinite(leverage) && leverage >= 1 && leverage <= 100 && currentPrice > 0 &&
@@ -551,17 +557,25 @@ function TradePageContent() {
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
-                    Stop Loss (preço)
-                    <input type="number" min="0.000001" step="any" placeholder="Opcional" value={stopLossInput} onChange={(e) => setStopLossInput(e.target.value)}
+                    Stop Loss (%)
+                    <input type="number" min="0.01" step="0.01" placeholder="Ex.: 2" value={stopLossInput} onChange={(e) => setStopLossInput(e.target.value)}
                       className="min-w-0 w-full px-3 py-3 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-sm text-[var(--text-primary)]" />
                   </label>
                   <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
-                    Take Profit (preço)
-                    <input type="number" min="0.000001" step="any" placeholder="Opcional" value={takeProfitInput} onChange={(e) => setTakeProfitInput(e.target.value)}
+                    Take Profit (%)
+                    <input type="number" min="0.01" step="0.01" placeholder="Ex.: 5" value={takeProfitInput} onChange={(e) => setTakeProfitInput(e.target.value)}
                       className="min-w-0 w-full px-3 py-3 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-sm text-[var(--text-primary)]" />
                   </label>
                 </div>
-                {(!validStopLoss || !validTakeProfit) && <p className="text-xs text-[var(--accent-red)]">Compra: SL abaixo e TP acima do preço atual. Venda: SL acima e TP abaixo.</p>}
+                <p className="text-[11px] text-[var(--text-muted)]">Percentual de variação do preço do ativo (não da margem). A alavancagem amplia o resultado sobre a margem.</p>
+                {(stopLoss !== null || takeProfit !== null) && currentPrice > 0 && (
+                  <p className="text-[11px] text-[var(--text-muted)]">
+                    {stopLoss !== null && validStopLoss ? `SL estimado: ${formatCurrency(stopLoss, false, { sourceCurrency })}` : ""}
+                    {stopLoss !== null && takeProfit !== null && validStopLoss && validTakeProfit ? " · " : ""}
+                    {takeProfit !== null && validTakeProfit ? `TP estimado: ${formatCurrency(takeProfit, false, { sourceCurrency })}` : ""}
+                  </p>
+                )}
+                {(!validStopLoss || !validTakeProfit) && <p className="text-xs text-[var(--accent-red)]">Informe percentuais positivos que resultem em preços válidos para a operação.</p>}
                 <div className="flex gap-2">
                   {[0.25, 0.5, 0.75, 1].map(pct => <button key={pct} type="button" onClick={() => setMarginPercent(pct)}
                     className="flex-1 py-1.5 rounded-md text-[11px] bg-[var(--bg-card-inner)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]">{pct * 100}%</button>)}
