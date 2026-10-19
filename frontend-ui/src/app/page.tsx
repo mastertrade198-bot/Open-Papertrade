@@ -22,6 +22,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
+import LeveragedTradeHistory from "@/components/LeveragedTradeHistory";
 import QuickSettings from "@/components/QuickSettings";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { stockAPI, StockQuote } from "@/lib/api";
@@ -726,6 +727,7 @@ export default function Dashboard() {
             </div>
           </Link>
         </div>
+      <div className="mt-6"><LeveragedTradeHistory /></div>
       </main>
     </div>
   );
