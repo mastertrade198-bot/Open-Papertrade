@@ -272,12 +272,12 @@ function TradePageContent() {
   };
 
   const getButtonText = () => {
-    if (!marketStatus.isOpen) return `${marketStatus.marketName} Market Closed`;
+    if (!marketStatus.isOpen) return `${marketStatus.marketName} Mercado fechado`;
     if (sourceCurrency !== "USD") return "Apenas ativos em USD";
     if (marginBalance === null) return "Carregando saldo disponível";
     if (!validStopLoss || !validTakeProfit) return "Preço inválido de SL / TP";
     if (margin > marginBalance) return "Margem insuficiente";
-    return `${orderType} ${selectedSymbol} · $${Number.isFinite(margin) ? margin.toFixed(2) : "0.00"} margin · ${leverage}x`;
+    return `${orderType === "BUY" ? "Comprar" : "Vender"} ${selectedSymbol} · $${Number.isFinite(margin) ? margin.toFixed(2) : "0.00"} de margem · ${leverage}x`;
   };
 
   return (
@@ -378,10 +378,10 @@ function TradePageContent() {
                     <div className="flex flex-col items-center justify-center py-8 text-center">
                       <Search size={24} className="text-[var(--text-dim)] mb-2" />
                       <span className="text-sm text-[var(--text-muted)]">
-                        No results for &quot;{searchQuery}&quot;
+                        Nenhum resultado para &quot;{searchQuery}&quot;
                       </span>
                       <span className="text-xs text-[var(--text-dim)] mt-1">
-                        Try a different symbol
+                        Tente outro símbolo
                       </span>
                     </div>
                   )}
@@ -432,25 +432,25 @@ function TradePageContent() {
               {selectedQuote && (
                 <div className="grid grid-cols-4 gap-4 pt-4 border-t border-[var(--border-primary)]">
                   <div>
-                    <span className="text-[11px] text-[var(--text-muted)]">Open</span>
+                    <span className="text-[11px] text-[var(--text-muted)]">Abertura</span>
                     <div className="font-mono text-sm text-[var(--text-primary)]">
                       {formatCurrency(selectedQuote.open, false, { sourceCurrency })}
                     </div>
                   </div>
                   <div>
-                    <span className="text-[11px] text-[var(--text-muted)]">High</span>
+                    <span className="text-[11px] text-[var(--text-muted)]">Máxima</span>
                     <div className="font-mono text-sm text-[var(--accent-green)]">
                       {formatCurrency(selectedQuote.high, false, { sourceCurrency })}
                     </div>
                   </div>
                   <div>
-                    <span className="text-[11px] text-[var(--text-muted)]">Low</span>
+                    <span className="text-[11px] text-[var(--text-muted)]">Mínima</span>
                     <div className="font-mono text-sm text-[var(--accent-red)]">
                       {formatCurrency(selectedQuote.low, false, { sourceCurrency })}
                     </div>
                   </div>
                   <div>
-                    <span className="text-[11px] text-[var(--text-muted)]">Prev Close</span>
+                    <span className="text-[11px] text-[var(--text-muted)]">Fechamento anterior</span>
                     <div className="font-mono text-sm text-[var(--text-primary)]">
                       {formatCurrency(selectedQuote.previousClose, false, { sourceCurrency })}
                     </div>
@@ -462,10 +462,10 @@ function TradePageContent() {
               {selectedHolding && (
                 <div className="mt-4 pt-4 border-t border-[var(--border-primary)]">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-[var(--text-muted)]">Your Position</span>
+                    <span className="text-sm text-[var(--text-muted)]">Sua posição</span>
                     <div className="text-right">
                       <span className="font-mono text-sm font-medium text-[var(--text-primary)]">
-                        {selectedHolding.shares} shares
+                        {selectedHolding.shares} ações
                       </span>
                       <span className="text-[var(--text-muted)] mx-2">&bull;</span>
                       <span className="font-mono text-sm text-[var(--text-muted)]">
@@ -490,10 +490,10 @@ function TradePageContent() {
               <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)] p-4" aria-live="polite">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-[var(--text-muted)]">Saldo disponível (USD)</span>
-                  <button type="button" onClick={() => void refreshPositions()} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]" title="Refresh available balance">Atualizar</button>
+                  <button type="button" onClick={() => void refreshPositions()} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]" title="Atualizar saldo disponível">Atualizar</button>
                 </div>
                 <div className="mt-2 font-mono text-2xl font-bold text-[var(--text-primary)] tabular-nums">
-                  {marginBalance === null ? "Loading…" : formatCurrency(marginBalance, false, { convertFromUSD: false })}
+                  {marginBalance === null ? "Carregando…" : formatCurrency(marginBalance, false, { convertFromUSD: false })}
                 </div>
                 <p className="mt-1 text-xs text-[var(--text-muted)]">Saldo fictício disponível para margem das operações</p>
               </div>
@@ -527,7 +527,7 @@ function TradePageContent() {
                 <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-[#F59E0B20] border border-[#F59E0B40]">
                   <Clock size={16} className="text-[#F59E0B] shrink-0" />
                   <div>
-                    <span className="text-sm font-medium text-[#F59E0B]">Market Closed</span>
+                    <span className="text-sm font-medium text-[#F59E0B]">Mercado fechado</span>
                     <p className="text-xs text-[#F59E0B]/80 mt-0.5">{marketStatus.reason}</p>
                   </div>
                 </div>
@@ -596,7 +596,7 @@ function TradePageContent() {
               {/* Available Balance */}
               <div className="flex items-center justify-between text-sm">
                 <span className="text-[var(--text-muted)]">
-                  Available Margem (USD)
+                  Margem disponível (USD)
                 </span>
                 <span className="font-mono text-[var(--text-primary)]">
                   {marginBalance === null ? "—" : formatCurrency(marginBalance, false, { convertFromUSD: false })}
