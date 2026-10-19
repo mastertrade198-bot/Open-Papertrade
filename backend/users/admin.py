@@ -1,8 +1,12 @@
 from django.contrib import admin
+from django.db import transaction
+from django.db.models import F
+from decimal import Decimal
 from django import forms
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect
+from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -108,6 +112,13 @@ class SiteSettingsAdmin(ModelAdmin):
 
 
 
+
+class BalanceAdjustmentForm(forms.Form):
+    operation = forms.ChoiceField(label="Operação", choices=[("CREDIT", "Adicionar saldo"), ("DEBIT", "Remover saldo")])
+    amount = forms.DecimalField(label="Valor", min_value=Decimal("0.01"), max_digits=20, decimal_places=2)
+    reason = forms.CharField(label="Justificativa", max_length=150, widget=forms.Textarea(attrs={"rows": 3}))
+
+
 class UserProfileAdminForm(forms.ModelForm):
     """Create a trading account without exposing its stored password hash."""
     password1 = forms.CharField(
@@ -140,7 +151,7 @@ class UserProfileAdminForm(forms.ModelForm):
 @admin.register(UserProfile)
 class UserProfileAdmin(ModelAdmin):
     form = UserProfileAdminForm
-    list_display = ['name', 'email', 'display_buying_power', 'display_admin', 'created_at']
+    list_display = ['name', 'email', 'display_buying_power', 'display_finance_link', 'display_admin', 'created_at']
     search_fields = ['name', 'email', 'username']
     list_filter = ['is_admin', 'created_at']
     readonly_fields = ['id', 'created_at', 'updated_at', 'password_changed_at', 'is_2fa_enabled']
@@ -152,6 +163,12 @@ class UserProfileAdmin(ModelAdmin):
         ("Security", {"fields": ["password_changed_at", "is_2fa_enabled"]}),
         ("Timestamps", {"fields": ["created_at", "updated_at"]}),
     ]
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(super().get_readonly_fields(request, obj))
+        if obj is not None:
+            fields.extend(["buying_power", "initial_balance"])
+        return fields
 
     def get_fieldsets(self, request, obj=None):
         if obj is None:
@@ -179,8 +196,61 @@ class UserProfileAdmin(ModelAdmin):
                 self.admin_site.admin_view(self.user_reports_view),
                 name='users_userprofile_reports',
             ),
+            path(
+                '<path:object_id>/finance/',
+                self.admin_site.admin_view(self.finance_view),
+                name='users_userprofile_finance',
+            ),
         ]
         return custom_urls + super().get_urls()
+
+    @display(description="Financeiro")
+    def display_finance_link(self, obj):
+        url = reverse("admin:users_userprofile_finance", args=[obj.pk])
+        return format_html('<a href="{}">Adicionar / remover saldo</a>', url)
+
+    def finance_view(self, request, object_id):
+        if not request.user.is_active or not request.user.is_superuser:
+            raise PermissionDenied("Somente superusuários podem ajustar saldos.")
+        target = get_object_or_404(UserProfile, pk=object_id)
+        form = BalanceAdjustmentForm(request.POST or None)
+        if request.method == "POST" and form.is_valid():
+            with transaction.atomic():
+                locked = UserProfile.objects.select_for_update().get(pk=target.pk)
+                before = locked.buying_power
+                amount = form.cleaned_data["amount"]
+                operation = form.cleaned_data["operation"]
+                delta = amount if operation == "CREDIT" else -amount
+                after = before + delta
+                if after < 0:
+                    form.add_error("amount", "Saldo insuficiente para realizar o débito.")
+                else:
+                    # Atomic conditional update also guards SQLite (which lacks SELECT FOR UPDATE).
+                    changed = UserProfile.objects.filter(pk=locked.pk, buying_power__gte=amount).update(
+                        buying_power=F("buying_power") - amount
+                    ) if operation == "DEBIT" else UserProfile.objects.filter(pk=locked.pk).update(
+                        buying_power=F("buying_power") + amount
+                    )
+                    if not changed:
+                        form.add_error("amount", "Saldo insuficiente ou alterado. Tente novamente.")
+                    else:
+                        locked.refresh_from_db(fields=["buying_power"])
+                        BalanceTransaction.objects.create(
+                            user=locked, amount=delta, balance_before=before,
+                            balance_after=locked.buying_power,
+                            category="ADMIN_CREDIT" if operation == "CREDIT" else "ADMIN_DEBIT",
+                            description=f"{form.cleaned_data['reason']} | Admin: {request.user.get_username()}"[:255],
+                        )
+                        messages.success(request, "Movimentação de saldo registrada com sucesso.")
+                        return HttpResponseRedirect(reverse("admin:users_userprofile_change", args=[target.pk]))
+        context = {
+            **self.admin_site.each_context(request),
+            "title": f"Financeiro: {target.name}",
+            "target_user": target,
+            "form": form,
+            "opts": self.model._meta,
+        }
+        return TemplateResponse(request, "admin/users/finance_adjustment.html", context)
 
     def user_reports_view(self, request, object_id):
         """Custom admin view that renders a user's trading reports."""
