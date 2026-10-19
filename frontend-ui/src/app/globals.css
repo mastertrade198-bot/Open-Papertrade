@@ -112,3 +112,15 @@
     font-family: "Instrument Serif", Georgia, serif;
   }
 }
+
+
+/* Fixed terminal navigation: reserve header space without changing page data flows. */
+body:has(.master-topnav) main {
+  padding-top: 90px;
+  min-width: 0;
+}
+@media (max-width: 767px) {
+  body:has(.master-topnav) main {
+    padding-top: 82px;
+  }
+}
