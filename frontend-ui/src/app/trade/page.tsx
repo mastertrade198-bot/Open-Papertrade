@@ -642,40 +642,40 @@ function TradePageContent() {
 
               {/* Order Summary */}
               <div className="flex flex-col gap-0 border-y border-[var(--border-primary)]">
-                <div className="flex items-center justify-between py-3 border-b border-[var(--border-primary)]">
-                  <span className="text-sm text-[var(--text-muted)]">
+                <div className="flex items-center justify-between py-1.5 border-b border-[var(--border-primary)]">
+                  <span className="text-xs text-[var(--text-muted)]">
                     Preço de mercado
                   </span>
-                  <span className="font-mono text-sm text-[var(--text-primary)]">
+                  <span className="font-mono text-xs text-[var(--text-primary)]">
                     {formatCurrency(effectivePrice, false, { sourceCurrency })}
                   </span>
                 </div>
-                <div className="flex items-center justify-between py-3 border-b border-[var(--border-primary)]">
-                  <span className="text-sm text-[var(--text-muted)]">Quantidade estimada</span>
-                  <span className="font-mono text-sm text-[var(--text-primary)]">
+                <div className="flex items-center justify-between py-1.5 border-b border-[var(--border-primary)]">
+                  <span className="text-xs text-[var(--text-muted)]">Quantidade estimada</span>
+                  <span className="font-mono text-xs text-[var(--text-primary)]">
                     {quantity > 0 ? quantity.toFixed(8) : "—"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between gap-3 py-3 border-b border-[var(--border-primary)]">
-                  <span className="text-sm text-[var(--text-muted)]">Possível lucro ({hasProjectedProfitTarget ? "Take Profit" : "alta favorável de 1%"})</span>
-                  <span className="font-mono text-sm font-bold text-[var(--accent-green)]">+{formatCurrency(projectedProfit, false, { convertFromUSD: false })}</span>
+                <div className="flex items-center justify-between gap-2 py-1.5 border-b border-[var(--border-primary)]">
+                  <span className="text-xs text-[var(--text-muted)]">Possível lucro ({hasProjectedProfitTarget ? "Take Profit" : "alta favorável de 1%"})</span>
+                  <span className="font-mono text-xs font-bold text-[var(--accent-green)]">+{formatCurrency(projectedProfit, false, { convertFromUSD: false })}</span>
                 </div>
-                <div className="flex items-center justify-between gap-3 py-3 border-b border-[var(--border-primary)]">
-                  <span className="text-sm text-[var(--text-muted)]">Possível prejuízo ({hasProjectedLossTarget ? "Stop Loss" : "queda desfavorável de 1%"})</span>
-                  <span className="font-mono text-sm font-bold text-[var(--accent-red)]">-{formatCurrency(projectedLoss, false, { convertFromUSD: false })}</span>
+                <div className="flex items-center justify-between gap-2 py-1.5 border-b border-[var(--border-primary)]">
+                  <span className="text-xs text-[var(--text-muted)]">Possível prejuízo ({hasProjectedLossTarget ? "Stop Loss" : "queda desfavorável de 1%"})</span>
+                  <span className="font-mono text-xs font-bold text-[var(--accent-red)]">-{formatCurrency(projectedLoss, false, { convertFromUSD: false })}</span>
                 </div>
-                <div className="flex items-center justify-between py-3 border-b border-[var(--border-primary)]">
-                  <span className="text-sm font-medium text-[var(--text-primary)]">
+                <div className="flex items-center justify-between py-1.5 border-b border-[var(--border-primary)]">
+                  <span className="text-xs font-medium text-[var(--text-primary)]">
                     Margem estimada
                   </span>
-                  <span className="font-mono text-lg font-bold text-[var(--text-primary)]">
+                  <span className="font-mono text-sm font-bold text-[var(--text-primary)]">
                     {formatCurrency(estimatedMargin, false, { sourceCurrency })}
                   </span>
                 </div>
               </div>
 
               {/* Available Balance */}
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-xs py-1">
                 <span className="text-[var(--text-muted)]">
                   Margem disponível (USD)
                 </span>
