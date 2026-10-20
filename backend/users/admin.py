@@ -418,3 +418,58 @@ class PositionAuditLogAdmin(ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+# Read-only custody audit: deposit and sweep records must be written only by
+# the verified blockchain reconciliation service, never through admin forms.
+from .models import PolygonDepositAddress, PolygonUSDTDeposit, PolygonSweep
+
+
+@admin.register(PolygonDepositAddress)
+class PolygonDepositAddressAdmin(ModelAdmin):
+    list_display = ('user', 'address', 'provider_reference', 'created_at')
+    search_fields = ('user__email', 'address', 'provider_reference')
+    readonly_fields = ('user', 'address', 'provider_reference', 'created_at')
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PolygonUSDTDeposit)
+class PolygonUSDTDepositAdmin(ModelAdmin):
+    list_display = ('user', 'amount', 'status', 'tx_hash', 'block_number', 'created_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('user__email', 'tx_hash', 'address__address')
+    readonly_fields = tuple(field.name for field in PolygonUSDTDeposit._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PolygonSweep)
+class PolygonSweepAdmin(ModelAdmin):
+    list_display = ('deposit', 'destination', 'status', 'tx_hash', 'created_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('destination', 'tx_hash', 'deposit__tx_hash')
+    readonly_fields = tuple(field.name for field in PolygonSweep._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
