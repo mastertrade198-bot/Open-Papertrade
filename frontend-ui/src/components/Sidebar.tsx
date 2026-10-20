@@ -40,7 +40,7 @@ export default function Sidebar() {
 
   return (
     <header className="master-topnav relative z-[100] min-h-[66px] border-b border-[var(--border-primary)] bg-[var(--bg-sidebar)]/95 backdrop-blur-xl">
-      <div className="mx-auto flex min-h-[66px] w-full max-w-[1920px] flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 lg:px-4">
+      <div className="mx-auto flex min-h-[66px] w-full max-w-[1920px] flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 lg:px-4">
         <Link href="/" className="flex shrink-0 items-center gap-2.5 hover:opacity-90" aria-label="Master Trade — Painel">
           <img src="/logo.png" alt="" width={26} height={26} className="rounded-lg" />
           <span className="whitespace-nowrap text-[12px] font-extrabold tracking-[.07em] text-[var(--text-primary)]">
@@ -48,19 +48,18 @@ export default function Sidebar() {
           </span>
         </Link>
         <div className="hidden h-6 w-px bg-[var(--border-primary)] xl:block" />
-        <nav aria-label="Navegação principal" className="order-3 flex w-full min-w-0 flex-wrap items-center justify-center gap-0.5 lg:order-none lg:w-auto lg:flex-1">
+        <nav aria-label="Navegação principal" className="order-3 flex w-full min-w-0 flex-wrap items-center justify-center gap-1 lg:order-none lg:w-auto lg:flex-1">
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
             return (
               <Link key={href} href={href} aria-current={active ? "page" : undefined}
-                className={`flex shrink-0 items-center gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold transition-colors ${active ? "bg-[var(--bg-hover)] text-[var(--accent-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"}`}>
+                className={`flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-semibold transition-colors ${active ? "bg-[var(--bg-hover)] text-[var(--accent-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"}`}>
                 <Icon size={15} strokeWidth={1.8} />{label}
               </Link>
             );
           })}
         </nav>
         <div className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
-          <QuickSettings />
           <button type="button" onClick={() => void handleRefresh()} disabled={refreshing || isLoading} aria-label="Atualizar cotações" title="Atualizar cotações" className="rounded-lg border border-[var(--border-primary)] p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50"><RefreshCw size={15} className={refreshing || isLoading ? "animate-spin" : ""} /></button>
           <div className="relative">
             <button type="button" onClick={() => setAccountOpen(v => !v)} aria-expanded={accountOpen}
@@ -69,8 +68,12 @@ export default function Sidebar() {
               <span className="hidden max-w-[105px] truncate text-xs font-semibold sm:block">{user.name}</span>
               <ChevronDown size={13} className="text-[var(--text-muted)]" />
             </button>
-            {accountOpen && <div className="absolute right-0 top-full mt-2 w-52 overflow-hidden rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-1 shadow-2xl">
+            {accountOpen && <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-2 shadow-2xl">
               <Link href="/account" onClick={() => setAccountOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm hover:bg-[var(--bg-hover)]"><Settings size={15} /> Minha conta</Link>
+              <div className="my-2 border-t border-[var(--border-primary)] pt-2">
+                <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Aparência e moeda</p>
+                <QuickSettings />
+              </div>
               <button type="button" onClick={() => void handleLogout()} className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm text-[var(--accent-red)] hover:bg-[var(--bg-hover)]"><LogOut size={15} /> Sair</button>
             </div>}
           </div>
