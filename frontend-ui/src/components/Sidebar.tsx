@@ -13,6 +13,7 @@ import { RefreshCw } from "lucide-react";
 const navItems = [
   { icon: LayoutDashboard, label: "Painel", href: "/" },
   { icon: TrendingUp, label: "Mercados", href: "/markets" },
+  { icon: CandlestickChart, label: "Trade", href: "/trade" },
   { icon: CandlestickChart, label: "Gráficos", href: "/chart" },
   { icon: Wallet, label: "Carteira", href: "/portfolio" },
   { icon: Star, label: "Favoritos", href: "/watchlist" },
