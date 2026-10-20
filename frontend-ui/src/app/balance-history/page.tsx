@@ -33,7 +33,7 @@ export default function BalanceHistoryPage() {
       <Sidebar />
       <main className="flex-1 min-w-0 overflow-y-auto p-5 md:p-8">
         <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
-          <div><h1 className="text-2xl font-bold">Extrato da conta</h1><p className="text-sm text-[var(--text-muted)] mt-1">Consulte as movimentações e os saldos da sua conta.</p></div>
+          <div><h1 className="font-primary text-2xl font-semibold tracking-normal">Extrato da conta</h1><p className="text-sm text-[var(--text-muted)] mt-1">Consulte as movimentações e os saldos da sua conta.</p></div>
           <button onClick={() => void load()} className="px-4 py-2 rounded-lg border border-[var(--border-primary)] hover:bg-[var(--bg-hover)]">Atualizar</button>
         </div>
         <div className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5 mb-6">
