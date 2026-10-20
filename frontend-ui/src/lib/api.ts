@@ -41,6 +41,9 @@ export interface ProviderStatus {
   cacheSize: number;
 }
 
+export interface CatalogAsset { symbol: string; name: string; category: string; currency: "USD"; displaySymbol?: string; }
+export interface CatalogResponse { assets: CatalogAsset[]; count: number; page: number; pageSize: number; hasMore: boolean; currency: "USD"; }
+
 export interface SearchResult {
   symbol: string;
   name: string;
@@ -71,11 +74,36 @@ export interface HistoricalDataResponse {
 }
 
 // User API types
+export interface SimulatedPosition {
+  id: string;
+  symbol: string;
+  name: string;
+  side: 'LONG' | 'SHORT';
+  quantity: number;
+  entryPrice: number;
+  leverage: number;
+  margin: number;
+  notionalValue: number;
+  stopLoss: number | null;
+  takeProfit: number | null;
+  currency: string;
+  status: 'OPEN' | 'CLOSED';
+  exitPrice: number | null;
+  realizedPnl: number | null;
+  marketPrice?: number;
+  unrealizedPnl?: number;
+  openedAt: string;
+  closedAt: string | null;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
   username: string;
   email: string;
+  cpf: string;
+  dateOfBirth: string | null;
+  phone: string;
   initials: string;
   avatarUrl: string | null;
   buyingPower: number;
@@ -413,6 +441,17 @@ class StockAPI {
     return this.fetch(`/stocks/crypto/${params}`);
   }
 
+  async getAssetCatalog(page = 1, query = ""): Promise<CatalogResponse> {
+    return this.fetch(`/stocks/catalog/?page=${page}&q=${encodeURIComponent(query)}`);
+  }
+
+  async registerCatalogAsset(symbol: string, type?: string): Promise<CatalogAsset> {
+    return this.fetch('/stocks/catalog/', {
+      method: 'POST',
+      body: JSON.stringify({ symbol, type }),
+    });
+  }
+
   /**
    * Search for symbols
    */
@@ -472,6 +511,16 @@ class StockAPI {
   }
 }
 
+export interface BalanceTransaction {
+  id: string;
+  amount: number;
+  balanceBefore: number;
+  balanceAfter: number;
+  category: string;
+  description: string;
+  createdAt: string;
+}
+
 class UserAPI {
   private baseUrl: string;
 
@@ -515,6 +564,23 @@ class UserAPI {
     }
 
     return response.json();
+  }
+
+  async getBalanceHistory(limit = 100): Promise<{ transactions: BalanceTransaction[]; buyingPower: number; currency: string; note: string }> {
+    return this.fetch(`/users/balance-history/?limit=${limit}`);
+  }
+
+  /** Leveraged positions use a separate simulated margin ledger. */
+  async getPositions(): Promise<{ positions: SimulatedPosition[]; buyingPower: number; currency: string }> {
+    return this.fetch('/users/positions/');
+  }
+
+  async openPosition(data: { symbol: string; side: 'LONG' | 'SHORT'; margin: number; leverage: number; stopLoss?: number | null; takeProfit?: number | null }): Promise<{ position: SimulatedPosition; buyingPower: number }> {
+    return this.fetch('/users/positions/', { method: 'POST', body: JSON.stringify(data) });
+  }
+
+  async closePosition(id: string): Promise<{ position: SimulatedPosition; buyingPower: number }> {
+    return this.fetch(`/users/positions/${encodeURIComponent(id)}/close/`, { method: 'POST' });
   }
 
   /**

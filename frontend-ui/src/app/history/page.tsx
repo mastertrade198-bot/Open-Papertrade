@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
+import LeveragedTradeHistory from "@/components/LeveragedTradeHistory";
 import PageHeader from "@/components/PageHeader";
 import MetricCard from "@/components/MetricCard";
 import { usePortfolio } from "@/context/PortfolioContext";
@@ -109,26 +110,27 @@ export default function HistoryPage() {
     <div className="flex h-full bg-[var(--bg-primary)]">
       <Sidebar />
       <main className="flex-1 flex flex-col gap-7 py-8 px-10 overflow-auto">
+        <LeveragedTradeHistory />
         <PageHeader
-          title="History"
-          subtitle="View your complete trading activity and transactions"
-          primaryButtonText="Export"
+          title="Histórico"
+          subtitle="Consulte todas as suas operações e transações"
+          primaryButtonText="Exportar"
           primaryButtonIcon="download"
           onPrimaryClick={exportCSV}
         />
 
         {/* Metrics Row */}
         <div className="flex gap-4">
-          <MetricCard label="Total Trades" value={totalTrades.toString()} />
-          <MetricCard label="Total Volume" value={formatCurrency(totalVolume, true)} />
+          <MetricCard label="Total de operações" value={totalTrades.toString()} />
+          <MetricCard label="Volume total" value={formatCurrency(totalVolume, true)} />
           <MetricCard
-            label="Profitable"
+            label="Lucrativas"
             value={buyTrades.toString()}
             valueColor="var(--accent-green)"
             subtext={`${((buyTrades / totalTrades) * 100).toFixed(1)}% win rate`}
           />
           <MetricCard
-            label="This Month"
+            label="Neste mês"
             value={thisMonthTrades.length.toString()}
             subtext={`${formatCurrency(thisMonthVolume, true)} volume`}
           />
@@ -140,10 +142,10 @@ export default function HistoryPage() {
           <div className="flex-1 bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)] flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-[var(--text-primary)]">
-                Transaction History
+                Histórico de transações
               </span>
               <button onClick={exportCSV} className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline">
-                Export CSV
+                Exportar CSV
               </button>
             </div>
 
@@ -224,11 +226,11 @@ export default function HistoryPage() {
             </div>
           </div>
 
-          {/* Monthly Summary Panel */}
+          {/* Resumo mensal Panel */}
           <div className="w-[360px] bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)] flex flex-col gap-5">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-[var(--text-primary)]">
-                Monthly Summary
+                Resumo mensal
               </span>
               <button onClick={exportCSV} className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline">
                 Export
@@ -236,10 +238,10 @@ export default function HistoryPage() {
             </div>
 
             <div className="flex flex-col gap-5 flex-1">
-              {/* Best Trade */}
+              {/* Melhor operação */}
               {bestTrade && (
                 <div className="flex flex-col gap-2 pb-4 border-b border-[var(--border-primary)]">
-                  <span className="text-xs text-[var(--text-muted)]">Best Trade</span>
+                  <span className="text-xs text-[var(--text-muted)]">Melhor operação</span>
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-base font-semibold text-[var(--text-primary)]">
                       {bestTrade.symbol}
@@ -251,10 +253,10 @@ export default function HistoryPage() {
                 </div>
               )}
 
-              {/* Worst Trade */}
+              {/* Pior operação */}
               {worstTrade && (
                 <div className="flex flex-col gap-2 pb-4 border-b border-[var(--border-primary)]">
-                  <span className="text-xs text-[var(--text-muted)]">Worst Trade</span>
+                  <span className="text-xs text-[var(--text-muted)]">Pior operação</span>
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-base font-semibold text-[var(--text-primary)]">
                       {worstTrade.symbol}
@@ -269,7 +271,7 @@ export default function HistoryPage() {
               {/* Avg Hold Time */}
               <div className="flex flex-col gap-2 pb-4 border-b border-[var(--border-primary)]">
                 <span className="text-xs text-[var(--text-muted)]">
-                  Average Hold Time
+                  Tempo médio em posição
                 </span>
                 <span className="font-mono text-base font-medium text-[var(--text-primary)]">
                   {avgHoldTime !== null
@@ -280,10 +282,10 @@ export default function HistoryPage() {
                 </span>
               </div>
 
-              {/* Most Traded */}
+              {/* Ativo mais negociado */}
               {mostTraded && (
                 <div className="flex flex-col gap-2">
-                  <span className="text-xs text-[var(--text-muted)]">Most Traded</span>
+                  <span className="text-xs text-[var(--text-muted)]">Ativo mais negociado</span>
                   <span className="font-mono text-base font-medium text-[var(--text-primary)]">
                     {mostTraded[0]} ({mostTraded[1]} trades)
                   </span>
@@ -293,13 +295,13 @@ export default function HistoryPage() {
               {/* Stats */}
               <div className="mt-auto pt-4 border-t border-[var(--border-primary)]">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-[var(--text-muted)]">Buy Orders</span>
+                  <span className="text-xs text-[var(--text-muted)]">Ordens de compra</span>
                   <span className="font-mono text-sm font-medium text-[var(--accent-green)]">
                     {buyTrades}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-muted)]">Sell Orders</span>
+                  <span className="text-xs text-[var(--text-muted)]">Ordens de venda</span>
                   <span className="font-mono text-sm font-medium text-[var(--accent-red)]">
                     {sellTrades}
                   </span>

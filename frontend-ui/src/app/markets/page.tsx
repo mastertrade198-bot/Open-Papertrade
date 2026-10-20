@@ -38,7 +38,7 @@ export default function MarketsPage() {
       <Sidebar />
       <main className="flex-1 flex flex-col gap-7 py-8 px-10 overflow-auto">
         <PageHeader
-          title="Markets"
+          title="Mercados"
           subtitle="Track global markets and discover trading opportunities"
         />
 

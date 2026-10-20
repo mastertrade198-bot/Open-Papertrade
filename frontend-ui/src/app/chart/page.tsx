@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import QuickSettings from "@/components/QuickSettings";
@@ -54,7 +54,7 @@ function saveLayout(symbol: string, layout: ChartLayout) {
   }
 }
 
-export default function ChartPage() {
+function ChartPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -113,10 +113,10 @@ export default function ChartPage() {
         <header className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex flex-col gap-1">
             <h1 className="font-serif text-[28px] font-medium tracking-[-0.5px] text-[var(--text-primary)]">
-              Chart Analysis
+              Análise gráfica
             </h1>
             <p className="text-xs text-[var(--text-muted)]">
-              Multi-pane technical analysis with indicators, drawing tools, and saved layouts
+              Análise técnica com indicadores, ferramentas de desenho e layouts salvos
             </p>
           </div>
 
@@ -132,7 +132,7 @@ export default function ChartPage() {
                 <input
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Search symbol…"
+                  placeholder="Pesquisar ativo…"
                   className="pl-9 pr-3 py-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border-primary)] text-xs font-mono text-[var(--text-primary)] placeholder:text-[var(--text-dim)] focus:border-[var(--accent-primary)] outline-none w-44"
                 />
               </div>
@@ -191,5 +191,20 @@ export default function ChartPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+
+export default function ChartPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-full items-center justify-center bg-[var(--bg-primary)] text-sm text-[var(--text-muted)]">
+          Loading chart...
+        </div>
+      }
+    >
+      <ChartPageContent />
+    </Suspense>
   );
 }

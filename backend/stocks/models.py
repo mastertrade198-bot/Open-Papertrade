@@ -58,3 +58,19 @@ class CompanyProfile(models.Model):
 
     def __str__(self):
         return f"{self.symbol}: {self.name}"
+
+
+class TradableAsset(models.Model):
+    """USD-denominated instruments discovered and verified through the quote provider."""
+    symbol = models.CharField(max_length=30, unique=True)
+    name = models.CharField(max_length=200)
+    category = models.CharField(max_length=40)
+    currency = models.CharField(max_length=3, default='USD')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['category', 'symbol']
+        indexes = [models.Index(fields=['category', 'symbol'])]
+
+    def __str__(self):
+        return self.symbol

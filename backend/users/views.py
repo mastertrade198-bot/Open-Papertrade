@@ -92,6 +92,27 @@ class UserProfileView(APIView):
                     )
                 user.username = new_username
 
+        if 'cpf' in data:
+            cpf = str(data['cpf']).strip()
+            if cpf and not re.fullmatch(r'\d{11}', cpf):
+                return Response({'error': 'CPF deve conter 11 dígitos'}, status=status.HTTP_400_BAD_REQUEST)
+            user.cpf = cpf
+        if 'phone' in data:
+            phone = str(data['phone']).strip()
+            if len(phone) > 20:
+                return Response({'error': 'Telefone muito longo'}, status=status.HTTP_400_BAD_REQUEST)
+            user.phone = phone
+        if 'dateOfBirth' in data:
+            from datetime import date
+            raw_date = data['dateOfBirth']
+            try:
+                birth_date = date.fromisoformat(raw_date) if raw_date else None
+            except (TypeError, ValueError):
+                return Response({'error': 'Data de nascimento inválida'}, status=status.HTTP_400_BAD_REQUEST)
+            if birth_date and birth_date > date.today():
+                return Response({'error': 'Data de nascimento não pode ser futura'}, status=status.HTTP_400_BAD_REQUEST)
+            user.date_of_birth = birth_date
+
         user.save()
         return Response(user.to_dict())
 
@@ -1048,84 +1069,39 @@ class UpdateMarketView(APIView):
 
 
 class UpdateCurrencyView(APIView):
-    """Update user's preferred trading currency."""
+    """Keep the account display currency fixed to USD."""
 
-    # Exchange rates relative to USD (approximate)
-    EXCHANGE_RATES = {
-        'USD': 1.0,
-        'EUR': 0.92,
-        'GBP': 0.79,
-        'INR': 83.12,
-        'JPY': 149.50,
-        'CAD': 1.36,
-        'AUD': 1.53,
-        'CHF': 0.88,
-        'CNY': 7.24,
-        'SGD': 1.34,
-    }
-
-    CURRENCY_SYMBOLS = {
-        'USD': '$',
-        'EUR': '€',
-        'GBP': '£',
-        'INR': '₹',
-        'JPY': '¥',
-        'CAD': 'C$',
-        'AUD': 'A$',
-        'CHF': 'CHF',
-        'CNY': '¥',
-        'SGD': 'S$',
-    }
+    CURRENCY_SYMBOLS = {"USD": "$"}
 
     def get(self, request):
-        """Get available currencies and exchange rates."""
         return Response({
-            'currencies': [
-                {'code': code, 'name': name, 'symbol': self.CURRENCY_SYMBOLS.get(code, code), 'rate': self.EXCHANGE_RATES.get(code, 1.0)}
-                for code, name in [
-                    ('USD', 'US Dollar'),
-                    ('EUR', 'Euro'),
-                    ('GBP', 'British Pound'),
-                    ('INR', 'Indian Rupee'),
-                    ('JPY', 'Japanese Yen'),
-                    ('CAD', 'Canadian Dollar'),
-                    ('AUD', 'Australian Dollar'),
-                    ('CHF', 'Swiss Franc'),
-                    ('CNY', 'Chinese Yuan'),
-                    ('SGD', 'Singapore Dollar'),
-                ]
+            "currencies": [
+                {"code": "USD", "name": "US Dollar", "symbol": "$", "rate": 1.0}
             ],
-            'exchangeRates': self.EXCHANGE_RATES,
-            'symbols': self.CURRENCY_SYMBOLS,
+            "exchangeRates": {"USD": 1.0},
+            "symbols": {"USD": "$"},
         })
 
     def post(self, request):
-        """Update user's currency preference."""
         user = get_user(request)
-        currency = request.data.get('currency', 'USD').upper()
+        currency = str(request.data.get("currency", "USD")).upper()
 
-        valid_currencies = list(self.EXCHANGE_RATES.keys())
-        if currency not in valid_currencies:
+        if currency != "USD":
             return Response(
-                {'error': f'Invalid currency. Valid options: {", ".join(valid_currencies)}'},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": "Account currency is fixed to USD."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if not hasattr(user, 'settings'):
-            settings = UserSettings.objects.create(user=user)
-        else:
-            settings = user.settings
-
-        settings.currency = currency
-        settings.save()
+        settings_obj, _ = UserSettings.objects.get_or_create(user=user)
+        settings_obj.currency = "USD"
+        settings_obj.save(update_fields=["currency"])
 
         return Response({
-            'success': True,
-            'currency': settings.currency,
-            'symbol': self.CURRENCY_SYMBOLS.get(currency, currency),
-            'exchangeRate': self.EXCHANGE_RATES.get(currency, 1.0),
+            "success": True,
+            "currency": "USD",
+            "symbol": "$",
+            "exchangeRate": 1.0,
         })
-
 
 def compute_trader_stats(user):
     """Compute trading stats for a user. Returns dict with portfolioReturn, realizedProfit, totalTrades, winRate."""

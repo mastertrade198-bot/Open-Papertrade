@@ -90,22 +90,12 @@ function Modal({ isOpen, onClose, title, children }: {
 
 // Available currencies for selection
 const AVAILABLE_CURRENCIES = [
-  { code: 'USD', name: 'US Dollar', symbol: '$' },
-  { code: 'EUR', name: 'Euro', symbol: '€' },
-  { code: 'GBP', name: 'British Pound', symbol: '£' },
-  { code: 'INR', name: 'Indian Rupee', symbol: '₹' },
-  { code: 'JPY', name: 'Japanese Yen', symbol: '¥' },
-  { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$' },
-  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$' },
-  { code: 'CHF', name: 'Swiss Franc', symbol: 'CHF' },
-  { code: 'CNY', name: 'Chinese Yuan', symbol: '¥' },
-  { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$' },
+  { code: 'USD', name: 'Dólar americano', symbol: '$' },
 ];
 
 // Available markets for selection
 const AVAILABLE_MARKETS = [
-  { code: 'US', name: 'United States', flag: '🇺🇸', exchanges: ['NASDAQ', 'NYSE'], description: 'US stocks (AAPL, GOOGL, MSFT...)' },
-  { code: 'IN', name: 'India', flag: '🇮🇳', exchanges: ['NSE', 'BSE'], description: 'Indian stocks (RELIANCE, TCS, INFY...)' },
+  { code: 'US', name: 'Estados Unidos', flag: '🇺🇸', exchanges: ['NASDAQ', 'NYSE'], description: 'Ações dos EUA (AAPL, GOOGL, MSFT...)' },
 ];
 
 export default function AccountPage() {
@@ -132,11 +122,14 @@ export default function AccountPage() {
   const [editUsername, setEditUsername] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editCpf, setEditCpf] = useState("");
+  const [editDateOfBirth, setEditDateOfBirth] = useState("");
+  const [editPhone, setEditPhone] = useState("");
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Modal states
   const [showSecurityModal, setShowSecurityModal] = useState(false);
-  const [showAppearanceModal, setShowAppearanceModal] = useState(false);
+  const [showAparênciaModal, setShowAparênciaModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
 
   // Security modal state
@@ -170,6 +163,9 @@ export default function AccountPage() {
       setEditName(profileRes.profile.name);
       setEditUsername(profileRes.profile.username || '');
       setEditEmail(profileRes.profile.email);
+      setEditCpf(profileRes.profile.cpf || "");
+      setEditDateOfBirth(profileRes.profile.dateOfBirth || "");
+      setEditPhone(profileRes.profile.phone || "");
       setStats(statsRes);
       setAchievements(achievementsRes.achievements);
       setAchievementStats({
@@ -177,7 +173,7 @@ export default function AccountPage() {
         totalCount: achievementsRes.totalCount,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load account data");
+      setError(err instanceof Error ? err.message : "Não foi possível carregar os dados da conta");
     } finally {
       setIsLoading(false);
     }
@@ -199,7 +195,7 @@ export default function AccountPage() {
 
     // Validate username
     if (editUsername && !/^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/.test(editUsername)) {
-      setUsernameError("3-30 chars, lowercase letters, numbers, and hyphens only");
+      setUsernameError("Use de 3 a 30 caracteres: letras minúsculas, números e hífens");
       return;
     }
     setUsernameError("");
@@ -209,13 +205,16 @@ export default function AccountPage() {
       const updated = await userAPI.updateProfile({
         name: editName,
         email: editEmail,
+        cpf: editCpf,
+        dateOfBirth: editDateOfBirth,
+        phone: editPhone,
         ...(editUsername ? { username: editUsername } : {}),
       } as any);
       setProfile({ ...profile, ...updated });
       setIsEditing(false);
-      showSuccess("Profile updated successfully");
+      showSuccess("Perfil atualizado com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update profile");
+      setError(err instanceof Error ? err.message : "Não foi possível atualizar o perfil");
     } finally {
       setIsSaving(false);
     }
@@ -235,9 +234,9 @@ export default function AccountPage() {
       const result = await userAPI.uploadAvatar(file);
       setProfile({ ...profile, avatarUrl: result.avatarUrl });
       await refreshPortfolio();
-      showSuccess("Profile picture updated");
+      showSuccess("Foto do perfil atualizada");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to upload image");
+      setError(err instanceof Error ? err.message : "Não foi possível enviar a imagem");
     } finally {
       setIsSaving(false);
     }
@@ -253,9 +252,9 @@ export default function AccountPage() {
       await userAPI.removeAvatar();
       setProfile({ ...profile, avatarUrl: null });
       await refreshPortfolio();
-      showSuccess("Profile picture removed");
+      showSuccess("Foto do perfil removida");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to remove image");
+      setError(err instanceof Error ? err.message : "Não foi possível remover a foto");
     } finally {
       setIsSaving(false);
     }
@@ -294,7 +293,7 @@ export default function AccountPage() {
       if (key === 'tradeConfirmations') {
         updateTradingSettings({ confirmTrades: settings.preferences.confirmTrades });
       }
-      setError(err instanceof Error ? err.message : "Failed to update settings");
+      setError(err instanceof Error ? err.message : "Não foi possível atualizar as configurações");
     }
   };
 
@@ -331,7 +330,7 @@ export default function AccountPage() {
       if (key === 'confirmTrades') {
         updateNotificationSettings({ tradeConfirmations: settings.notifications.tradeConfirmations });
       }
-      setError(err instanceof Error ? err.message : "Failed to update settings");
+      setError(err instanceof Error ? err.message : "Não foi possível atualizar as configurações");
     }
   };
 
@@ -350,7 +349,7 @@ export default function AccountPage() {
     } catch (err) {
       setSettings(settings);
       updateTradingSettings({ defaultOrderType: settings.preferences.defaultOrderType });
-      setError(err instanceof Error ? err.message : "Failed to update settings");
+      setError(err instanceof Error ? err.message : "Não foi possível atualizar as configurações");
     }
   };
 
@@ -363,9 +362,9 @@ export default function AccountPage() {
       await fetchUserData();
       refreshPrices();
       refreshPortfolio();
-      showSuccess("Account reset successfully");
+      showSuccess("Conta redefinida com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reset account");
+      setError(err instanceof Error ? err.message : "Não foi possível redefinir a conta");
     } finally {
       setIsSaving(false);
     }
@@ -384,10 +383,10 @@ export default function AccountPage() {
 
     try {
       await userAPI.updateTheme(theme);
-      showSuccess(`Theme changed to ${theme.toLowerCase()}`);
+      showSuccess(`Tema alterado para ${theme === "DARK" ? "escuro" : theme === "LIGHT" ? "claro" : "automático"}`);
     } catch (err) {
       setSettings(settings);
-      setError(err instanceof Error ? err.message : "Failed to update theme");
+      setError(err instanceof Error ? err.message : "Não foi possível alterar o tema");
     }
   };
 
@@ -405,10 +404,10 @@ export default function AccountPage() {
     try {
       await setCurrency(newCurrency);
       const currencyInfo = AVAILABLE_CURRENCIES.find(c => c.code === newCurrency);
-      showSuccess(`Currency changed to ${currencyInfo?.name || newCurrency}`);
+      showSuccess(`Moeda alterada para ${currencyInfo?.name || newCurrency}`);
     } catch (err) {
       setSettings({ ...settings, display: { ...settings.display, currency: oldCurrency } });
-      setError(err instanceof Error ? err.message : "Failed to update currency");
+      setError(err instanceof Error ? err.message : "Não foi possível alterar a moeda");
     }
   };
 
@@ -426,10 +425,10 @@ export default function AccountPage() {
     try {
       await setMarket(newMarket);
       const marketInfo = AVAILABLE_MARKETS.find(m => m.code === newMarket);
-      showSuccess(`Market changed to ${marketInfo?.name || newMarket}`);
+      showSuccess(`Mercado alterado para ${marketInfo?.name || newMarket}`);
     } catch (err) {
       setSettings({ ...settings, display: { ...settings.display, market: oldMarket } });
-      setError(err instanceof Error ? err.message : "Failed to update market");
+      setError(err instanceof Error ? err.message : "Não foi possível alterar o mercado");
     }
   };
 
@@ -457,11 +456,11 @@ export default function AccountPage() {
 
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("As senhas não coincidem");
       return;
     }
     if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError("A senha deve ter pelo menos 8 caracteres");
       return;
     }
     setIsSaving(true);
@@ -475,9 +474,9 @@ export default function AccountPage() {
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      showSuccess("Password changed successfully");
+      showSuccess("Senha alterada com sucesso");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to change password");
+      setError(err instanceof Error ? err.message : "Não foi possível alterar a senha");
     } finally {
       setIsSaving(false);
     }
@@ -492,7 +491,7 @@ export default function AccountPage() {
       setTotpSecret(result.secret);
       setSecurityView('2fa-setup');
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to start 2FA setup");
+      setError(err instanceof Error ? err.message : "Não foi possível iniciar a configuração de dois fatores");
     } finally {
       setIsSaving(false);
     }
@@ -509,7 +508,7 @@ export default function AccountPage() {
       }
       setTotpCode("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to verify 2FA code");
+      setError(err instanceof Error ? err.message : "Não foi possível verificar o código de autenticação");
     } finally {
       setIsSaving(false);
     }
@@ -525,9 +524,9 @@ export default function AccountPage() {
       }
       setSecurityView('overview');
       setDisablePassword("");
-      showSuccess("Two-factor authentication disabled");
+      showSuccess("Autenticação em dois fatores desativada");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to disable 2FA");
+      setError(err instanceof Error ? err.message : "Não foi possível desativar a autenticação em dois fatores");
     } finally {
       setIsSaving(false);
     }
@@ -541,7 +540,7 @@ export default function AccountPage() {
       setApiKeys(result.keys);
       setSecurityView('api-keys');
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load API keys");
+      setError(err instanceof Error ? err.message : "Não foi possível carregar as chaves de API");
     } finally {
       setIsSaving(false);
     }
@@ -549,7 +548,7 @@ export default function AccountPage() {
 
   const handleCreateAPIKey = async () => {
     if (!newKeyName.trim()) {
-      setError("API key name is required");
+      setError("Informe um nome para a chave de API");
       return;
     }
     setIsSaving(true);
@@ -560,21 +559,21 @@ export default function AccountPage() {
       setNewKeyName("");
       setSecurityView('api-key-created');
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create API key");
+      setError(err instanceof Error ? err.message : "Não foi possível criar a chave de API");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleRevokeAPIKey = async (keyId: string) => {
-    if (!confirm("Are you sure you want to revoke this API key?")) return;
+    if (!confirm("Tem certeza de que deseja revogar esta chave de API?")) return;
     setError(null);
     try {
       await userAPI.revokeAPIKey(keyId);
       setApiKeys(apiKeys.filter(k => k.id !== keyId));
-      showSuccess("API key revoked");
+      showSuccess("Chave de API revogada");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to revoke API key");
+      setError(err instanceof Error ? err.message : "Não foi possível revogar a chave de API");
     }
   };
 
@@ -589,7 +588,7 @@ export default function AccountPage() {
     const created = new Date(dateString);
     const now = new Date();
     const days = Math.floor((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
-    if (days < 1) return "Today";
+    if (days < 1) return "Hoje";
     if (days === 1) return "1 day";
     if (days < 30) return `${days} days`;
     const months = Math.floor(days / 30);
@@ -619,7 +618,7 @@ export default function AccountPage() {
         <Sidebar />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <p className="text-[var(--text-muted)] mb-4">{error || "Failed to load account data"}</p>
+            <p className="text-[var(--text-muted)] mb-4">{error || "Não foi possível carregar os dados da conta"}</p>
             <button
               onClick={fetchUserData}
               className="px-4 py-2 rounded-lg bg-[var(--accent-primary)] text-white text-sm font-medium"
@@ -637,8 +636,8 @@ export default function AccountPage() {
       <Sidebar />
       <main className="flex-1 flex flex-col gap-6 py-8 px-10 overflow-auto">
         <PageHeader
-          title="Account"
-          subtitle="Manage your profile and preferences"
+          title="Conta"
+          subtitle="Gerencie seu perfil e suas preferências"
         />
 
         {/* Success Message */}
@@ -673,13 +672,16 @@ export default function AccountPage() {
                       setEditName(profile.name);
                       setEditUsername(profile.username || '');
                       setEditEmail(profile.email);
+                      setEditCpf(profile.cpf || "");
+                      setEditDateOfBirth(profile.dateOfBirth || "");
+                      setEditPhone(profile.phone || "");
                       setUsernameError("");
                     }
                   }}
                   className="flex items-center gap-2 text-[11px] font-medium text-[var(--accent-primary)] hover:underline"
                 >
                   <Edit2 size={12} />
-                  {isEditing ? "Cancel" : "Edit"}
+                  {isEditing ? "Cancelar" : "Editar"}
                 </button>
               </div>
 
@@ -718,7 +720,7 @@ export default function AccountPage() {
                       onClick={handleAvatarRemove}
                       disabled={isSaving}
                       className="absolute top-0 right-0 w-6 h-6 rounded-full bg-[var(--bg-card)] border border-[var(--border-primary)] flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 hover:bg-[var(--accent-red)]/10 hover:border-[var(--accent-red)]/50 transition-all disabled:opacity-50"
-                      title="Remove profile picture"
+                      title="Remover foto do perfil"
                     >
                       <X size={12} className="text-[var(--accent-red)]" />
                     </button>
@@ -731,7 +733,7 @@ export default function AccountPage() {
                     <div className="flex flex-col gap-4">
                       <div>
                         <label className="text-[11px] font-medium text-[var(--text-muted)] mb-1 block">
-                          Full Name
+                          Nome completo
                         </label>
                         <input
                           type="text"
@@ -772,12 +774,26 @@ export default function AccountPage() {
                           className="w-full px-3 py-2 rounded-lg bg-[var(--bg-card-inner)] border border-[var(--border-muted)] text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]"
                         />
                       </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label htmlFor="profile-cpf" className="text-[11px] text-[var(--text-muted)]">CPF</label>
+                          <input id="profile-cpf" inputMode="numeric" maxLength={11} value={editCpf} onChange={(e) => setEditCpf(e.target.value.replace(/\D/g, "").slice(0, 11))} placeholder="Somente números" className="w-full px-3 py-2 rounded-lg bg-[var(--bg-card-inner)] border border-[var(--border-muted)] text-sm text-[var(--text-primary)]" />
+                        </div>
+                        <div>
+                          <label htmlFor="profile-birth" className="text-[11px] text-[var(--text-muted)]">Data de nascimento</label>
+                          <input id="profile-birth" type="date" max={new Date().toISOString().slice(0, 10)} value={editDateOfBirth} onChange={(e) => setEditDateOfBirth(e.target.value)} className="w-full px-3 py-2 rounded-lg bg-[var(--bg-card-inner)] border border-[var(--border-muted)] text-sm text-[var(--text-primary)]" />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label htmlFor="profile-phone" className="text-[11px] text-[var(--text-muted)]">Telefone</label>
+                          <input id="profile-phone" type="tel" maxLength={20} value={editPhone} onChange={(e) => setEditPhone(e.target.value)} placeholder="(81) 99999-9999" className="w-full px-3 py-2 rounded-lg bg-[var(--bg-card-inner)] border border-[var(--border-muted)] text-sm text-[var(--text-primary)]" />
+                        </div>
+                      </div>
                       <button
                         onClick={handleSaveProfile}
                         disabled={isSaving}
                         className="self-start px-4 py-2 rounded-lg bg-[var(--accent-primary)] text-sm font-medium text-white hover:bg-[var(--accent-secondary)] transition-colors disabled:opacity-50"
                       >
-                        {isSaving ? "Saving..." : "Save Changes"}
+                        {isSaving ? "Salvando..." : "Salvar alterações"}
                       </button>
                     </div>
                   ) : (
@@ -790,9 +806,10 @@ export default function AccountPage() {
                           @{profile.username}
                         </p>
                       )}
-                      <p className="text-sm text-[var(--text-muted)] mt-1">
-                        {profile.email}
-                      </p>
+                      <p className="text-sm text-[var(--text-muted)] mt-1">{profile.email}</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-2">CPF: {profile.cpf || "Não informado"}</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">Data de nascimento: {profile.dateOfBirth ? profile.dateOfBirth.split("-").reverse().join("/") : "Não informada"}</p>
+                      <p className="text-xs text-[var(--text-muted)] mt-1">Telefone: {profile.phone || "Não informado"}</p>
                       <div className="flex items-center gap-2 mt-3">
                         <span className="px-2 py-1 rounded-md bg-purple-500/10 text-[10px] font-semibold text-purple-400">
                           Lv.{profile.level} {profile.rank}
@@ -812,7 +829,7 @@ export default function AccountPage() {
               <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)]">
                 <div className="flex items-center gap-3 mb-5">
                   <Trophy size={18} className="text-purple-400" />
-                  <h2 className="text-sm font-semibold text-[var(--text-primary)]">Rank Progress</h2>
+                  <h2 className="text-sm font-semibold text-[var(--text-primary)]">Progresso de nível</h2>
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="flex flex-col items-center gap-1">
@@ -831,7 +848,7 @@ export default function AccountPage() {
                       <span className="text-xs text-[var(--text-muted)]">
                         {stats.rank.nextRank
                           ? `${stats.rank.nextRank.xpRequired.toLocaleString()} XP for ${stats.rank.nextRank.rank}`
-                          : 'Max Rank'}
+                          : 'Nível máximo'}
                       </span>
                     </div>
                     <div className="w-full h-3 rounded-full bg-[var(--bg-card-inner)] border border-[var(--border-primary)] overflow-hidden">
@@ -857,7 +874,7 @@ export default function AccountPage() {
             {/* Account Stats */}
             <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)]">
               <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-5">
-                Account Overview
+                Visão geral da conta
               </h2>
 
               <div className="grid grid-cols-2 gap-4">
@@ -866,7 +883,7 @@ export default function AccountPage() {
                     <div className="w-10 h-10 rounded-lg bg-[var(--accent-primary)]/10 flex items-center justify-center">
                       <PieChart size={18} className="text-[var(--accent-primary)]" />
                     </div>
-                    <span className="text-xs text-[var(--text-muted)]">Portfolio Value</span>
+                    <span className="text-xs text-[var(--text-muted)]">Valor da carteira</span>
                   </div>
                   <span className="font-mono text-2xl font-bold text-[var(--text-primary)]">
                     {formatCurrency(totalPortfolioValue)}
@@ -878,7 +895,7 @@ export default function AccountPage() {
                     <div className="w-10 h-10 rounded-lg bg-[var(--accent-green)]/10 flex items-center justify-center">
                       <TrendingUp size={18} className="text-[var(--accent-green)]" />
                     </div>
-                    <span className="text-xs text-[var(--text-muted)]">Total Returns</span>
+                    <span className="text-xs text-[var(--text-muted)]">Retorno total</span>
                   </div>
                   <span className={`font-mono text-2xl font-bold ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
                     {totalReturns >= 0 ? "+" : ""}{formatCurrency(totalReturns)}
@@ -893,7 +910,7 @@ export default function AccountPage() {
                     <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
                       <DollarSign size={18} className="text-blue-500" />
                     </div>
-                    <span className="text-xs text-[var(--text-muted)]">Buying Power</span>
+                    <span className="text-xs text-[var(--text-muted)]">Saldo disponível</span>
                   </div>
                   <span className="font-mono text-2xl font-bold text-[var(--text-primary)]">
                     {formatCurrency(buyingPower, false, { convertFromUSD: false })}
@@ -905,7 +922,7 @@ export default function AccountPage() {
                     <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
                       <History size={18} className="text-purple-500" />
                     </div>
-                    <span className="text-xs text-[var(--text-muted)]">Total Trades</span>
+                    <span className="text-xs text-[var(--text-muted)]">Total de operações</span>
                   </div>
                   <span className="font-mono text-2xl font-bold text-[var(--text-primary)]">
                     {stats.totalTrades}
@@ -916,19 +933,19 @@ export default function AccountPage() {
               {/* Achievement Stats */}
               <div className="grid grid-cols-4 gap-4 mt-4 pt-4 border-t border-[var(--border-primary)]">
                 <div className="text-center">
-                  <span className="text-xs text-[var(--text-muted)]">Holdings</span>
+                  <span className="text-xs text-[var(--text-muted)]">Ativos</span>
                   <div className="font-mono text-lg font-semibold text-[var(--text-primary)] mt-1">
                     {stats.holdingsCount}
                   </div>
                 </div>
                 <div className="text-center">
-                  <span className="text-xs text-[var(--text-muted)]">Account Age</span>
+                  <span className="text-xs text-[var(--text-muted)]">Tempo de conta</span>
                   <div className="font-mono text-lg font-semibold text-[var(--text-primary)] mt-1">
                     {formatAccountAge(stats.memberSince)}
                   </div>
                 </div>
                 <div className="text-center">
-                  <span className="text-xs text-[var(--text-muted)]">Win Rate</span>
+                  <span className="text-xs text-[var(--text-muted)]">Taxa de acerto</span>
                   <div className="font-mono text-lg font-semibold text-[var(--accent-green)] mt-1">
                     {stats.winRate}%
                   </div>
@@ -950,7 +967,7 @@ export default function AccountPage() {
                   [ACHIEVEMENTS]
                 </span>
                 <h2 className="text-xl font-bold tracking-[2px] text-[var(--text-primary)] uppercase">
-                  Trader Milestones
+                  Conquistas do trader
                 </h2>
                 <div className="w-16 h-[3px] rounded-full bg-[var(--accent-primary)]" />
                 <span className="text-[11px] font-mono text-[var(--text-dim)]">
@@ -1044,21 +1061,21 @@ export default function AccountPage() {
 
           {/* Right Column - Settings */}
           <div className="w-[380px] flex flex-col gap-5">
-            {/* Notifications */}
+            {/* Notificações */}
             <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)]">
               <div className="flex items-center gap-3 mb-5">
                 <Bell size={18} className="text-[var(--text-muted)]" />
                 <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-                  Notifications
+                  Notificações
                 </h2>
               </div>
 
               <div className="flex flex-col gap-4">
                 {[
-                  { key: "priceAlerts" as const, label: "Price Alerts", desc: "Get notified when prices hit your targets" },
-                  { key: "tradeConfirmations" as const, label: "Trade Confirmations", desc: "Confirm before executing trades" },
-                  { key: "weeklyReport" as const, label: "Weekly Report", desc: "Receive weekly performance summary" },
-                  { key: "marketNews" as const, label: "Market News", desc: "Breaking news and market updates" },
+                  { key: "priceAlerts" as const, label: "Alertas de preço", desc: "Receba avisos quando os preços atingirem suas metas" },
+                  { key: "tradeConfirmations" as const, label: "Confirmações de operações", desc: "Confirmar antes de executar operações" },
+                  { key: "weeklyReport" as const, label: "Relatório semanal", desc: "Receba um resumo semanal do desempenho" },
+                  { key: "marketNews" as const, label: "Notícias do mercado", desc: "Notícias e atualizações do mercado" },
                 ].map((item) => (
                   <div key={item.key} className="flex items-center justify-between">
                     <div>
@@ -1086,58 +1103,29 @@ export default function AccountPage() {
               </div>
             </div>
 
-            {/* Trading Preferences */}
+            {/* Preferências de negociação */}
             <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border-primary)]">
               <div className="flex items-center gap-3 mb-5">
                 <TrendingUp size={18} className="text-[var(--text-muted)]" />
                 <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-                  Trading Preferences
+                  Preferências de negociação
                 </h2>
               </div>
 
               <div className="flex flex-col gap-4">
                 <div>
                   <span className="text-xs font-medium text-[var(--text-muted)] mb-2 block">
-                    Default Order Type
+                    Execução de ordens
                   </span>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1 group/market">
-                      <button
-                        onClick={() => handleOrderTypeChange("MARKET")}
-                        className={`w-full py-2 rounded-lg text-xs font-medium transition-colors ${
-                          settings.preferences.defaultOrderType === "MARKET"
-                            ? "bg-[var(--accent-primary)] text-white"
-                            : "bg-[var(--bg-card-inner)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]"
-                        }`}
-                      >
-                        MARKET
-                      </button>
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 px-3 py-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-primary)] shadow-xl text-xs text-[var(--text-secondary)] opacity-0 invisible group-hover/market:opacity-100 group-hover/market:visible pointer-events-none transition-all duration-150 z-50">
-                        Executes immediately at the current market price. Guaranteed to fill.
-                      </div>
-                    </div>
-                    <div className="relative flex-1 group/limit">
-                      <button
-                        onClick={() => handleOrderTypeChange("LIMIT")}
-                        className={`w-full py-2 rounded-lg text-xs font-medium transition-colors ${
-                          settings.preferences.defaultOrderType === "LIMIT"
-                            ? "bg-[var(--accent-primary)] text-white"
-                            : "bg-[var(--bg-card-inner)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]"
-                        }`}
-                      >
-                        LIMIT
-                      </button>
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 px-3 py-2 rounded-lg bg-[var(--bg-primary)] border border-[var(--border-primary)] shadow-xl text-xs text-[var(--text-secondary)] opacity-0 invisible group-hover/limit:opacity-100 group-hover/limit:visible pointer-events-none transition-all duration-150 z-50">
-                        Executes only when the price reaches your specified limit. May not fill if the price doesn&apos;t reach your target.
-                      </div>
-                    </div>
-                  </div>
+                  <p className="text-xs text-[var(--text-secondary)]">
+                    All trades execute at the current market price.
+                  </p>
                 </div>
 
                 {[
-                  { key: "confirmTrades" as const, label: "Confirm before trading" },
+                  { key: "confirmTrades" as const, label: "Confirmar antes de negociar" },
                   { key: "showProfitLoss" as const, label: "Show profit/loss on holdings" },
-                  { key: "compactMode" as const, label: "Compact view mode" },
+                  { key: "compactMode" as const, label: "Modo compacto" },
                 ].map((item) => (
                   <div key={item.key} className="flex items-center justify-between">
                     <span className="text-sm text-[var(--text-primary)]">{item.label}</span>
@@ -1170,28 +1158,28 @@ export default function AccountPage() {
               >
                 <div className="flex items-center gap-3">
                   <Shield size={18} className="text-[var(--text-muted)]" />
-                  <span className="text-sm text-[var(--text-primary)]">Security Settings</span>
+                  <span className="text-sm text-[var(--text-primary)]">Settings de segurança</span>
                 </div>
                 <ChevronRight size={16} className="text-[var(--text-muted)]" />
               </button>
 
               <button
-                onClick={() => setShowAppearanceModal(true)}
+                onClick={() => setShowAparênciaModal(true)}
                 className="w-full flex items-center justify-between px-5 py-4 hover:bg-[var(--bg-muted)] transition-colors border-b border-[var(--border-primary)]"
               >
                 <div className="flex items-center gap-3">
                   <Palette size={18} className="text-[var(--text-muted)]" />
-                  <span className="text-sm text-[var(--text-primary)]">Appearance</span>
+                  <span className="text-sm text-[var(--text-primary)]">Aparência</span>
                 </div>
                 <ChevronRight size={16} className="text-[var(--text-muted)]" />
               </button>
 
               </div>
 
-            {/* Danger Zone */}
+            {/* Zona de risco */}
             <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] overflow-hidden">
               <div className="px-5 pt-4 pb-3">
-                <span className="text-[10px] font-bold tracking-[1.5px] uppercase text-[var(--text-dim)]">Danger Zone</span>
+                <span className="text-[10px] font-bold tracking-[1.5px] uppercase text-[var(--text-dim)]">Zona de risco</span>
               </div>
 
               <button
@@ -1204,7 +1192,7 @@ export default function AccountPage() {
                 </div>
                 <div className="flex-1 text-left">
                   <span className="text-sm font-medium text-[var(--text-primary)] block">
-                    {isSaving ? "Resetting..." : "Reset Account"}
+                    {isSaving ? "Redefinindo..." : "Redefinir conta"}
                   </span>
                   <span className="text-[11px] text-[var(--text-dim)]">
                     Clear all trades, holdings, and alerts
@@ -1221,9 +1209,9 @@ export default function AccountPage() {
                   <LogOut size={16} className="text-[var(--accent-red)]" />
                 </div>
                 <div className="flex-1 text-left">
-                  <span className="text-sm font-medium text-[var(--text-primary)] block">Sign Out</span>
+                  <span className="text-sm font-medium text-[var(--text-primary)] block">Sair</span>
                   <span className="text-[11px] text-[var(--text-dim)]">
-                    End your current session
+                    Encerrar sua sessão atual
                   </span>
                 </div>
                 <ChevronRight size={16} className="text-[var(--text-dim)] group-hover:text-[var(--accent-red)] transition-colors" />
@@ -1233,14 +1221,14 @@ export default function AccountPage() {
         </div>
       </main>
 
-      {/* Security Settings Modal */}
+      {/* Settings de segurança Modal */}
       <Modal
         isOpen={showSecurityModal}
         onClose={() => {
           setShowSecurityModal(false);
           resetSecurityState();
         }}
-        title="Security Settings"
+        title="Settings de segurança"
       >
         <div className="flex flex-col gap-4">
           {securityView === 'overview' && (
@@ -1250,11 +1238,11 @@ export default function AccountPage() {
                   <Lock size={20} className="text-blue-500" />
                 </div>
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-[var(--text-primary)]">Password</span>
+                  <span className="text-sm font-medium text-[var(--text-primary)]">Senha</span>
                   <p className="text-xs text-[var(--text-muted)]">
                     {profile?.passwordChangedAt
                       ? `Last changed ${Math.floor((Date.now() - new Date(profile.passwordChangedAt).getTime()) / (1000 * 60 * 60 * 24))} days ago`
-                      : "Never changed"}
+                      : "Nunca alterada"}
                   </p>
                 </div>
                 <button
@@ -1270,9 +1258,9 @@ export default function AccountPage() {
                   <Smartphone size={20} className="text-purple-500" />
                 </div>
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-[var(--text-primary)]">Two-Factor Auth</span>
+                  <span className="text-sm font-medium text-[var(--text-primary)]">Autenticação em dois fatores</span>
                   <p className="text-xs text-[var(--text-muted)]">
-                    {profile?.is2faEnabled ? "Enabled" : "Not enabled"}
+                    {profile?.is2faEnabled ? "Ativado" : "Não ativado"}
                   </p>
                 </div>
                 {profile?.is2faEnabled ? (
@@ -1288,7 +1276,7 @@ export default function AccountPage() {
                     disabled={isSaving}
                     className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-secondary)] transition-colors disabled:opacity-50"
                   >
-                    {isSaving ? "..." : "Enable"}
+                    {isSaving ? "..." : "Ativar"}
                   </button>
                 )}
               </div>
@@ -1298,8 +1286,8 @@ export default function AccountPage() {
                   <Key size={20} className="text-green-500" />
                 </div>
                 <div className="flex-1">
-                  <span className="text-sm font-medium text-[var(--text-primary)]">API Keys</span>
-                  <p className="text-xs text-[var(--text-muted)]">Manage API access</p>
+                  <span className="text-sm font-medium text-[var(--text-primary)]">Chaves de API</span>
+                  <p className="text-xs text-[var(--text-muted)]">Gerenciar acesso à API</p>
                 </div>
                 <button
                   onClick={handleLoadAPIKeys}
@@ -1315,7 +1303,7 @@ export default function AccountPage() {
           {securityView === 'password' && (
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-medium text-[var(--text-muted)]">Current Password</label>
+                <label className="text-xs font-medium text-[var(--text-muted)]">Senha atual</label>
                 <input
                   type="password"
                   value={currentPassword}
@@ -1324,17 +1312,17 @@ export default function AccountPage() {
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-medium text-[var(--text-muted)]">New Password</label>
+                <label className="text-xs font-medium text-[var(--text-muted)]">Nova senha</label>
                 <input
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Min. 8 characters"
+                  placeholder="Mínimo de 8 caracteres"
                   className="w-full px-3 py-2.5 rounded-lg bg-[var(--bg-card-inner)] border border-[var(--border-muted)] text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]"
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-medium text-[var(--text-muted)]">Confirm New Password</label>
+                <label className="text-xs font-medium text-[var(--text-muted)]">Confirm Nova senha</label>
                 <input
                   type="password"
                   value={confirmPassword}
@@ -1347,7 +1335,7 @@ export default function AccountPage() {
                 disabled={isSaving || !currentPassword || !newPassword || !confirmPassword}
                 className="w-full py-2.5 rounded-lg bg-[var(--accent-primary)] text-sm font-medium text-white hover:bg-[var(--accent-secondary)] transition-colors disabled:opacity-50"
               >
-                {isSaving ? "Changing..." : "Change Password"}
+                {isSaving ? "Alterando..." : "Alterar senha"}
               </button>
               <button
                 onClick={() => { setSecurityView('overview'); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); setError(null); }}
@@ -1371,11 +1359,11 @@ export default function AccountPage() {
                     </div>
                   )}
                   <div className="p-3 rounded-lg bg-[var(--bg-card-inner)] border border-[var(--border-primary)]">
-                    <span className="text-[10px] text-[var(--text-muted)] block mb-1">Manual entry key</span>
+                    <span className="text-[10px] text-[var(--text-muted)] block mb-1">Chave para inserção manual</span>
                     <code className="text-xs font-mono text-[var(--text-primary)] break-all">{totpSecret}</code>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label className="text-xs font-medium text-[var(--text-muted)]">Enter 6-digit code</label>
+                    <label className="text-xs font-medium text-[var(--text-muted)]">Digite o código de 6 dígitos</label>
                     <input
                       type="text"
                       value={totpCode}
@@ -1390,20 +1378,20 @@ export default function AccountPage() {
                     disabled={isSaving || totpCode.length !== 6}
                     className="w-full py-2.5 rounded-lg bg-[var(--accent-primary)] text-sm font-medium text-white hover:bg-[var(--accent-secondary)] transition-colors disabled:opacity-50"
                   >
-                    {isSaving ? "Verifying..." : "Verify & Enable"}
+                    {isSaving ? "Verificando..." : "Verificar e ativar"}
                   </button>
                   <button
                     onClick={() => { setSecurityView('overview'); setQrCode(""); setTotpSecret(""); setTotpCode(""); setError(null); }}
                     className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                   >
-                    Cancel
+                    Cancelar
                   </button>
                 </>
               ) : (
                 <>
                   <div className="flex items-center gap-2 text-[var(--accent-green)]">
                     <Check size={18} />
-                    <span className="text-sm font-medium">Two-factor authentication enabled</span>
+                    <span className="text-sm font-medium">Autenticação em dois fatores ativada</span>
                   </div>
                   <p className="text-sm text-[var(--text-muted)]">
                     Save these backup codes in a safe place. Each code can only be used once.
@@ -1418,7 +1406,7 @@ export default function AccountPage() {
                     className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-[var(--bg-muted)] text-sm text-[var(--text-primary)] hover:bg-[var(--border-muted)] transition-colors"
                   >
                     <Copy size={14} />
-                    {keyCopied ? "Copied!" : "Copy All"}
+                    {keyCopied ? "Copiado!" : "Copiar todos"}
                   </button>
                   <button
                     onClick={() => { setSecurityView('overview'); setBackupCodes([]); setQrCode(""); setTotpSecret(""); }}
@@ -1437,7 +1425,7 @@ export default function AccountPage() {
                 Enter your password to disable two-factor authentication.
               </p>
               <div className="flex flex-col gap-2">
-                <label className="text-xs font-medium text-[var(--text-muted)]">Password</label>
+                <label className="text-xs font-medium text-[var(--text-muted)]">Senha</label>
                 <input
                   type="password"
                   value={disablePassword}
@@ -1450,13 +1438,13 @@ export default function AccountPage() {
                 disabled={isSaving || !disablePassword}
                 className="w-full py-2.5 rounded-lg bg-[var(--accent-red)] text-sm font-medium text-white hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                {isSaving ? "Disabling..." : "Disable 2FA"}
+                {isSaving ? "Desativando..." : "Desativar autenticação em dois fatores"}
               </button>
               <button
                 onClick={() => { setSecurityView('overview'); setDisablePassword(""); setError(null); }}
                 className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
               >
-                Cancel
+                Cancelar
               </button>
             </div>
           )}
@@ -1486,7 +1474,7 @@ export default function AccountPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-[var(--text-muted)] text-center py-4">No API keys yet</p>
+                <p className="text-sm text-[var(--text-muted)] text-center py-4">Nenhuma chave de API cadastrada</p>
               )}
 
               <div className="flex gap-2">
@@ -1494,7 +1482,7 @@ export default function AccountPage() {
                   type="text"
                   value={newKeyName}
                   onChange={(e) => setNewKeyName(e.target.value)}
-                  placeholder="Key name (e.g. Trading Bot)"
+                  placeholder="Nome da chave (ex.: Bot de trading)"
                   className="flex-1 px-3 py-2 rounded-lg bg-[var(--bg-card-inner)] border border-[var(--border-muted)] text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]"
                 />
                 <button
@@ -1520,7 +1508,7 @@ export default function AccountPage() {
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2 text-[var(--accent-green)]">
                 <Check size={18} />
-                <span className="text-sm font-medium">API key created</span>
+                <span className="text-sm font-medium">Chave de API criada</span>
               </div>
               <p className="text-sm text-yellow-500">
                 This key will not be shown again. Copy it now.
@@ -1559,18 +1547,18 @@ export default function AccountPage() {
         </div>
       </Modal>
 
-      {/* Appearance Modal */}
+      {/* Aparência Modal */}
       <Modal
-        isOpen={showAppearanceModal}
-        onClose={() => setShowAppearanceModal(false)}
-        title="Settings"
+        isOpen={showAparênciaModal}
+        onClose={() => setShowAparênciaModal(false)}
+        title="Configurações"
       >
         <div className="flex flex-col gap-4">
           {/* Market Selection */}
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Globe size={16} className="text-[var(--text-muted)]" />
-              <span className="text-xs font-medium text-[var(--text-muted)]">Market</span>
+              <span className="text-xs font-medium text-[var(--text-muted)]">Mercado</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {AVAILABLE_MARKETS.map((mkt) => (
@@ -1605,13 +1593,13 @@ export default function AccountPage() {
           </div>
 
           <div className="border-t border-[var(--border-primary)] pt-4">
-            <span className="text-xs font-medium text-[var(--text-muted)]">Theme</span>
+            <span className="text-xs font-medium text-[var(--text-muted)]">Tema</span>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {[
-              { value: 'DARK' as const, label: 'Dark', icon: Moon },
-              { value: 'LIGHT' as const, label: 'Light', icon: Sun },
-              { value: 'AUTO' as const, label: 'System', icon: Monitor },
+              { value: 'DARK' as const, label: 'Escuro', icon: Moon },
+              { value: 'LIGHT' as const, label: 'Claro', icon: Sun },
+              { value: 'AUTO' as const, label: 'Automático', icon: Monitor },
             ].map((theme) => (
               <button
                 key={theme.value}
@@ -1646,7 +1634,7 @@ export default function AccountPage() {
           <div className="mt-4 pt-4 border-t border-[var(--border-primary)]">
             <div className="flex items-center gap-2 mb-3">
               <Coins size={16} className="text-[var(--text-muted)]" />
-              <span className="text-xs font-medium text-[var(--text-muted)]">Currency</span>
+              <span className="text-xs font-medium text-[var(--text-muted)]">Moeda</span>
             </div>
             <div className="grid grid-cols-2 gap-2 max-h-[180px] overflow-y-auto pr-1">
               {AVAILABLE_CURRENCIES.map((curr) => (
@@ -1687,7 +1675,7 @@ export default function AccountPage() {
         </div>
       </Modal>
 
-      {/* Reset Account Confirmation Modal */}
+      {/* Redefinir conta Confirmation Modal */}
       {showResetModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={() => setShowResetModal(false)} />
@@ -1696,7 +1684,7 @@ export default function AccountPage() {
               <div className="w-14 h-14 rounded-full bg-yellow-500/10 flex items-center justify-center mx-auto mb-4">
                 <AlertTriangle size={28} className="text-yellow-500" />
               </div>
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Reset Account?</h3>
+              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Redefinir conta?</h3>
               <p className="text-sm text-[var(--text-muted)] mb-5">
                 This action cannot be undone. The following will be permanently deleted:
               </p>
@@ -1730,13 +1718,13 @@ export default function AccountPage() {
                   onClick={() => setShowResetModal(false)}
                   className="flex-1 px-4 py-2.5 rounded-lg border border-[var(--border-primary)] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors"
                 >
-                  Cancel
+                  Cancelar
                 </button>
                 <button
                   onClick={handleResetAccount}
                   className="flex-1 px-4 py-2.5 rounded-lg bg-yellow-500 text-black text-sm font-medium hover:bg-yellow-400 transition-colors"
                 >
-                  Reset Account
+                  Redefinir conta
                 </button>
               </div>
             </div>

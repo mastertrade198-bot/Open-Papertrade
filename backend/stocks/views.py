@@ -91,6 +91,141 @@ class BulkQuoteView(APIView):
         })
 
 
+
+# Curated USD symbols are listed without downloading quotes for every menu open.
+# Discovered instruments are stored after a USD quote is verified.
+USD_STOCK_SYMBOLS = (
+    "AAPL MSFT NVDA AMZN GOOGL GOOG META TSLA BRK-B AVGO JPM V WMT LLY "
+    "MA ORCL COST NFLX HD PG JNJ ABBV BAC KO CRM CVX XOM UNH MRK CSCO "
+    "IBM ADBE AMD INTC QCOM TXN AMAT MU PANW CRWD PLTR UBER ABNB DIS "
+    "PYPL SQ SHOP COIN HOOD ROKU SPOT SNAP PINS NKE SBUX MCD BA CAT "
+    "GE F GM T UAL DAL AAL PFE TMO DHR GILD AMGN ISRG NOW SNOW NET "
+    "DDOG MDB ZS OKTA DOCU RBLX SOFI RIVN LCID NIO"
+).split()
+USD_ETF_SYMBOLS = (
+    "SPY QQQ VOO IVV VTI DIA IWM SCHD VGT XLK XLF XLE XLV XLY XLP "
+    "XLI XLU XLB XLRE XLC ARKK GLD SLV TLT HYG LQD EEM EFA"
+).split()
+USD_CRYPTO_SYMBOLS = (
+    "BTC ETH SOL XRP BNB ADA DOGE AVAX LINK SHIB DOT LTC BCH UNI "
+    "AAVE ATOM NEAR ICP FIL ETC XLM ALGO HBAR PEPE"
+).split()
+
+
+# USD-quoted commodity futures. Prices are indicative underlying prices,
+# not executable futures contracts or contract-size adjusted notionals.
+USD_COMMODITIES = {
+    'GC=F': 'Ouro',
+    'SI=F': 'Prata',
+    'CL=F': 'Petróleo WTI',
+    'BZ=F': 'Petróleo Brent',
+    'NG=F': 'Gás Natural',
+    'HG=F': 'Cobre',
+    'ZC=F': 'Milho',
+    'ZW=F': 'Trigo',
+    'ZS=F': 'Soja',
+    'KC=F': 'Café',
+    'SB=F': 'Açúcar',
+    'CT=F': 'Algodão',
+}
+
+
+USD_COMMODITY_LABELS = dict(zip(USD_COMMODITIES, (
+    'XAU/USD', 'XAG/USD', 'WTI/USD', 'BRENT/USD', 'NATGAS/USD', 'COPPER/USD',
+    'CORN/USD', 'WHEAT/USD', 'SOY/USD', 'COFFEE/USD', 'SUGAR/USD', 'COTTON/USD'
+)))
+USD_INDEX_LABELS = {
+    '^GSPC': ('S&P 500', 'SPX500'),
+    '^IXIC': ('Nasdaq Composite', 'NASDAQ'),
+    '^DJI': ('Dow Jones', 'US30'),
+    '^RUT': ('Russell 2000', 'US2000'),
+    '^NDX': ('Nasdaq 100', 'NAS100'),
+}
+
+
+class AssetCatalogView(APIView):
+    """Browsable USD-only catalog with pagination and verified discovered symbols."""
+
+    def get(self, request):
+        from .models import TradableAsset
+
+        assets = {}
+        for category, symbols in (
+            ('Ações', USD_STOCK_SYMBOLS),
+            ('ETFs', USD_ETF_SYMBOLS),
+            ('Criptomoedas', USD_CRYPTO_SYMBOLS),
+        ):
+            for symbol in symbols:
+                assets[symbol] = {'symbol': symbol, 'name': symbol, 'category': category, 'currency': 'USD'}
+
+        for symbol, name in USD_COMMODITIES.items():
+            assets[symbol] = {
+                'symbol': symbol, 'name': name,
+                'category': 'Commodities', 'currency': 'USD',
+            }
+
+        for symbol, name in USD_COMMODITIES.items():
+            assets[symbol]['displaySymbol'] = USD_COMMODITY_LABELS[symbol]
+
+        for symbol, (name, display_symbol) in USD_INDEX_LABELS.items():
+            assets[symbol] = {
+                'symbol': symbol, 'name': name, 'category': 'Índices',
+                'currency': 'USD', 'displaySymbol': display_symbol,
+            }
+
+        for asset in TradableAsset.objects.filter(currency='USD'):
+            assets[asset.symbol] = {
+                'symbol': asset.symbol, 'name': asset.name,
+                'category': asset.category, 'currency': 'USD',
+            }
+
+        category = request.query_params.get('category', '').strip()
+        query = request.query_params.get('q', '').strip().lower()
+        results = sorted(assets.values(), key=lambda a: (a['category'], a['symbol']))
+        if category:
+            results = [a for a in results if a['category'] == category]
+        if query:
+            results = [a for a in results if query in a['symbol'].lower() or query in a['name'].lower() or query in a.get('displaySymbol', '').lower()]
+        try:
+            page = max(1, int(request.query_params.get('page', '1')))
+        except (TypeError, ValueError):
+            page = 1
+        page_size = 50
+        total = len(results)
+        return Response({
+            'assets': results[(page - 1) * page_size:page * page_size],
+            'count': total, 'page': page, 'pageSize': page_size,
+            'hasMore': page * page_size < total,
+            'currency': 'USD',
+        })
+
+    def post(self, request):
+        """Add an instrument found via search only if its quote is actually in USD."""
+        from .models import TradableAsset
+        import re
+
+        symbol = str(request.data.get('symbol', '')).strip().upper()
+        if not re.fullmatch(r'[A-Z0-9][A-Z0-9.\\=\\-]{0,29}', symbol):
+            return Response({'error': 'Símbolo inválido'}, status=status.HTTP_400_BAD_REQUEST)
+
+        lookup_symbol = symbol
+        service = get_stock_service()
+        result = service.get_quote(lookup_symbol)
+        if (not result.success or not result.quote or
+                str(result.quote.currency or '').upper() != 'USD'):
+            return Response({'error': 'Ativo sem cotação USD confirmada'}, status=status.HTTP_400_BAD_REQUEST)
+
+        name = str(result.quote.name or symbol)[:200]
+        is_crypto = symbol.endswith('-USD') or str(request.data.get('type', '')).upper() == 'CRYPTOCURRENCY'
+        category = 'Commodities' if symbol in USD_COMMODITIES else ('Criptomoedas' if is_crypto else 'Ações')
+        display_symbol = symbol[:-4] if symbol.endswith('-USD') else symbol
+        asset, _ = TradableAsset.objects.update_or_create(
+            symbol=display_symbol,
+            defaults={'name': name, 'category': category, 'currency': 'USD'},
+        )
+        return Response({'symbol': asset.symbol, 'name': asset.name, 'category': asset.category, 'currency': 'USD'})
+
+
 class SymbolSearchView(APIView):
     """
     Search for stock symbols.
@@ -100,7 +235,6 @@ class SymbolSearchView(APIView):
 
     # Exchange mappings for filtering
     US_EXCHANGES = {'NMS', 'NYQ', 'NGM', 'NCM', 'PCX', 'ASE', 'BTS', 'NASDAQ', 'NYSE', 'AMEX'}
-    IN_EXCHANGES = {'NSI', 'BSE', 'NSE', 'BOM'}
 
     def get(self, request):
         query = request.query_params.get('q', '').strip()
@@ -121,19 +255,27 @@ class SymbolSearchView(APIView):
                     market = user.settings.market
             except:
                 pass
-        market = market or 'US'
+        market = 'US'
 
         service = get_stock_service()
         results = service.search(query)
 
         # Filter by market (always include crypto regardless of market)
         is_crypto = lambda r: r.get('type', '').upper() == 'CRYPTOCURRENCY' or r.get('symbol', '').endswith('-USD')
-        if market == 'US':
-            filtered = [r for r in results if r.get('exchange', '') in self.US_EXCHANGES or is_crypto(r)]
-        elif market == 'IN':
-            filtered = [r for r in results if r.get('exchange', '') in self.IN_EXCHANGES or r.get('yahooSymbol', '').endswith(('.NS', '.BO')) or is_crypto(r)]
-        else:
-            filtered = results
+        excluded_symbols = {
+            'RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK',
+            'HINDUNILVR', 'SBIN', 'BHARTIARTL', 'ITC', 'KOTAKBANK',
+        }
+        indian_exchanges = {'NSI', 'BSE', 'NSE', 'BOM'}
+        filtered = [
+            r for r in results
+            if (r.get('exchange', '').upper() in self.US_EXCHANGES or is_crypto(r))
+            and r.get('exchange', '').upper() not in indian_exchanges
+            and not str(r.get('symbol', '')).upper().endswith(('.NS', '.BO'))
+            and not str(r.get('yahooSymbol', '')).upper().endswith(('.NS', '.BO'))
+            and str(r.get('symbol', '')).upper() not in excluded_symbols
+        ]
+        market = 'US'
 
         return Response({
             "results": filtered,
@@ -202,11 +344,6 @@ class PopularStocksView(APIView):
         "META", "TSLA", "NFLX", "AMD", "INTC"
     ]
 
-    INDIAN_SYMBOLS = [
-        "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK",
-        "HINDUNILVR", "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK"
-    ]
-
     def get(self, request):
         # Get market preference from query param or user settings
         market = request.query_params.get('market', '').upper()
@@ -222,7 +359,7 @@ class PopularStocksView(APIView):
                 pass
 
         market = market or 'US'
-        symbols = self.INDIAN_SYMBOLS if market == 'IN' else self.US_SYMBOLS
+        symbols = self.US_SYMBOLS
 
         service = get_stock_service()
         results = service.get_quotes(symbols)
@@ -368,12 +505,6 @@ class MarketIndicesView(APIView):
         ("DOW JONES", "^DJI"),
     ]
 
-    IN_INDICES = [
-        ("NIFTY 50", "^NSEI"),
-        ("SENSEX", "^BSESN"),
-        ("BANK NIFTY", "^NSEBANK"),
-    ]
-
     def get(self, request):
         market = request.query_params.get('market', '').upper()
 
@@ -387,7 +518,7 @@ class MarketIndicesView(APIView):
                 pass
 
         market = market or 'US'
-        index_list = self.IN_INDICES if market == 'IN' else self.US_INDICES
+        index_list = self.US_INDICES
 
         service = get_stock_service()
         yahoo_symbols = [ys for _, ys in index_list]

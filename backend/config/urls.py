@@ -3,6 +3,11 @@ URL configuration for paper-trading backend.
 """
 
 from django.contrib import admin
+from django.contrib.admin.models import LogEntry
+from django.db.models import Sum
+from django.template.response import TemplateResponse
+from types import MethodType
+from users.models import UserProfile, Position, BalanceTransaction
 from django.urls import path, include
 from django.http import JsonResponse
 from django.conf import settings
@@ -67,6 +72,29 @@ def maintenance_status(request):
         'links': links,
     })
 
+
+
+def master_trade_admin_index(self, request, extra_context=None):
+    if not self.has_permission(request):
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied
+    positions = Position.objects.all()
+    context = {
+        **self.each_context(request),
+        "title": "Dashboard Master Trade",
+        "total_clients": UserProfile.objects.count(),
+        "total_positions": positions.count(),
+        "open_positions": positions.filter(status="OPEN").count(),
+        "closed_positions": positions.filter(status="CLOSED").count(),
+        "total_balance": UserProfile.objects.aggregate(value=Sum("buying_power"))["value"] or 0,
+        "total_financial_entries": BalanceTransaction.objects.count(),
+        "recent_actions": LogEntry.objects.select_related("user", "content_type").order_by("-action_time")[:10],
+        **(extra_context or {}),
+    }
+    return TemplateResponse(request, "admin/index.html", context)
+
+
+admin.site.index = MethodType(master_trade_admin_index, admin.site)
 
 urlpatterns = [
     path('admin/', admin.site.urls),

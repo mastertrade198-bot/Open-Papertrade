@@ -1,0 +1,29 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div class="max-w-7xl">
+  <h1 class="text-2xl font-semibold mb-6">Visão geral da Master Trade</h1>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+    <div class="border rounded-lg p-5"><div class="text-sm opacity-70">Quantidade de usuários</div><div class="text-3xl font-bold mt-2">{{ total_clients }}</div></div>
+    <div class="border rounded-lg p-5"><div class="text-sm opacity-70">Quantidade de operações</div><div class="text-3xl font-bold mt-2">{{ total_positions }}</div></div>
+    <div class="border rounded-lg p-5"><div class="text-sm opacity-70">Operações abertas</div><div class="text-3xl font-bold mt-2">{{ open_positions }}</div></div>
+    <div class="border rounded-lg p-5"><div class="text-sm opacity-70">Operações fechadas</div><div class="text-3xl font-bold mt-2">{{ closed_positions }}</div></div>
+    <div class="border rounded-lg p-5"><div class="text-sm opacity-70">Saldo disponível simulado (total)</div><div class="text-3xl font-bold mt-2">{{ total_balance|floatformat:2 }}</div></div>
+    <div class="border rounded-lg p-5"><div class="text-sm opacity-70">Movimentações financeiras</div><div class="text-3xl font-bold mt-2">{{ total_financial_entries }}</div></div>
+  </div>
+  <section class="border rounded-lg p-5">
+    <h2 class="text-xl font-semibold mb-4">Recent Actions</h2>
+    {% if recent_actions %}
+      <ul class="divide-y">
+      {% for entry in recent_actions %}
+        <li class="py-3">
+          <div class="font-medium">{% if entry.get_admin_url %}<a href="{{ entry.get_admin_url }}" class="text-primary-600 hover:underline">{{ entry.object_repr }}</a>{% else %}{{ entry.object_repr }}{% endif %}</div>
+          <div class="text-sm opacity-70">{{ entry.user.get_username }} · {{ entry.action_time|date:"d/m/Y H:i" }} · {{ entry.content_type }}</div>
+        </li>
+      {% endfor %}
+      </ul>
+    {% else %}
+      <p class="opacity-70">Nenhuma atividade administrativa recente.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

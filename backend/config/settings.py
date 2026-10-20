@@ -15,6 +15,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-dev-key')
 
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 INSTALLED_APPS = [
@@ -54,7 +56,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'users' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -196,8 +198,8 @@ from django.templatetags.static import static
 from django.urls import reverse_lazy
 
 UNFOLD = {
-    "SITE_TITLE": "Open Papertrade",
-    "SITE_HEADER": "Open Papertrade",
+    "SITE_TITLE": "Master Trade",
+    "SITE_HEADER": "Master Trade",
     "SITE_LOGO": lambda request: "/static/img/logo.png",
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": False,
@@ -218,75 +220,31 @@ UNFOLD = {
     },
     "SIDEBAR": {
         "show_search": True,
-        "show_all_applications": True,
+        "show_all_applications": False,
         "navigation": [
             {
-                "title": "Dashboard",
+                "title": "Administração",
                 "separator": True,
                 "items": [
-                    {
-                        "title": "Dashboard",
-                        "icon": "dashboard",
-                        "link": reverse_lazy("admin:index"),
-                    },
-                ],
-            },
-            {
-                "title": "Users",
-                "separator": True,
-                "items": [
-                    {
-                        "title": "User Profiles",
-                        "icon": "person",
-                        "link": reverse_lazy("admin:users_userprofile_changelist"),
-                    },
-                    {
-                        "title": "User Settings",
-                        "icon": "settings",
-                        "link": reverse_lazy("admin:users_usersettings_changelist"),
-                    },
-                    {
-                        "title": "Achievements",
-                        "icon": "emoji_events",
-                        "link": reverse_lazy("admin:users_achievement_changelist"),
-                    },
+                    {"title": "Painel", "icon": "dashboard", "link": reverse_lazy("admin:index")},
+                    {"title": "Clientes", "icon": "groups", "link": reverse_lazy("admin:users_userprofile_changelist")},
                 ],
             },
             {
                 "title": "Trading",
                 "separator": True,
                 "items": [
-                    {
-                        "title": "Trades",
-                        "icon": "swap_horiz",
-                        "link": reverse_lazy("admin:users_trade_changelist"),
-                    },
-                    {
-                        "title": "Holdings",
-                        "icon": "account_balance_wallet",
-                        "link": reverse_lazy("admin:users_holding_changelist"),
-                    },
-                    {
-                        "title": "Watchlist",
-                        "icon": "visibility",
-                        "link": reverse_lazy("admin:users_watchlist_changelist"),
-                    },
-                    {
-                        "title": "Price Alerts",
-                        "icon": "notifications",
-                        "link": reverse_lazy("admin:users_pricealert_changelist"),
-                    },
+                    {"title": "Operações", "icon": "candlestick_chart", "link": reverse_lazy("admin:users_position_changelist")},
+                    {"title": "Financeiro", "icon": "account_balance_wallet", "link": reverse_lazy("admin:users_balancetransaction_changelist")},
+                    {"title": "Auditoria", "icon": "history", "link": reverse_lazy("admin:users_positionauditlog_changelist")},
                 ],
             },
             {
-                "title": "Configuration",
+                "title": "Configurações",
                 "separator": True,
                 "items": [
-                    {
-                        "title": "Site Settings",
-                        "icon": "tune",
-                        "link": reverse_lazy("admin:users_sitesettings_changelist"),
-                    },
+                    {"title": "Configurações do site", "icon": "settings", "link": reverse_lazy("admin:users_sitesettings_changelist")},
+                    {"title": "Usuários do Admin", "icon": "admin_panel_settings", "link": reverse_lazy("admin:auth_user_changelist")},
                 ],
             },
         ],

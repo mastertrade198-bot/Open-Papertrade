@@ -3,7 +3,7 @@
 
 export const APP_CONFIG = {
   // App name - displayed in sidebar logo and page titles
-  name: "Open Papertrade",
+  name: "Master Trade",
 
   // App tagline
   tagline: "Paper Trading Simulator",

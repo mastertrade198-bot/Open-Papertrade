@@ -1,5 +1,12 @@
 from django.contrib import admin
+from django.db import transaction
+from django.db.models import F
+from decimal import Decimal
+from django import forms
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect
+from django.core.exceptions import PermissionDenied
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.template.response import TemplateResponse
@@ -11,7 +18,7 @@ from unfold.decorators import display, action
 from .models import (
     UserProfile, UserSettings, Achievement, UserAchievement,
     Trade, Holding, Watchlist, PriceAlert, SiteSettings, APIKey, LimitOrder,
-    Strategy, Backtest,
+    Strategy, Backtest, Position, PositionAuditLog, BalanceTransaction, generate_username,
 )
 from .email_service import send_test_email
 from .report_views import compute_weekly_report, compute_monthly_report, compute_yearly_report
@@ -104,20 +111,83 @@ class SiteSettingsAdmin(ModelAdmin):
         return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/admin/'))
 
 
+
+
+class BalanceAdjustmentForm(forms.Form):
+    operation = forms.ChoiceField(label="Operação", choices=[("CREDIT", "Adicionar saldo"), ("DEBIT", "Remover saldo")])
+    amount = forms.DecimalField(label="Valor", min_value=Decimal("0.01"), max_digits=20, decimal_places=2)
+    reason = forms.CharField(label="Justificativa", max_length=150, widget=forms.Textarea(attrs={"rows": 3}))
+
+
+class UserProfileAdminForm(forms.ModelForm):
+    """Create a trading account without exposing its stored password hash."""
+    password1 = forms.CharField(
+        label="Senha", widget=forms.PasswordInput(render_value=False), required=False
+    )
+    password2 = forms.CharField(
+        label="Confirmar senha", widget=forms.PasswordInput(render_value=False), required=False
+    )
+
+    class Meta:
+        model = UserProfile
+        exclude = ("password",)
+
+    def clean(self):
+        cleaned = super().clean()
+        if self.instance._state.adding:
+            password = cleaned.get("password1")
+            if not password:
+                self.add_error("password1", "Informe uma senha.")
+            elif password != cleaned.get("password2"):
+                self.add_error("password2", "As senhas não coincidem.")
+            else:
+                try:
+                    validate_password(password, user=self.instance)
+                except ValidationError as error:
+                    self.add_error("password1", error)
+        return cleaned
+
+
 @admin.register(UserProfile)
 class UserProfileAdmin(ModelAdmin):
-    list_display = ['name', 'email', 'display_verified', 'display_buying_power', 'display_plan', 'display_admin', 'display_reports_link', 'created_at']
-    search_fields = ['name', 'email', 'username']
-    list_filter = ['plan', 'is_email_verified', 'is_2fa_enabled', 'is_admin', 'created_at']
+    form = UserProfileAdminForm
+    list_display = ['name', 'email', 'display_buying_power', 'display_finance_link', 'phone', 'created_at']
+    search_fields = ['name', 'email', 'username', 'cpf', 'phone']
+    list_filter = ['is_admin', 'created_at']
     readonly_fields = ['id', 'created_at', 'updated_at', 'password_changed_at', 'is_2fa_enabled']
     fieldsets = [
-        ("Profile", {"fields": ["id", "name", "username", "email", "avatar_url"]}),
+        ("Profile", {"fields": ["id", "name", "username", "email", "cpf", "date_of_birth", "phone", "avatar_url"]}),
         ("Email Verification", {"fields": ["is_email_verified"]}),
         ("Account", {"fields": ["buying_power", "initial_balance", "plan"]}),
         ("Admin", {"fields": ["is_admin"]}),
         ("Security", {"fields": ["password_changed_at", "is_2fa_enabled"]}),
         ("Timestamps", {"fields": ["created_at", "updated_at"]}),
     ]
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = list(super().get_readonly_fields(request, obj))
+        if obj is not None:
+            fields.extend(["buying_power", "initial_balance"])
+        return fields
+
+    def get_fieldsets(self, request, obj=None):
+        if obj is None:
+            return [
+                ("Novo usuário", {"fields": ("name", "username", "email", "cpf", "date_of_birth", "phone", "password1", "password2")}),
+                ("Saldo simulado", {"fields": ("initial_balance", "buying_power")}),
+                ("Conta", {"fields": ("plan", "is_email_verified")}),
+            ]
+        return super().get_fieldsets(request, obj)
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            if not obj.username:
+                obj.username = generate_username(obj.name)
+            obj.is_admin = False
+            obj.set_password(form.cleaned_data["password1"])
+        super().save_model(request, obj, form, change)
+        if not change:
+            UserSettings.objects.get_or_create(user=obj)
 
     def get_urls(self):
         custom_urls = [
@@ -126,8 +196,61 @@ class UserProfileAdmin(ModelAdmin):
                 self.admin_site.admin_view(self.user_reports_view),
                 name='users_userprofile_reports',
             ),
+            path(
+                '<path:object_id>/finance/',
+                self.admin_site.admin_view(self.finance_view),
+                name='users_userprofile_finance',
+            ),
         ]
         return custom_urls + super().get_urls()
+
+    @display(description="Financeiro")
+    def display_finance_link(self, obj):
+        url = reverse("admin:users_userprofile_finance", args=[obj.pk])
+        return format_html('<a href="{}">Adicionar / remover saldo</a>', url)
+
+    def finance_view(self, request, object_id):
+        if not request.user.is_active or not request.user.is_superuser:
+            raise PermissionDenied("Somente superusuários podem ajustar saldos.")
+        target = get_object_or_404(UserProfile, pk=object_id)
+        form = BalanceAdjustmentForm(request.POST or None)
+        if request.method == "POST" and form.is_valid():
+            with transaction.atomic():
+                locked = UserProfile.objects.select_for_update().get(pk=target.pk)
+                before = locked.buying_power
+                amount = form.cleaned_data["amount"]
+                operation = form.cleaned_data["operation"]
+                delta = amount if operation == "CREDIT" else -amount
+                after = before + delta
+                if after < 0:
+                    form.add_error("amount", "Saldo insuficiente para realizar o débito.")
+                else:
+                    # Atomic conditional update also guards SQLite (which lacks SELECT FOR UPDATE).
+                    changed = UserProfile.objects.filter(pk=locked.pk, buying_power__gte=amount).update(
+                        buying_power=F("buying_power") - amount
+                    ) if operation == "DEBIT" else UserProfile.objects.filter(pk=locked.pk).update(
+                        buying_power=F("buying_power") + amount
+                    )
+                    if not changed:
+                        form.add_error("amount", "Saldo insuficiente ou alterado. Tente novamente.")
+                    else:
+                        locked.refresh_from_db(fields=["buying_power"])
+                        BalanceTransaction.objects.create(
+                            user=locked, amount=delta, balance_before=before,
+                            balance_after=locked.buying_power,
+                            category="ADMIN_CREDIT" if operation == "CREDIT" else "ADMIN_DEBIT",
+                            description=f"{form.cleaned_data['reason']} | Admin: {request.user.get_username()}"[:255],
+                        )
+                        messages.success(request, "Movimentação de saldo registrada com sucesso.")
+                        return HttpResponseRedirect(reverse("admin:users_userprofile_change", args=[target.pk]))
+        context = {
+            **self.admin_site.each_context(request),
+            "title": f"Financeiro: {target.name}",
+            "target_user": target,
+            "form": form,
+            "opts": self.model._meta,
+        }
+        return TemplateResponse(request, "admin/users/finance_adjustment.html", context)
 
     def user_reports_view(self, request, object_id):
         """Custom admin view that renders a user's trading reports."""
@@ -234,143 +357,64 @@ class UserProfileAdmin(ModelAdmin):
         return format_html('<a href="{}" style="white-space:nowrap">View Reports</a>', url)
 
 
-@admin.register(UserSettings)
-class UserSettingsAdmin(ModelAdmin):
-    list_display = ['user', 'theme', 'default_order_type', 'notify_price_alerts']
-    list_filter = ['theme', 'default_order_type']
-    search_fields = ['user__name', 'user__email']
 
 
-@admin.register(Achievement)
-class AchievementAdmin(ModelAdmin):
-    list_display = ['id', 'name', 'icon', 'requirement_type', 'requirement_value']
-    search_fields = ['name', 'description']
-    list_filter = ['requirement_type']
 
 
-@admin.register(UserAchievement)
-class UserAchievementAdmin(ModelAdmin):
-    list_display = ['user', 'achievement', 'unlocked_at']
-    list_filter = ['achievement', 'unlocked_at']
-    search_fields = ['user__name', 'achievement__name']
 
 
-@admin.register(Trade)
-class TradeAdmin(ModelAdmin):
-    list_display = ['user', 'symbol', 'display_trade_type', 'shares', 'display_price', 'display_total', 'currency', 'executed_at']
-    list_filter = ['trade_type', 'symbol', 'executed_at']
-    search_fields = ['symbol', 'user__name']
-    readonly_fields = ['id', 'executed_at']
-    date_hierarchy = 'executed_at'
-
-    @display(description="Type", label={"BUY": "success", "SELL": "danger"})
-    def display_trade_type(self, obj):
-        return obj.trade_type
-
-    @display(description="Price")
-    def display_price(self, obj):
-        return _fmt(obj.price, obj.currency)
-
-    @display(description="Total")
-    def display_total(self, obj):
-        return _fmt(obj.total, obj.currency)
 
 
-@admin.register(Holding)
-class HoldingAdmin(ModelAdmin):
-    list_display = ['user', 'symbol', 'name', 'shares', 'display_avg_cost', 'display_value', 'currency']
-    search_fields = ['symbol', 'user__name', 'name']
-    list_filter = ['symbol']
-
-    @display(description="Avg Cost")
-    def display_avg_cost(self, obj):
-        return _fmt(obj.avg_cost, obj.currency)
-
-    @display(description="Value")
-    def display_value(self, obj):
-        return _fmt(float(obj.shares) * float(obj.avg_cost), obj.currency)
 
 
-@admin.register(Watchlist)
-class WatchlistAdmin(ModelAdmin):
-    list_display = ['user', 'symbol', 'name', 'display_starred', 'added_at']
-    list_filter = ['starred', 'added_at']
-    search_fields = ['symbol', 'user__name']
 
-    @display(description="Starred", boolean=True)
-    def display_starred(self, obj):
-        return obj.starred
+# Operational records are visible but not editable here: changing a leveraged
+# position must go through the audited position-management API.
+@admin.register(Position)
+class PositionAdmin(ModelAdmin):
+    list_display = ("user", "symbol", "side", "status", "quantity", "entry_price", "leverage", "margin", "realized_pnl", "opened_at")
+    list_filter = ("status", "side", "opened_at")
+    search_fields = ("symbol", "user__name", "user__email")
+    readonly_fields = tuple(field.name for field in Position._meta.fields)
 
+    def has_add_permission(self, request):
+        return False
 
-@admin.register(PriceAlert)
-class PriceAlertAdmin(ModelAdmin):
-    list_display = ['user', 'symbol', 'condition', 'display_target', 'display_enabled', 'display_triggered']
-    list_filter = ['condition', 'enabled', 'triggered']
-    search_fields = ['symbol', 'user__name']
+    def has_change_permission(self, request, obj=None):
+        return False
 
-    @display(description="Target")
-    def display_target(self, obj):
-        try:
-            cur = obj.user.settings.currency
-        except UserSettings.DoesNotExist:
-            cur = 'USD'
-        return _fmt(obj.target_price, cur)
-
-    @display(description="Enabled", boolean=True)
-    def display_enabled(self, obj):
-        return obj.enabled
-
-    @display(description="Triggered", boolean=True)
-    def display_triggered(self, obj):
-        return obj.triggered
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
-@admin.register(APIKey)
-class APIKeyAdmin(ModelAdmin):
-    list_display = ['user', 'name', 'key_prefix', 'display_active', 'last_used_at', 'created_at']
-    list_filter = ['is_active', 'created_at']
-    search_fields = ['name', 'user__name', 'user__email', 'key_prefix']
-    readonly_fields = ['id', 'key_prefix', 'key_hash', 'created_at']
+@admin.register(BalanceTransaction)
+class BalanceTransactionAdmin(ModelAdmin):
+    list_display = ("user", "category", "amount", "balance_before", "balance_after", "created_at")
+    list_filter = ("category", "created_at")
+    search_fields = ("user__name", "user__email", "description")
+    readonly_fields = tuple(field.name for field in BalanceTransaction._meta.fields)
 
-    @display(description="Active", boolean=True)
-    def display_active(self, obj):
-        return obj.is_active
+    def has_add_permission(self, request):
+        return False
 
+    def has_change_permission(self, request, obj=None):
+        return False
 
-@admin.register(LimitOrder)
-class LimitOrderAdmin(ModelAdmin):
-    list_display = ['user', 'symbol', 'display_trade_type', 'display_status', 'display_limit_price', 'shares', 'created_at']
-    list_filter = ['trade_type', 'status', 'created_at']
-    search_fields = ['symbol', 'user__name']
-    readonly_fields = ['id', 'created_at', 'filled_at']
-
-    @display(description="Type", label={"BUY": "success", "SELL": "danger"})
-    def display_trade_type(self, obj):
-        return obj.trade_type
-
-    @display(description="Status", label={"PENDING": "info", "FILLED": "success", "CANCELLED": "warning", "EXPIRED": "danger"})
-    def display_status(self, obj):
-        return obj.status
-
-    @display(description="Limit Price")
-    def display_limit_price(self, obj):
-        return _fmt(obj.limit_price, obj.currency)
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
-# ── Backtesting ──────────────────────────────────────────────────
+@admin.register(PositionAuditLog)
+class PositionAuditLogAdmin(ModelAdmin):
+    list_display = ("position", "actor", "action", "created_at")
+    list_filter = ("action", "created_at")
+    readonly_fields = tuple(field.name for field in PositionAuditLog._meta.fields)
 
-@admin.register(Strategy)
-class StrategyAdmin(ModelAdmin):
-    list_display = ("name", "owner", "is_public", "updated_at")
-    list_filter = ("is_public",)
-    search_fields = ("name", "description", "owner__username", "owner__email")
-    readonly_fields = ("created_at", "updated_at")
+    def has_add_permission(self, request):
+        return False
 
+    def has_change_permission(self, request, obj=None):
+        return False
 
-@admin.register(Backtest)
-class BacktestAdmin(ModelAdmin):
-    list_display = ("strategy_name", "symbol", "owner", "start_date", "end_date", "created_at")
-    list_filter = ("symbol",)
-    search_fields = ("strategy_name", "symbol", "owner__username", "owner__email")
-    readonly_fields = ("created_at", "results", "config_snapshot")
-    date_hierarchy = "created_at"
+    def has_delete_permission(self, request, obj=None):
+        return False

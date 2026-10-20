@@ -8,7 +8,7 @@ import { APP_CONFIG } from "@/config/app";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: `Open Papertrade - Trading Dashboard`,
+  title: `Master Trade - Painel de Negociação`,
   description: APP_CONFIG.tagline,
 };
 
@@ -18,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
+    <html lang="pt-BR" className="h-full">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

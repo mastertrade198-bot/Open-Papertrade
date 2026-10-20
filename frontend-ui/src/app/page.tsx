@@ -22,7 +22,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
-import QuickSettings from "@/components/QuickSettings";
+import LeveragedTradeHistory from "@/components/LeveragedTradeHistory";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { stockAPI, StockQuote } from "@/lib/api";
 import { formatCurrency, formatPercent, formatDateTime } from "@/lib/utils";
@@ -54,6 +54,13 @@ export default function Dashboard() {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [indices, setIndices] = useState<StockQuote[]>([]);
+  const [tickerQuotes, setTickerQuotes] = useState<StockQuote[]>([]);
+  const tickerSymbols = ["BRL=X", "GC=F", "CL=F", "AAPL", "MSFT", "NVDA", "AMZN", "TSLA", "ETH-USD"];
+  const tickerNames: Record<string, string> = {
+    "BRL=X": "USD/BRL", "GC=F": "OURO", "CL=F": "PETRÓLEO",
+    AAPL: "APPLE", MSFT: "MICROSOFT", NVDA: "NVIDIA",
+    AMZN: "AMAZON", TSLA: "TESLA", "ETH-USD": "ETH",
+  };
 
   // Fetch market indices whenever the market changes
   useEffect(() => {
@@ -63,6 +70,25 @@ export default function Dashboard() {
       console.error("Failed to fetch indices:", err);
     });
   }, [market]);
+
+  useEffect(() => {
+    let active = true;
+    const refreshTicker = async () => {
+      try {
+        const response = await stockAPI.getQuotes(tickerSymbols);
+        if (!active) return;
+        setTickerQuotes(tickerSymbols.flatMap((symbol) => {
+          const result = response.quotes[symbol];
+          return result?.success && result.data ? [result.data] : [];
+        }));
+      } catch (error) {
+        console.error("Falha ao carregar cotações do painel:", error);
+      }
+    };
+    void refreshTicker();
+    const interval = window.setInterval(() => void refreshTicker(), 60000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, []);
 
   // Top holdings by value
   const topHoldings = [...holdings]
@@ -105,9 +131,9 @@ export default function Dashboard() {
   const totalValue = stockValue + cryptoValue + cashValue;
 
   const allocation = [
-    { label: "Stocks", value: stockValue, percent: totalValue > 0 ? (stockValue / totalValue) * 100 : 0, color: "var(--accent-primary)" },
-    { label: "Crypto", value: cryptoValue, percent: totalValue > 0 ? (cryptoValue / totalValue) * 100 : 0, color: "var(--accent-green)" },
-    { label: "Cash", value: cashValue, percent: totalValue > 0 ? (cashValue / totalValue) * 100 : 0, color: "var(--text-muted)" },
+    { label: "Ações", value: stockValue, percent: totalValue > 0 ? (stockValue / totalValue) * 100 : 0, color: "var(--accent-primary)" },
+    { label: "Criptomoedas", value: cryptoValue, percent: totalValue > 0 ? (cryptoValue / totalValue) * 100 : 0, color: "var(--accent-green)" },
+    { label: "Saldo", value: cashValue, percent: totalValue > 0 ? (cashValue / totalValue) * 100 : 0, color: "var(--text-muted)" },
   ];
 
   const handleRefresh = async () => {
@@ -126,7 +152,7 @@ export default function Dashboard() {
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-3">
               <h1 className="font-serif text-[32px] font-medium tracking-[-1px] text-[var(--text-primary)]">
-                Welcome back{user.name ? `, ${user.name.split(" ")[0]}` : ""}
+                Bem-vindo de volta{user.name ? `, ${user.name.split(" ")[0]}` : ""}
               </h1>
               {lastUpdated && (
                 <span className="text-xs text-[var(--text-dim)] flex items-center gap-1.5">
@@ -136,73 +162,54 @@ export default function Dashboard() {
               )}
             </div>
             <p className="text-sm text-[var(--text-muted)]">
-              Here's your portfolio overview for today
+              Confira o resumo da sua carteira de hoje
             </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <QuickSettings />
-            <div className="w-px h-6 bg-[var(--border-primary)]" />
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing || isLoading}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[var(--border-muted)] hover:bg-[var(--bg-muted)] transition-colors disabled:opacity-50"
-            >
-              {isRefreshing || isLoading ? (
-                <Loader2 size={16} className="text-[var(--text-muted)] animate-spin" />
-              ) : (
-                <RefreshCw size={16} className="text-[var(--text-muted)]" />
-              )}
-            </button>
-            <Link
-              href="/trade"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent-primary)] hover:brightness-110 transition-all"
-            >
-              <Plus size={16} className="text-black" />
-              <span className="text-[13px] font-semibold text-black">New Trade</span>
-            </Link>
           </div>
         </header>
 
-        {/* Market Indices Bar */}
-        {indices.length > 0 && (
-          <div className="flex items-center gap-6 px-5 py-3 bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)]">
-            {indices.map((idx) => (
-              <div key={idx.symbol} className="flex items-center gap-3">
-                <span className="text-xs font-semibold text-[var(--text-muted)]">{idx.symbol}</span>
-                <span className="font-mono text-sm font-medium text-[var(--text-primary)]">
-                  {idx.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                </span>
-                <span className={`font-mono text-xs font-medium ${idx.changePercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                  {formatPercent(idx.changePercent)}
-                </span>
+        {/* Scrolling market ticker: duplicated sequence for seamless motion */}
+        {(() => {
+          const btc = crypto.find((item) => item.symbol === "BTC");
+          const items = [
+            ...indices.map((item) => ({ ...item, label: item.symbol })),
+            ...(btc ? [{ ...btc, label: "BTC" }] : []),
+            ...tickerQuotes.map((item) => ({ ...item, label: tickerNames[item.symbol] || item.symbol })),
+          ];
+          if (!items.length) return null;
+          return (
+            <div className="shrink-0 min-h-[48px] flex items-center overflow-hidden bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] py-3" aria-label="Cotações de mercado">
+              <style>{`@keyframes dashboardTickerScroll { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+                .dashboard-ticker-track { display: flex; flex: none; width: max-content; min-width: max-content; will-change: transform; animation: dashboardTickerScroll 45s linear infinite; }`}</style>
+              <div className="dashboard-ticker-track items-center">
+                {[0, 1].map((copy) => (
+                  <div key={copy} className="flex shrink-0 items-center gap-8 pr-8" aria-hidden={copy === 1}>
+                    {items.map((item, index) => (
+                      <div key={`${copy}-${item.symbol}-${index}`} className="flex shrink-0 items-center gap-2.5 whitespace-nowrap">
+                        <span className="text-xs font-semibold text-[var(--text-muted)]">{item.label}</span>
+                        <span className="font-mono text-sm font-medium text-[var(--text-primary)]">
+                          {item.label === "USD/BRL" ? `R$ ${item.price.toLocaleString("pt-BR", { minimumFractionDigits: 4, maximumFractionDigits: 4 })}` : item.price.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
+                        </span>
+                        <span className={`font-mono text-xs font-medium ${item.changePercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
+                          {formatPercent(item.changePercent)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
               </div>
-            ))}
-            {(() => {
-              const btc = crypto.find((c) => c.symbol === "BTC");
-              return btc ? (
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-semibold text-[var(--text-muted)]">BTC</span>
-                  <span className="font-mono text-sm font-medium text-[var(--text-primary)]">
-                    {formatCurrency(btc.price, false, { sourceCurrency: btc.currency || "USD" })}
-                  </span>
-                  <span className={`font-mono text-xs font-medium ${btc.changePercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                    {formatPercent(btc.changePercent)}
-                  </span>
-                </div>
-              ) : null;
-            })()}
-          </div>
-        )}
+            </div>
+          );
+        })()}
 
         {/* Main Stats Row */}
         <div className="grid grid-cols-4 gap-4">
           {/* Total Portfolio */}
           <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[var(--text-muted)]">Total Portfolio</span>
+              <span className="text-xs font-medium text-[var(--text-muted)]">Patrimônio total</span>
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)] animate-pulse" />
-                <span className="text-[10px] font-medium text-[var(--accent-green)]">Live</span>
+                <span className="text-[10px] font-medium text-[var(--accent-green)]">Ao vivo</span>
               </div>
             </div>
             <span className="font-mono text-[28px] font-semibold text-[var(--text-primary)] tracking-tight">
@@ -215,7 +222,7 @@ export default function Dashboard() {
                 <ArrowDownRight size={14} className="text-[var(--accent-red)]" />
               )}
               <span className={`text-xs font-medium ${dayGain >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                {dayGain >= 0 ? "+" : ""}{formatCurrency(dayGain, false)} ({formatPercent(dayGainPercent)}) today
+                {dayGain >= 0 ? "+" : ""}{formatCurrency(dayGain, false)} ({formatPercent(dayGainPercent)}) hoje
               </span>
             </div>
           </div>
@@ -223,7 +230,7 @@ export default function Dashboard() {
           {/* Total Returns / Total Invested */}
           {settings.showProfitLoss ? (
             <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3">
-              <span className="text-xs font-medium text-[var(--text-muted)]">Total Returns</span>
+              <span className="text-xs font-medium text-[var(--text-muted)]">Retorno total</span>
               <span className={`font-mono text-[28px] font-semibold tracking-tight ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
                 {totalReturns >= 0 ? "+" : ""}{formatCurrency(totalReturns, false)}
               </span>
@@ -234,13 +241,13 @@ export default function Dashboard() {
                   <TrendingDown size={14} className="text-[var(--accent-red)]" />
                 )}
                 <span className={`text-xs font-medium ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                  {formatPercent(returnsPercent)} all time
+                  {formatPercent(returnsPercent)} desde o início
                 </span>
               </div>
             </div>
           ) : (
             <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3">
-              <span className="text-xs font-medium text-[var(--text-muted)]">Total Invested</span>
+              <span className="text-xs font-medium text-[var(--text-muted)]">Total investido</span>
               <span className="font-mono text-[28px] font-semibold text-[var(--text-primary)] tracking-tight">
                 {formatCurrency(totalInvested, false)}
               </span>
@@ -255,21 +262,21 @@ export default function Dashboard() {
 
           {/* Buying Power */}
           <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3">
-            <span className="text-xs font-medium text-[var(--text-muted)]">Buying Power</span>
+            <span className="text-xs font-medium text-[var(--text-muted)]">Saldo disponível</span>
             <span className="font-mono text-[28px] font-semibold text-[var(--text-primary)] tracking-tight">
               {formatCurrency(buyingPower, false, { convertFromUSD: false })}
             </span>
             <div className="flex items-center gap-1.5">
               <Wallet size={14} className="text-[var(--text-muted)]" />
               <span className="text-xs text-[var(--text-muted)]">
-                Available to trade
+                Disponível para negociar
               </span>
             </div>
           </div>
 
           {/* Active Positions */}
           <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3">
-            <span className="text-xs font-medium text-[var(--text-muted)]">Active Positions</span>
+            <span className="text-xs font-medium text-[var(--text-muted)]">Posições abertas</span>
             <span className="font-mono text-[28px] font-semibold text-[var(--accent-primary)] tracking-tight">
               {holdings.length}
             </span>
@@ -291,23 +298,23 @@ export default function Dashboard() {
               <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
                 <div className="flex items-center gap-2">
                   <BarChart3 size={16} className="text-[var(--accent-primary)]" />
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">Top Holdings</span>
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">Principais ativos</span>
                 </div>
                 <Link href="/portfolio" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline flex items-center gap-1">
-                  View all <ChevronRight size={12} />
+                  Ver todos <ChevronRight size={12} />
                 </Link>
               </div>
 
               {holdings.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <PieChart size={32} className="text-[var(--text-dim)] mb-3" />
-                  <span className="text-sm text-[var(--text-muted)] mb-1">No holdings yet</span>
-                  <span className="text-xs text-[var(--text-dim)]">Start trading to build your portfolio</span>
+                  <span className="text-sm text-[var(--text-muted)] mb-1">Nenhum ativo na carteira</span>
+                  <span className="text-xs text-[var(--text-dim)]">Comece a negociar para montar sua carteira</span>
                   <Link
                     href="/trade"
                     className="mt-4 px-4 py-2 rounded-lg bg-[var(--accent-primary)] text-xs font-semibold text-black hover:brightness-110 transition-all"
                   >
-                    Make Your First Trade
+                    Faça sua primeira operação
                   </Link>
                 </div>
               ) : (
@@ -357,7 +364,7 @@ export default function Dashboard() {
                     <div className="w-6 h-6 rounded-md bg-[var(--accent-green)]/20 flex items-center justify-center">
                       <TrendingUp size={14} className="text-[var(--accent-green)]" />
                     </div>
-                    <span className="text-xs font-medium text-[var(--text-muted)]">Best Performer</span>
+                    <span className="text-xs font-medium text-[var(--text-muted)]">Melhor desempenho</span>
                   </div>
                   {bestPerformer && (
                     <div className="flex items-center justify-between">
@@ -380,7 +387,7 @@ export default function Dashboard() {
                     <div className="w-6 h-6 rounded-md bg-[var(--accent-red)]/20 flex items-center justify-center">
                       <TrendingDown size={14} className="text-[var(--accent-red)]" />
                     </div>
-                    <span className="text-xs font-medium text-[var(--text-muted)]">Needs Attention</span>
+                    <span className="text-xs font-medium text-[var(--text-muted)]">Requer atenção</span>
                   </div>
                   {worstPerformer && worstPerformer.gainPercent < 0 ? (
                     <div className="flex items-center justify-between">
@@ -395,7 +402,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                   ) : (
-                    <div className="text-sm text-[var(--text-muted)]">All positions are profitable!</div>
+                    <div className="text-sm text-[var(--text-muted)]">Todas as posições estão positivas!</div>
                   )}
                 </div>
               </div>
@@ -406,11 +413,11 @@ export default function Dashboard() {
               <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <BarChart3 size={16} className="text-[var(--accent-primary)]" />
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">Weekly Summary</span>
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">Resumo semanal</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs text-[var(--text-muted)]">Trades This Week</span>
+                    <span className="text-xs text-[var(--text-muted)]">Operações nesta semana</span>
                     <span className="font-mono text-lg font-semibold text-[var(--text-primary)]">
                       {transactions.filter((tx) => {
                         const txDate = new Date(tx.date);
@@ -421,19 +428,19 @@ export default function Dashboard() {
                     </span>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs text-[var(--text-muted)]">Portfolio Change</span>
+                    <span className="text-xs text-[var(--text-muted)]">Variação da carteira</span>
                     <span className={`font-mono text-lg font-semibold ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
                       {totalReturns >= 0 ? "+" : ""}{formatCurrency(totalReturns, false)}
                     </span>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs text-[var(--text-muted)]">Active Positions</span>
+                    <span className="text-xs text-[var(--text-muted)]">Posições abertas</span>
                     <span className="font-mono text-lg font-semibold text-[var(--text-primary)]">
                       {holdings.length}
                     </span>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs text-[var(--text-muted)]">Buying Power</span>
+                    <span className="text-xs text-[var(--text-muted)]">Saldo disponível</span>
                     <span className="font-mono text-lg font-semibold text-[var(--text-primary)]">
                       {formatCurrency(buyingPower, false, { convertFromUSD: false })}
                     </span>
@@ -448,17 +455,17 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
                   <div className="flex items-center gap-2">
                     <Zap size={16} className="text-[var(--accent-primary)]" />
-                    <span className="text-sm font-semibold text-[var(--text-primary)]">Market Movers</span>
+                    <span className="text-sm font-semibold text-[var(--text-primary)]">Destaques do mercado</span>
                   </div>
                   <Link href="/markets" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline flex items-center gap-1">
-                    View markets <ChevronRight size={12} />
+                    Ver mercados <ChevronRight size={12} />
                   </Link>
                 </div>
 
                 <div className="grid grid-cols-2 divide-x divide-[var(--border-primary)]">
                   {/* Gainers */}
                   <div className="p-4">
-                    <div className="text-[10px] font-semibold text-[var(--accent-green)] uppercase tracking-wider mb-3">Top Gainers</div>
+                    <div className="text-[10px] font-semibold text-[var(--accent-green)] uppercase tracking-wider mb-3">Maiores altas</div>
                     <div className="flex flex-col gap-2">
                       {gainers.length > 0 ? gainers.map((stock) => (
                         <div
@@ -470,14 +477,14 @@ export default function Dashboard() {
                           <span className="font-mono text-xs font-semibold text-[var(--accent-green)]">{formatPercent(stock.changePercent)}</span>
                         </div>
                       )) : (
-                        <span className="text-xs text-[var(--text-dim)] py-2">Loading...</span>
+                        <span className="text-xs text-[var(--text-dim)] py-2">Carregando...</span>
                       )}
                     </div>
                   </div>
 
                   {/* Losers */}
                   <div className="p-4">
-                    <div className="text-[10px] font-semibold text-[var(--accent-red)] uppercase tracking-wider mb-3">Top Losers</div>
+                    <div className="text-[10px] font-semibold text-[var(--accent-red)] uppercase tracking-wider mb-3">Maiores quedas</div>
                     <div className="flex flex-col gap-2">
                       {losers.length > 0 ? losers.map((stock) => (
                         <div
@@ -489,7 +496,7 @@ export default function Dashboard() {
                           <span className="font-mono text-xs font-semibold text-[var(--accent-red)]">{formatPercent(stock.changePercent)}</span>
                         </div>
                       )) : (
-                        <span className="text-xs text-[var(--text-dim)] py-2">Loading...</span>
+                        <span className="text-xs text-[var(--text-dim)] py-2">Carregando...</span>
                       )}
                     </div>
                   </div>
@@ -504,7 +511,7 @@ export default function Dashboard() {
             <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)]">
               <div className="flex items-center gap-2 mb-4">
                 <PieChart size={16} className="text-[var(--accent-primary)]" />
-                <span className="text-sm font-semibold text-[var(--text-primary)]">Allocation</span>
+                <span className="text-sm font-semibold text-[var(--text-primary)]">Alocação</span>
               </div>
 
               {/* Allocation Bar */}
@@ -545,17 +552,17 @@ export default function Dashboard() {
               <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
                 <div className="flex items-center gap-2">
                   <Star size={16} className="text-[var(--accent-primary)]" />
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">Watchlist</span>
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">Lista de acompanhamento</span>
                 </div>
                 <Link href="/watchlist" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline flex items-center gap-1">
-                  View all <ChevronRight size={12} />
+                  Ver todos <ChevronRight size={12} />
                 </Link>
               </div>
 
               {watchlist.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center px-4">
                   <Star size={24} className="text-[var(--text-dim)] mb-2" />
-                  <span className="text-xs text-[var(--text-muted)]">No stocks in watchlist</span>
+                  <span className="text-xs text-[var(--text-muted)]">Nenhum ativo na lista</span>
                   <Link href="/watchlist" className="text-[11px] text-[var(--accent-primary)] mt-1 hover:underline">
                     Add stocks to watch
                   </Link>
@@ -591,17 +598,17 @@ export default function Dashboard() {
               <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
                 <div className="flex items-center gap-2">
                   <Clock size={16} className="text-[var(--accent-primary)]" />
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">Recent Activity</span>
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">Atividade recente</span>
                 </div>
                 <Link href="/history" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline flex items-center gap-1">
-                  View all <ChevronRight size={12} />
+                  Ver todos <ChevronRight size={12} />
                 </Link>
               </div>
 
               {transactions.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center px-4 flex-1">
                   <Target size={24} className="text-[var(--text-dim)] mb-2" />
-                  <span className="text-xs text-[var(--text-muted)]">No transactions yet</span>
+                  <span className="text-xs text-[var(--text-muted)]">Nenhuma transação ainda</span>
                   <Link href="/trade" className="text-[11px] text-[var(--accent-primary)] mt-1 hover:underline">
                     Start trading
                   </Link>
@@ -620,10 +627,10 @@ export default function Dashboard() {
                         </div>
                         <div>
                           <div className="text-xs font-medium text-[var(--text-primary)]">
-                            {tx.type} {tx.symbol}
+                            {tx.type === "BUY" ? "COMPRA" : "VENDA"} {tx.symbol}
                           </div>
                           <div className="text-[10px] text-[var(--text-dim)]">
-                            {tx.shares} shares @ {formatCurrency(tx.price, false)}
+                            {tx.shares} unidades a {formatCurrency(tx.price, false)}
                           </div>
                         </div>
                       </div>
@@ -632,7 +639,7 @@ export default function Dashboard() {
                           {tx.type === "BUY" ? "-" : "+"}{formatCurrency(tx.total, false)}
                         </div>
                         <div className="text-[10px] text-[var(--text-dim)]">
-                          {formatDateTime(tx.date)}
+                          {new Date(tx.date).toLocaleString("pt-BR")}
                         </div>
                       </div>
                     </div>
@@ -653,8 +660,8 @@ export default function Dashboard() {
               <Plus size={18} className="text-[var(--accent-primary)]" />
             </div>
             <div>
-              <div className="text-sm font-medium text-[var(--text-primary)]">New Trade</div>
-              <div className="text-xs text-[var(--text-muted)]">Buy or sell stocks</div>
+              <div className="text-sm font-medium text-[var(--text-primary)]">Nova operação</div>
+              <div className="text-xs text-[var(--text-muted)]">Compre ou venda ações</div>
             </div>
           </Link>
 
@@ -666,8 +673,8 @@ export default function Dashboard() {
               <TrendingUp size={18} className="text-[var(--accent-green)]" />
             </div>
             <div>
-              <div className="text-sm font-medium text-[var(--text-primary)]">Markets</div>
-              <div className="text-xs text-[var(--text-muted)]">Explore stocks & crypto</div>
+              <div className="text-sm font-medium text-[var(--text-primary)]">Mercados</div>
+              <div className="text-xs text-[var(--text-muted)]">Explore ações e criptomoedas</div>
             </div>
           </Link>
 
@@ -679,8 +686,8 @@ export default function Dashboard() {
               <PieChart size={18} className="text-[var(--text-muted)]" />
             </div>
             <div>
-              <div className="text-sm font-medium text-[var(--text-primary)]">Portfolio</div>
-              <div className="text-xs text-[var(--text-muted)]">View your holdings</div>
+              <div className="text-sm font-medium text-[var(--text-primary)]">Carteira</div>
+              <div className="text-xs text-[var(--text-muted)]">Visualize seus ativos</div>
             </div>
           </Link>
 
@@ -692,11 +699,12 @@ export default function Dashboard() {
               <Clock size={18} className="text-[var(--text-dim)]" />
             </div>
             <div>
-              <div className="text-sm font-medium text-[var(--text-primary)]">History</div>
-              <div className="text-xs text-[var(--text-muted)]">Past transactions</div>
+              <div className="text-sm font-medium text-[var(--text-primary)]">Histórico</div>
+              <div className="text-xs text-[var(--text-muted)]">Transações anteriores</div>
             </div>
           </Link>
         </div>
+      <div className="mt-6"><LeveragedTradeHistory /></div>
       </main>
     </div>
   );

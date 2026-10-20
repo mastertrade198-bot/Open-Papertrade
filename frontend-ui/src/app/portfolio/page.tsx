@@ -21,6 +21,7 @@ import {
   DollarSign,
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import LeveragedTradeHistory from "@/components/LeveragedTradeHistory";
 import PageHeader from "@/components/PageHeader";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { formatCurrency, formatPercent } from "@/lib/utils";
@@ -105,7 +106,7 @@ export default function PortfolioPage() {
     [holdingsWithPL]
   );
 
-  // Allocation colors
+  // Alocação colors
   const COLORS = [
     "#FF5C00",
     "#22C55E",
@@ -147,8 +148,8 @@ export default function PortfolioPage() {
         <main className="flex-1 flex flex-col gap-7 py-8 px-10 overflow-auto">
           <div className="flex items-start justify-between">
             <PageHeader
-              title="Portfolio"
-              subtitle="Track your holdings and investment performance"
+              title="Carteira"
+              subtitle="Acompanhe seus ativos e o desempenho dos investimentos"
             />
 
             {/* Refresh Button */}
@@ -201,13 +202,13 @@ export default function PortfolioPage() {
                       className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[var(--accent-primary)] text-black text-sm font-semibold hover:brightness-110 transition-all"
                     >
                       <Plus size={16} />
-                      Make your first trade
+                      Faça sua primeira operação
                     </Link>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
                     <Wallet size={14} />
                     <span>
-                      Buying Power: <span className="text-[var(--text-primary)] font-mono">{formatCurrency(buyingPower, false, { convertFromUSD: false })}</span>
+                      Saldo disponível: <span className="text-[var(--text-primary)] font-mono">{formatCurrency(buyingPower, false, { convertFromUSD: false })}</span>
                     </span>
                   </div>
                 </>
@@ -224,8 +225,8 @@ export default function PortfolioPage() {
       <Sidebar />
       <main className="flex-1 flex flex-col gap-6 py-8 px-10 overflow-auto">
         <PageHeader
-          title="Portfolio"
-          subtitle="Track your holdings and investment performance"
+          title="Carteira"
+          subtitle="Acompanhe seus ativos e o desempenho dos investimentos"
         />
 
         {/* Error Banner */}
@@ -238,11 +239,11 @@ export default function PortfolioPage() {
 
         {/* Summary Cards Row */}
         <div className="grid grid-cols-4 gap-4">
-          {/* Total Value */}
+          {/* Valor total */}
           <div className={`bg-[var(--bg-card)] rounded-xl ${settings.compactMode ? "p-3" : "p-5"} border border-[var(--border-primary)]`}>
             <div className="flex items-center gap-2 mb-3">
               <BarChart3 size={14} className="text-[var(--text-muted)]" />
-              <span className="text-xs font-medium text-[var(--text-muted)]">Total Value</span>
+              <span className="text-xs font-medium text-[var(--text-muted)]">Valor total</span>
             </div>
             <div className="font-mono text-2xl font-semibold text-[var(--text-primary)]">
               {formatCurrency(totalPortfolioValue, false, { convertFromUSD: false })}
@@ -264,7 +265,7 @@ export default function PortfolioPage() {
             </div>
           </div>
 
-          {/* Total Returns (shown) / Total Invested (when P/L hidden) */}
+          {/* Retorno total (shown) / Total investido (when P/L hidden) */}
           {settings.showProfitLoss ? (
             <div className={`bg-[var(--bg-card)] rounded-xl ${settings.compactMode ? "p-3" : "p-5"} border border-[var(--border-primary)]`}>
               <div className="flex items-center gap-2 mb-3">
@@ -273,7 +274,7 @@ export default function PortfolioPage() {
                 ) : (
                   <TrendingDown size={14} className="text-[var(--accent-red)]" />
                 )}
-                <span className="text-xs font-medium text-[var(--text-muted)]">Total Returns</span>
+                <span className="text-xs font-medium text-[var(--text-muted)]">Retorno total</span>
               </div>
               <div
                 className={`font-mono text-2xl font-semibold ${
@@ -291,7 +292,7 @@ export default function PortfolioPage() {
             <div className={`bg-[var(--bg-card)] rounded-xl ${settings.compactMode ? "p-3" : "p-5"} border border-[var(--border-primary)]`}>
               <div className="flex items-center gap-2 mb-3">
                 <DollarSign size={14} className="text-[var(--text-muted)]" />
-                <span className="text-xs font-medium text-[var(--text-muted)]">Total Invested</span>
+                <span className="text-xs font-medium text-[var(--text-muted)]">Total investido</span>
               </div>
               <div className="font-mono text-2xl font-semibold text-[var(--text-primary)]">
                 {formatCurrency(totalInvested, false, { convertFromUSD: false })}
@@ -316,11 +317,11 @@ export default function PortfolioPage() {
             </div>
           </div>
 
-          {/* Buying Power */}
+          {/* Saldo disponível */}
           <div className={`bg-[var(--bg-card)] rounded-xl ${settings.compactMode ? "p-3" : "p-5"} border border-[var(--border-primary)]`}>
             <div className="flex items-center gap-2 mb-3">
               <Plus size={14} className="text-[var(--text-muted)]" />
-              <span className="text-xs font-medium text-[var(--text-muted)]">Buying Power</span>
+              <span className="text-xs font-medium text-[var(--text-muted)]">Saldo disponível</span>
             </div>
             <div className="font-mono text-2xl font-semibold text-[var(--text-primary)]">
               {formatCurrency(buyingPower, false, { convertFromUSD: false })}
@@ -348,14 +349,14 @@ export default function PortfolioPage() {
                 className="flex items-center gap-1 text-xs font-medium text-[var(--accent-primary)] hover:underline"
               >
                 <Plus size={12} />
-                Add position
+                Adicionar posição
               </Link>
             </div>
 
             {/* Column Headers */}
             <div className={`grid ${settings.showProfitLoss ? "grid-cols-12" : "grid-cols-9"} gap-2 px-5 py-3 bg-[var(--bg-card-inner)] text-[10px] font-semibold tracking-wider text-[var(--text-muted)] uppercase`}>
               <span className="col-span-3">Asset</span>
-              <span className="col-span-2 text-right">Shares</span>
+              <span className="col-span-2 text-right">Quantidade</span>
               <span className="col-span-2 text-right">Price</span>
               <span className="col-span-2 text-right">Value</span>
               {settings.showProfitLoss && (
@@ -396,7 +397,7 @@ export default function PortfolioPage() {
                       </div>
                     </div>
 
-                    {/* Shares */}
+                    {/* Quantidade */}
                     <div className="col-span-2 flex items-center justify-end">
                       <span className="font-mono text-sm text-[var(--text-secondary)]">
                         {holding.shares}
@@ -459,10 +460,10 @@ export default function PortfolioPage() {
 
           {/* Right Sidebar */}
           <div className="w-[340px] flex flex-col gap-5 shrink-0">
-            {/* Allocation Card */}
+            {/* Alocação Card */}
             <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)]">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-sm font-semibold text-[var(--text-primary)]">Allocation</span>
+                <span className="text-sm font-semibold text-[var(--text-primary)]">Alocação</span>
                 <PieChart size={14} className="text-[var(--text-muted)]" />
               </div>
 
@@ -515,7 +516,7 @@ export default function PortfolioPage() {
                 </div>
               </div>
 
-              {/* Allocation List */}
+              {/* Alocação List */}
               <div className="flex flex-col gap-2.5">
                 {allocations.map((alloc) => (
                   <div key={alloc.symbol} className="flex items-center justify-between">
@@ -554,10 +555,10 @@ export default function PortfolioPage() {
             {settings.showProfitLoss && (
             <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)]">
               <span className="text-sm font-semibold text-[var(--text-primary)] block mb-4">
-                Performance
+                Desempenho
               </span>
 
-              {/* Top Gainer */}
+              {/* Maior alta */}
               {topGainer && (
                 <div
                   className="flex items-center justify-between p-3 rounded-lg bg-[var(--accent-green)]/10 mb-3 cursor-pointer hover:bg-[var(--accent-green)]/15 transition-colors"
@@ -566,7 +567,7 @@ export default function PortfolioPage() {
                   <div className="flex items-center gap-2">
                     <TrendingUp size={14} className="text-[var(--accent-green)]" />
                     <div>
-                      <span className="text-xs text-[var(--text-muted)]">Top Gainer</span>
+                      <span className="text-xs text-[var(--text-muted)]">Maior alta</span>
                       <div className="font-mono text-sm font-semibold text-[var(--text-primary)]">
                         {topGainer.symbol}
                       </div>
@@ -578,7 +579,7 @@ export default function PortfolioPage() {
                 </div>
               )}
 
-              {/* Top Loser */}
+              {/* Maior queda */}
               {topLoser && topLoser.pl < 0 && (
                 <div
                   className="flex items-center justify-between p-3 rounded-lg bg-[var(--accent-red)]/10 cursor-pointer hover:bg-[var(--accent-red)]/15 transition-colors"
@@ -587,7 +588,7 @@ export default function PortfolioPage() {
                   <div className="flex items-center gap-2">
                     <TrendingDown size={14} className="text-[var(--accent-red)]" />
                     <div>
-                      <span className="text-xs text-[var(--text-muted)]">Top Loser</span>
+                      <span className="text-xs text-[var(--text-muted)]">Maior queda</span>
                       <div className="font-mono text-sm font-semibold text-[var(--text-primary)]">
                         {topLoser.symbol}
                       </div>
@@ -631,19 +632,19 @@ export default function PortfolioPage() {
                 </div>
                 <div className="h-px bg-[var(--border-primary)]" />
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-muted)]">Winners</span>
+                  <span className="text-xs text-[var(--text-muted)]">Ganhos</span>
                   <span className="font-mono text-sm text-[var(--accent-green)]">
                     {holdingsWithPL.filter((h) => h.dayChange > 0).length}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-muted)]">Losers</span>
+                  <span className="text-xs text-[var(--text-muted)]">Perdas</span>
                   <span className="font-mono text-sm text-[var(--accent-red)]">
                     {holdingsWithPL.filter((h) => h.dayChange < 0).length}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-muted)]">Unchanged</span>
+                  <span className="text-xs text-[var(--text-muted)]">Sem alteração</span>
                   <span className="font-mono text-sm text-[var(--text-muted)]">
                     {holdingsWithPL.filter((h) => h.dayChange === 0).length}
                   </span>
@@ -652,6 +653,7 @@ export default function PortfolioPage() {
             </div>
           </div>
         </div>
+      <div className="mt-6"><LeveragedTradeHistory /></div>
       </main>
     </div>
   );

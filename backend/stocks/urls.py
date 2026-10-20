@@ -14,6 +14,9 @@ urlpatterns = [
     # Bulk quotes
     path('quotes/', views.BulkQuoteView.as_view(), name='bulk-quotes'),
 
+    # Paginated USD instrument catalog
+    path('catalog/', views.AssetCatalogView.as_view(), name='catalog'),
+
     # Search
     path('search/', views.SymbolSearchView.as_view(), name='search'),
 
@@ -42,7 +45,4 @@ urlpatterns = [
     # Market indices (US/IN based on market param)
     path('indices/', views.MarketIndicesView.as_view(), name='indices'),
 
-    # Convenience endpoints - Indian markets
-    path('indian/', views.IndianStocksView.as_view(), name='indian-stocks'),
-    path('indian/indices/', views.IndianIndicesView.as_view(), name='indian-indices'),
 ]

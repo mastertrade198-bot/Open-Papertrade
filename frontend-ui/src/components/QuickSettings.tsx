@@ -1,38 +1,24 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Moon, Sun, Monitor, Globe2, ChevronDown, Check } from "lucide-react";
+import { Moon, Sun, Monitor, ChevronDown, Check } from "lucide-react";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { CURRENCY_SYMBOLS } from "@/lib/utils";
 
 const CURRENCIES: { code: string; name: string }[] = [
-  { code: "USD", name: "US Dollar" },
-  { code: "EUR", name: "Euro" },
-  { code: "GBP", name: "Pound Sterling" },
-  { code: "INR", name: "Indian Rupee" },
-  { code: "JPY", name: "Japanese Yen" },
-  { code: "CAD", name: "Canadian Dollar" },
-  { code: "AUD", name: "Australian Dollar" },
-  { code: "CHF", name: "Swiss Franc" },
-  { code: "CNY", name: "Chinese Yuan" },
-  { code: "SGD", name: "Singapore Dollar" },
-];
-
-const MARKETS: { code: string; name: string; flag: string }[] = [
-  { code: "US", name: "United States", flag: "🇺🇸" },
-  { code: "IN", name: "India", flag: "🇮🇳" },
+  { code: "USD", name: "Dólar americano" },
 ];
 
 const THEMES: { code: "DARK" | "LIGHT" | "AUTO"; label: string; icon: typeof Moon }[] = [
-  { code: "DARK", label: "Dark", icon: Moon },
-  { code: "LIGHT", label: "Light", icon: Sun },
-  { code: "AUTO", label: "Auto", icon: Monitor },
+  { code: "DARK", label: "Escuro", icon: Moon },
+  { code: "LIGHT", label: "Claro", icon: Sun },
+  { code: "AUTO", label: "Automático", icon: Monitor },
 ];
 
 export default function QuickSettings() {
-  const { theme, applyTheme, currency, setCurrency, market, setMarket } = usePortfolio();
+  const { theme, applyTheme, currency, setCurrency } = usePortfolio();
 
-  const [openMenu, setOpenMenu] = useState<"theme" | "market" | "currency" | null>(null);
+  const [openMenu, setOpenMenu] = useState<"theme" | "currency" | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Close on outside click
@@ -47,7 +33,6 @@ export default function QuickSettings() {
 
   const themeMeta = THEMES.find((t) => t.code === theme) ?? THEMES[0];
   const ThemeIcon = themeMeta.icon;
-  const marketMeta = MARKETS.find((m) => m.code === market) ?? MARKETS[0];
   const currencySymbol = CURRENCY_SYMBOLS[currency] ?? currency;
 
   return (
@@ -56,7 +41,7 @@ export default function QuickSettings() {
       <div className="relative">
         <button
           onClick={() => setOpenMenu(openMenu === "theme" ? null : "theme")}
-          title="Theme"
+          title="Tema"
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[var(--bg-card)] border border-[var(--border-primary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/40 transition-all"
         >
           <ThemeIcon size={14} />
@@ -90,51 +75,11 @@ export default function QuickSettings() {
         )}
       </div>
 
-      {/* Market */}
-      <div className="relative">
-        <button
-          onClick={() => setOpenMenu(openMenu === "market" ? null : "market")}
-          title="Market"
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[var(--bg-card)] border border-[var(--border-primary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/40 transition-all"
-        >
-          <span className="text-sm leading-none">{marketMeta.flag}</span>
-          <span className="text-[11px] font-semibold text-[var(--text-primary)]">
-            {marketMeta.code}
-          </span>
-          <ChevronDown size={10} className="opacity-50" />
-        </button>
-        {openMenu === "market" && (
-          <div className="absolute top-full right-0 mt-1 w-44 bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-lg shadow-2xl z-50 py-1">
-            {MARKETS.map((m) => {
-              const active = market === m.code;
-              return (
-                <button
-                  key={m.code}
-                  onClick={() => {
-                    void setMarket(m.code);
-                    setOpenMenu(null);
-                  }}
-                  className={`flex items-center justify-between w-full px-3 py-2 text-left hover:bg-[var(--bg-muted)] transition-colors ${
-                    active ? "bg-[var(--bg-muted)]/50" : ""
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <span className="text-base leading-none">{m.flag}</span>
-                    <span className="text-xs text-[var(--text-primary)]">{m.name}</span>
-                  </span>
-                  {active && <Check size={12} className="text-[var(--accent-primary)]" />}
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
       {/* Currency */}
       <div className="relative">
         <button
           onClick={() => setOpenMenu(openMenu === "currency" ? null : "currency")}
-          title="Currency"
+          title="Moeda"
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-[var(--bg-card)] border border-[var(--border-primary)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)]/40 transition-all"
         >
           <span className="font-mono text-[13px] font-bold text-[var(--text-primary)] leading-none">

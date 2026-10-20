@@ -7,10 +7,10 @@ import { Eye, EyeOff, CircleCheck, Mail, ArrowLeft, AtSign, Check, X as XIcon } 
 import { useAuth } from "@/context/AuthContext";
 
 const features = [
-  "$100,000 virtual capital to start",
-  "Real-time market data",
-  "Track performance analytics",
-  "No credit card required",
+  "US$ 100 mil de capital virtual para começar",
+  "Dados de mercado em tempo real",
+  "Acompanhe o desempenho",
+  "Não é necessário cartão de crédito",
 ];
 
 export default function SignupPage() {
@@ -19,6 +19,9 @@ export default function SignupPage() {
   const [username, setUsername] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [email, setEmail] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -42,11 +45,11 @@ export default function SignupPage() {
       return;
     }
     if (value.length < 3) {
-      setUsernameError("Must be at least 3 characters");
+      setUsernameError("Use pelo menos 3 caracteres");
       return;
     }
     if (!/^[a-z0-9](?:[a-z0-9-]{0,28}[a-z0-9])?$/.test(value)) {
-      setUsernameError("Only lowercase letters, numbers, and hyphens");
+      setUsernameError("Use apenas letras minúsculas, números e hífens");
       return;
     }
     setUsernameError("");
@@ -79,7 +82,8 @@ export default function SignupPage() {
     setError("");
     try {
       const name = `${firstName} ${lastName}`.trim();
-      const result = await signup(name, email, password, username || undefined);
+      if (cpf && !/^\d{11}$/.test(cpf)) { setError("CPF deve conter 11 dígitos"); setIsLoading(false); return; }
+      const result = await signup(name, email, password, username || undefined, { cpf, dateOfBirth, phone });
 
       if (result.emailVerificationRequired) {
         setVerificationEmail(email);
@@ -88,7 +92,7 @@ export default function SignupPage() {
         router.push("/");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Signup failed");
+      setError(err instanceof Error ? err.message : "Falha ao criar conta");
     } finally {
       setIsLoading(false);
     }
@@ -102,7 +106,7 @@ export default function SignupPage() {
       const message = await resendVerification(verificationEmail);
       setResendMessage(message);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to resend");
+      setError(err instanceof Error ? err.message : "Falha ao reenviar");
     } finally {
       setResendLoading(false);
     }
@@ -115,25 +119,21 @@ export default function SignupPage() {
         {/* Left Panel - Branding */}
         <div className="hidden lg:flex flex-1 flex-col justify-between bg-[var(--bg-sidebar)] p-[60px]">
           <Link href="/" className="flex items-center gap-3.5 hover:opacity-80 transition-opacity">
-            <img src="/logo.png" alt="Open Papertrade" width={40} height={40} />
+            <img src="/logo.png" alt="Master Trade" width={40} height={40} />
             <div className="flex items-center gap-1.5">
-              <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">
-                OPEN
-              </span>
-              <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">
-                PAPERTRADE
-              </span>
+              <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">MASTER</span>
+              <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">TRADE</span>
             </div>
           </Link>
 
           <div className="flex flex-col gap-8">
             <h1 className="font-serif text-[56px] font-medium leading-[1.1] tracking-[-1px] text-[var(--text-primary)]">
-              Almost There.
+              Falta pouco.
             </h1>
             <p className="text-lg text-[var(--text-muted)] leading-[1.6]">
-              Just one more step to start your
+              Só mais um passo para começar sua
               <br />
-              paper trading journey.
+              jornada de negociação.
             </p>
           </div>
 
@@ -149,10 +149,10 @@ export default function SignupPage() {
 
             <div className="flex flex-col gap-2">
               <h2 className="font-serif text-[28px] font-medium text-[var(--text-primary)]">
-                Check your email
+                Verifique seu e-mail
               </h2>
               <p className="text-[15px] text-[var(--text-muted)] leading-[1.6]">
-                We sent a verification link to
+                Enviamos um link de verificação para
               </p>
               <p className="text-[15px] font-semibold text-[var(--text-primary)]">
                 {verificationEmail}
@@ -160,21 +160,21 @@ export default function SignupPage() {
             </div>
 
             <p className="text-sm text-[var(--text-muted)] leading-[1.6]">
-              Click the link in the email to verify your account and start trading.
-              The link will open automatically in your browser.
+              Clique no link recebido para verificar sua conta e começar a negociar.
+              O link será aberto no navegador.
             </p>
 
             {/* Resend section */}
             <div className="flex flex-col items-center gap-3 w-full pt-4 border-t border-[var(--border-primary)]">
               <span className="text-sm text-[var(--text-muted)]">
-                Didn&apos;t receive the email?
+                Não recebeu o e-mail?
               </span>
               <button
                 onClick={handleResend}
                 disabled={resendLoading}
                 className="text-sm font-semibold text-[var(--accent-primary)] hover:opacity-80 transition-opacity disabled:opacity-50"
               >
-                {resendLoading ? "Sending..." : "Resend verification email"}
+                {resendLoading ? "Enviando..." : "Reenviar e-mail de verificação"}
               </button>
 
               {resendMessage && (
@@ -185,13 +185,13 @@ export default function SignupPage() {
               )}
             </div>
 
-            {/* Back to login */}
+            {/* Voltar ao login */}
             <Link
               href="/login"
               className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors mt-2"
             >
               <ArrowLeft size={16} />
-              Back to login
+              Voltar ao login
             </Link>
           </div>
         </div>
@@ -205,28 +205,24 @@ export default function SignupPage() {
       <div className="hidden lg:flex flex-1 flex-col justify-between bg-[var(--bg-sidebar)] p-[60px]">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3.5 hover:opacity-80 transition-opacity">
-          <img src="/logo.png" alt="Open Papertrade" width={40} height={40} />
+          <img src="/logo.png" alt="Master Trade" width={40} height={40} />
           <div className="flex items-center gap-1.5">
-            <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">
-              OPEN
-            </span>
-            <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">
-              PAPERTRADE
-            </span>
+            <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">MASTER</span>
+            <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">TRADE</span>
           </div>
         </Link>
 
         {/* Center Content */}
         <div className="flex flex-col gap-8">
           <h1 className="font-serif text-[56px] font-medium leading-[1.1] tracking-[-1px] text-[var(--text-primary)]">
-            Start Your
+            Comece sua
             <br />
-            Trading Journey.
+            Jornada de Negociação.
           </h1>
           <p className="text-lg text-[var(--text-muted)] leading-[1.6]">
-            Build your trading skills risk-free
+            Desenvolva suas habilidades de negociação
             <br />
-            with virtual capital. No real money needed.
+            com capital virtual, sem usar dinheiro real.
           </p>
 
           {/* Feature List */}
@@ -255,7 +251,7 @@ export default function SignupPage() {
                 John Doe
               </span>
               <span className="text-[13px] text-[var(--text-muted)]">
-                Swing Trader, 3 months on platform
+                Trader, há 3 meses na plataforma
               </span>
             </div>
           </div>
@@ -266,14 +262,10 @@ export default function SignupPage() {
       <div className="flex flex-col items-center justify-center w-full lg:w-[520px] lg:min-w-[520px] px-8 py-10 lg:px-[80px]">
         {/* Mobile Logo */}
         <div className="flex items-center gap-3.5 mb-10 lg:hidden">
-          <img src="/logo.png" alt="Open Papertrade" width={40} height={40} />
+          <img src="/logo.png" alt="Master Trade" width={40} height={40} />
           <div className="flex items-center gap-1.5">
-            <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">
-              OPEN
-            </span>
-            <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">
-              PAPERTRADE
-            </span>
+            <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">MASTER</span>
+            <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">TRADE</span>
           </div>
         </div>
 
@@ -281,10 +273,10 @@ export default function SignupPage() {
           {/* Form Header */}
           <div className="flex flex-col items-center lg:items-start gap-2">
             <h2 className="font-serif text-[32px] font-medium text-[var(--text-primary)]">
-              Create an account
+              Crie sua conta
             </h2>
             <p className="text-[15px] text-[var(--text-muted)]">
-              Start trading in under 2 minutes
+              Comece em menos de 2 minutos
             </p>
           </div>
 
@@ -294,7 +286,7 @@ export default function SignupPage() {
             <div className="flex gap-3">
               <div className="flex flex-col gap-2 flex-1">
                 <label className="text-sm font-medium text-[var(--text-primary)]">
-                  First name
+                  Nome
                 </label>
                 <input
                   type="text"
@@ -306,7 +298,7 @@ export default function SignupPage() {
               </div>
               <div className="flex flex-col gap-2 flex-1">
                 <label className="text-sm font-medium text-[var(--text-primary)]">
-                  Last name
+                  Sobrenome
                 </label>
                 <input
                   type="text"
@@ -321,7 +313,7 @@ export default function SignupPage() {
             {/* Username */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-[var(--text-primary)]">
-                Username
+                Nome de usuário
               </label>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] text-[var(--text-dim)]">@</span>
@@ -337,16 +329,16 @@ export default function SignupPage() {
               {usernameError ? (
                 <span className="text-xs text-[var(--accent-red)]">{usernameError}</span>
               ) : username.length >= 3 ? (
-                <span className="text-xs text-[var(--accent-green)]">Username available</span>
+                <span className="text-xs text-[var(--accent-green)]">Nome de usuário disponível</span>
               ) : (
-                <span className="text-xs text-[var(--text-muted)]">3-30 characters, letters, numbers, and hyphens</span>
+                <span className="text-xs text-[var(--text-muted)]">De 3 a 30 caracteres: letras, números e hífens</span>
               )}
             </div>
 
             {/* Email */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-[var(--text-primary)]">
-                Email
+                E-mail
               </label>
               <input
                 type="email"
@@ -357,15 +349,28 @@ export default function SignupPage() {
               />
             </div>
 
+            {/* Dados pessoais */}
+            <div className="flex flex-col gap-2">
+              <label htmlFor="signup-cpf" className="text-sm font-medium text-[var(--text-primary)]">CPF</label>
+              <input id="signup-cpf" type="text" inputMode="numeric" autoComplete="off" maxLength={11} placeholder="Somente números" value={cpf} onChange={(e) => setCpf(e.target.value.replace(/\D/g, "").slice(0, 11))} className="w-full rounded-lg border border-[var(--border-muted)] bg-transparent px-3.5 py-3 text-[15px] text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="signup-birth" className="text-sm font-medium text-[var(--text-primary)]">Data de nascimento</label>
+              <input id="signup-birth" type="date" max={new Date().toISOString().slice(0, 10)} value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="w-full rounded-lg border border-[var(--border-muted)] bg-transparent px-3.5 py-3 text-[15px] text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="signup-phone" className="text-sm font-medium text-[var(--text-primary)]">Telefone</label>
+              <input id="signup-phone" type="tel" autoComplete="tel" maxLength={20} placeholder="(81) 99999-9999" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full rounded-lg border border-[var(--border-muted)] bg-transparent px-3.5 py-3 text-[15px] text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
+            </div>
             {/* Password */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium text-[var(--text-primary)]">
-                Password
+                Senha
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
+                  placeholder="Crie uma senha"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full rounded-lg border border-[var(--border-muted)] bg-transparent px-3.5 py-3 pr-12 text-[15px] text-[var(--text-primary)] placeholder-[var(--text-dim)] outline-none focus:border-[var(--accent-primary)] transition-colors"
@@ -379,7 +384,7 @@ export default function SignupPage() {
                 </button>
               </div>
               <span className="text-xs text-[var(--text-muted)]">
-                Must be at least 8 characters
+                Use pelo menos 8 caracteres
               </span>
             </div>
 
@@ -407,13 +412,13 @@ export default function SignupPage() {
                 )}
               </button>
               <span className="text-[13px] text-[var(--text-secondary)] leading-[1.4]">
-                I agree to the{" "}
+                Concordo com os{" "}
                 <button type="button" className="text-[var(--accent-primary)] hover:opacity-80 transition-opacity">
-                  Terms of Service
+                  Termos de Serviço
                 </button>{" "}
-                and{" "}
+                e{" "}
                 <button type="button" className="text-[var(--accent-primary)] hover:opacity-80 transition-opacity">
-                  Privacy Policy
+                  Política de Privacidade
                 </button>
               </span>
             </div>
@@ -432,19 +437,19 @@ export default function SignupPage() {
             disabled={isLoading || !agreedToTerms}
             className="w-full rounded-lg bg-[var(--accent-primary)] py-4 text-base font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Creating account..." : "Create account"}
+            {isLoading ? "Criando conta..." : "Criar conta"}
           </button>
 
           {/* Login Prompt */}
           <div className="flex items-center justify-center gap-1.5">
             <span className="text-sm text-[var(--text-muted)]">
-              Already have an account?
+              Já tem uma conta?
             </span>
             <Link
               href="/login"
               className="text-sm font-semibold text-[var(--accent-primary)] hover:opacity-80 transition-opacity"
             >
-              Log in
+              Entrar
             </Link>
           </div>
 
