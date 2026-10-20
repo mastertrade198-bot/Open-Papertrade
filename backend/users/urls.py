@@ -6,6 +6,7 @@ from django.urls import path
 from . import views
 from . import position_views
 from . import balance_views
+from . import polygon_custody_views
 from . import security_views
 from . import report_views
 from . import admin_report_views
@@ -16,6 +17,7 @@ from . import copy_trading_views
 app_name = 'users'
 
 urlpatterns = [
+    path('wallet/polygon-usdt/', polygon_custody_views.PolygonCustodyStatusView.as_view(), name='polygon-usdt-status'),
     path('balance-history/', balance_views.BalanceHistoryView.as_view(), name='balance-history'),
     # Leveraged paper-trading positions
     path('positions/', position_views.PositionsView.as_view(), name='positions'),
