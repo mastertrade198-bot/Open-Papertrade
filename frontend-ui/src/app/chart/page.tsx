@@ -112,7 +112,7 @@ function ChartPageContent() {
         {/* Header */}
         <header className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex flex-col gap-1">
-            <h1 className="font-serif text-[28px] font-medium tracking-[-0.5px] text-[var(--text-primary)]">
+            <h1 className="font-primary text-[28px] font-semibold tracking-normal text-[var(--text-primary)]">
               Análise gráfica
             </h1>
             <p className="text-xs text-[var(--text-muted)]">
