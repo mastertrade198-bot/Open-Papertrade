@@ -109,7 +109,10 @@
   }
 
   .font-serif {
-    font-family: "Instrument Serif", Georgia, serif;
+    /* Legacy page headings still use font-serif; align them with the navigation. */
+    font-family: "Inter", system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: normal;
   }
 }
 
