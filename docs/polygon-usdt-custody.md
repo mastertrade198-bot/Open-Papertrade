@@ -19,3 +19,13 @@
 ## Activation gates
 Default: **all real deposit, credit and sweep operations disabled**.
 No live activation until owner approval, successful end-to-end tests and operational security review.
+
+
+## Product requirement: exactly one user-facing balance
+
+- Display **one** account balance in USDT. Do not offer a simulated/real toggle, demo balance, signup bonus, or automatically seeded buying power.
+- New accounts start at **0 USDT**. Available balance is derived from a reconciled, immutable ledger of confirmed funds and authorized debits, with locked margin tracked as a component of the same account.
+- Sweep transfers between user deposit addresses and the operator's Trust Wallet are internal custody transfers, **not** customer credits or debits.
+- Preserve separate internal accounting records (on-chain receipts, reserved margin, trade settlement, custody movements) even though the interface exposes a single account balance.
+- Legacy simulated balance fields and endpoints must be retired or made inaccessible before live launch. Never relabel legacy paper-trading buying power as real USDT.
+- **Critical solvency requirement:** leveraged trade profits are not automatically backed by received USDT. Before enabling real-money trading, define the counterparty, funding source, settlement and withdrawal rules, and enforce asset/liability reconciliation and regulatory review. Until then, trading and real-money crediting remain disabled.
