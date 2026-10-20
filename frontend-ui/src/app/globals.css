@@ -161,3 +161,15 @@ div:has(> .master-topnav) > main {
     letter-spacing: normal;
   }
 }
+
+
+/* Consistent sans-serif headings across every route, including pages whose
+   title uses a legacy font-serif utility or custom Tailwind font weight. */
+@layer utilities {
+  h1, h2, h3, h4, h5, h6,
+  [data-page-title] {
+    font-family: "Inter", system-ui, sans-serif !important;
+    font-weight: 600 !important;
+    letter-spacing: normal !important;
+  }
+}
