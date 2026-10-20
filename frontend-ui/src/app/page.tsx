@@ -151,7 +151,7 @@ export default function Dashboard() {
         <header className="flex items-start justify-between">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-3">
-              <h1 className="font-primary text-[32px] font-semibold tracking-normal text-[var(--text-primary)]">
+              <h1 className="font-primary text-2xl font-semibold tracking-normal text-[var(--text-primary)]">
                 Bem-vindo de volta{user.name ? `, ${user.name.split(" ")[0]}` : ""}
               </h1>
               {lastUpdated && (
