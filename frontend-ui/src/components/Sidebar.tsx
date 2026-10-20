@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, TrendingUp, Wallet, History, Star, Settings, LogOut, CandlestickChart, ChevronDown, UserRound, Eye, EyeOff } from "lucide-react";
+import { LayoutDashboard, TrendingUp, ArrowLeftRight, Wallet, History, Star, Settings, LogOut, CandlestickChart, ChevronDown, UserRound, Eye, EyeOff } from "lucide-react";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useAuth } from "@/context/AuthContext";
 import { API_HOST } from "@/lib/api";
@@ -13,7 +13,7 @@ import { RefreshCw } from "lucide-react";
 const navItems = [
   { icon: LayoutDashboard, label: "Painel", href: "/" },
   { icon: TrendingUp, label: "Mercados", href: "/markets" },
-  { icon: CandlestickChart, label: "Trade", href: "/trade" },
+  { icon: ArrowLeftRight, label: "Negociar", href: "/trade" },
   { icon: CandlestickChart, label: "Gráficos", href: "/chart" },
   { icon: Wallet, label: "Carteira", href: "/portfolio" },
   { icon: Star, label: "Favoritos", href: "/watchlist" },
