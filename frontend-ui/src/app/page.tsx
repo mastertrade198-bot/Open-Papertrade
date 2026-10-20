@@ -165,19 +165,6 @@ export default function Dashboard() {
               Confira o resumo da sua carteira de hoje
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing || isLoading}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[var(--border-muted)] hover:bg-[var(--bg-muted)] transition-colors disabled:opacity-50"
-            >
-              {isRefreshing || isLoading ? (
-                <Loader2 size={16} className="text-[var(--text-muted)] animate-spin" />
-              ) : (
-                <RefreshCw size={16} className="text-[var(--text-muted)]" />
-              )}
-            </button>
-          </div>
         </header>
 
         {/* Scrolling market ticker: duplicated sequence for seamless motion */}
