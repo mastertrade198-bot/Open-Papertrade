@@ -890,3 +890,48 @@ class BalanceTransaction(models.Model):
             "description": self.description,
             "createdAt": self.created_at.isoformat(),
         }
+
+
+# Real on-chain funds are tracked independently of legacy simulated buying power.
+# Never derive a user's real balance from trading P/L or admin balance adjustments.
+class PolygonDepositAddress(models.Model):
+    user = models.OneToOneField('UserProfile', on_delete=models.PROTECT, related_name='polygon_deposit_address')
+    address = models.CharField(max_length=42, unique=True)
+    provider_reference = models.CharField(max_length=160, unique=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = 'polygon_deposit_addresses'
+
+
+class PolygonUSDTDeposit(models.Model):
+    STATUS = [('observed', 'Observed'), ('confirmed', 'Confirmed'), ('rejected', 'Rejected')]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey('UserProfile', on_delete=models.PROTECT, related_name='polygon_usdt_deposits')
+    address = models.ForeignKey(PolygonDepositAddress, on_delete=models.PROTECT)
+    tx_hash = models.CharField(max_length=66)
+    log_index = models.PositiveIntegerField()
+    block_number = models.PositiveBigIntegerField()
+    amount = models.DecimalField(max_digits=38, decimal_places=6)
+    status = models.CharField(max_length=12, choices=STATUS, default='observed')
+    created_at = models.DateTimeField(default=timezone.now)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'polygon_usdt_deposits'
+        constraints = [
+            models.UniqueConstraint(fields=['tx_hash', 'log_index'], name='unique_polygon_usdt_log'),
+            models.CheckConstraint(condition=models.Q(amount__gt=0), name='positive_polygon_usdt_amount'),
+        ]
+
+
+class PolygonSweep(models.Model):
+    STATUS = [('pending', 'Pending'), ('submitted', 'Submitted'), ('confirmed', 'Confirmed'), ('failed', 'Failed')]
+    deposit = models.OneToOneField(PolygonUSDTDeposit, on_delete=models.PROTECT, related_name='sweep')
+    destination = models.CharField(max_length=42)
+    tx_hash = models.CharField(max_length=66, blank=True, default='')
+    status = models.CharField(max_length=12, choices=STATUS, default='pending')
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = 'polygon_usdt_sweeps'
