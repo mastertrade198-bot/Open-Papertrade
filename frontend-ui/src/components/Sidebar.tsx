@@ -18,7 +18,6 @@ const navItems = [
   { icon: Wallet, label: "Carteira", href: "/portfolio" },
   { icon: Star, label: "Favoritos", href: "/watchlist" },
   { icon: History, label: "Extrato", href: "/balance-history" },
-  { icon: Settings, label: "Conta", href: "/account" },
 ];
 
 export default function Sidebar() {
