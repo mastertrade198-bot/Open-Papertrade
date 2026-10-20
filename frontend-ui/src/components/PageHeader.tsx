@@ -23,7 +23,7 @@ export default function PageHeader({
       <header className="flex items-start justify-between">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-4">
-            <h1 className="font-serif text-[38px] font-medium tracking-[-1px] text-[var(--text-primary)]">
+            <h1 className="font-primary text-2xl font-semibold tracking-normal text-[var(--text-primary)]">
               {title}
             </h1>
             <ConnectionStatus />
