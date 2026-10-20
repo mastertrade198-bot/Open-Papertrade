@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, TrendingUp, Wallet, History, Star, Settings, LogOut, CandlestickChart, ChevronDown, UserRound } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Wallet, History, Star, Settings, LogOut, CandlestickChart, ChevronDown, UserRound, Eye, EyeOff } from "lucide-react";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useAuth } from "@/context/AuthContext";
 import { API_HOST } from "@/lib/api";
@@ -23,7 +23,8 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, refreshPrices, isLoading } = usePortfolio();
+  const { user, buyingPower, refreshPrices, isLoading } = usePortfolio();
+  const [balanceVisible, setBalanceVisible] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const handleRefresh = async () => {
     if (refreshing || isLoading) return;
@@ -48,7 +49,7 @@ export default function Sidebar() {
           </span>
         </Link>
         <div className="hidden h-6 w-px bg-[var(--border-primary)] xl:block" />
-        <nav aria-label="Navegação principal" className="order-3 flex w-full min-w-0 flex-wrap items-center justify-center gap-1 lg:order-none lg:w-auto lg:flex-1">
+        <nav aria-label="Navegação principal" className="order-3 flex w-full min-w-0 flex-wrap items-center justify-start gap-1 lg:order-none lg:w-auto lg:flex-1">
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
             return (
@@ -60,6 +61,19 @@ export default function Sidebar() {
           })}
         </nav>
         <div className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
+          <div className="flex items-center gap-1.5 rounded-lg border border-[var(--border-primary)] px-2.5 py-1.5" aria-label="Saldo disponível em USD">
+            <Wallet size={15} className="shrink-0 text-[var(--text-muted)]" />
+            <span className="hidden text-[10px] text-[var(--text-muted)] xl:inline">Saldo</span>
+            <span className="whitespace-nowrap font-mono text-[12px] font-semibold text-[var(--text-primary)] tabular-nums">
+              {balanceVisible ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(buyingPower) : "••••••"}
+            </span>
+            <button type="button" onClick={() => setBalanceVisible(v => !v)}
+              aria-label={balanceVisible ? "Ocultar saldo" : "Mostrar saldo"}
+              title={balanceVisible ? "Ocultar saldo" : "Mostrar saldo"}
+              className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+              {balanceVisible ? <Eye size={15} /> : <EyeOff size={15} />}
+            </button>
+          </div>
           <button type="button" onClick={() => void handleRefresh()} disabled={refreshing || isLoading} aria-label="Atualizar cotações" title="Atualizar cotações" className="rounded-lg border border-[var(--border-primary)] p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50"><RefreshCw size={15} className={refreshing || isLoading ? "animate-spin" : ""} /></button>
           <div className="relative">
             <button type="button" onClick={() => setAccountOpen(v => !v)} aria-expanded={accountOpen}
