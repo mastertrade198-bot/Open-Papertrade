@@ -177,13 +177,6 @@ export default function Dashboard() {
                 <RefreshCw size={16} className="text-[var(--text-muted)]" />
               )}
             </button>
-            <Link
-              href="/trade"
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent-primary)] hover:brightness-110 transition-all"
-            >
-              <Plus size={16} className="text-black" />
-              <span className="text-[13px] font-semibold text-black">Nova operação</span>
-            </Link>
           </div>
         </header>
 
