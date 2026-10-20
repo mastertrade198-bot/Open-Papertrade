@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from .models import PolygonDepositAddress, PolygonUSDTDeposit
 from .views import get_user
+from .real_usdt_accounting import real_usdt_balance
 
 
 class PolygonCustodyStatusView(APIView):
@@ -25,6 +26,7 @@ class PolygonCustodyStatusView(APIView):
             "sweepEnabled": False,
             "depositAddress": None,  # No unverified address is exposed.
             "confirmedDepositTotal": str(confirmed),
+            "recordedRealUSDT": str(real_usdt_balance(user)),
             "spendableBalance": None,
             "status": "pending_custody_integration",
             "message": "Depósitos reais indisponíveis até validação da custódia e conciliação.",
