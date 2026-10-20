@@ -150,23 +150,14 @@ div:has(> .master-topnav) > main {
 }
 
 
-/* Master Trade visual identity: same Inter family and bold tracking as wordmark.
-   Keep body copy, numeric figures and controls unchanged. */
+/* Page titles follow the top navigation's Inter / semibold typography.
+   No extra tracking: same family, weight and spacing as menu labels. */
 @layer base {
-  h1, h2, h3, h4, h5, h6 {
-    font-family: "Inter", system-ui, sans-serif;
-    font-weight: 800;
-    letter-spacing: 0.045em;
-  }
-
-  h1, h2 {
-    letter-spacing: 0.07em;
-  }
-
-  /* Section eyebrow labels and subtitles */
+  h1, h2, h3, h4, h5, h6,
+  .master-page-title,
   .master-section-subtitle {
     font-family: "Inter", system-ui, sans-serif;
-    font-weight: 700;
-    letter-spacing: 0.045em;
+    font-weight: 600;
+    letter-spacing: normal;
   }
 }
