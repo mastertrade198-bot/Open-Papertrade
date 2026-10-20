@@ -935,3 +935,21 @@ class PolygonSweep(models.Model):
 
     class Meta:
         db_table = 'polygon_usdt_sweeps'
+
+
+class RealUSDTLedgerEntry(models.Model):
+    """Append-only real USDT movements, separate from legacy paper balances."""
+    KIND = [('deposit', 'Deposit'), ('debit', 'Debit'), ('reversal', 'Reversal')]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey('UserProfile', on_delete=models.PROTECT, related_name='real_usdt_ledger')
+    deposit = models.OneToOneField(PolygonUSDTDeposit, null=True, blank=True, on_delete=models.PROTECT, related_name='ledger_entry')
+    kind = models.CharField(max_length=12, choices=KIND)
+    amount = models.DecimalField(max_digits=38, decimal_places=6)
+    reference = models.CharField(max_length=180, unique=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        db_table = 'real_usdt_ledger'
+        constraints = [
+            models.CheckConstraint(condition=~models.Q(amount=0), name='nonzero_real_usdt_ledger'),
+        ]
