@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 from .models import PolygonDepositAddress, PolygonUSDTDeposit
 from .views import get_user
 from .real_usdt_accounting import real_usdt_balance
+from .polygon_rpc import polygon_rpc_healthcheck
 
 
 class PolygonCustodyStatusView(APIView):
@@ -21,6 +22,7 @@ class PolygonCustodyStatusView(APIView):
         # reversals, fees and settlements require a dedicated double-entry ledger.
         return Response({
             "network": "polygon",
+            "rpc": polygon_rpc_healthcheck(),
             "asset": "USDT",
             "depositEnabled": False,
             "sweepEnabled": False,
