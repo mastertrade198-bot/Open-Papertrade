@@ -83,7 +83,7 @@ export default function Sidebar() {
               <ChevronDown size={13} className="text-[var(--text-muted)]" />
             </button>
             {accountOpen && <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-2 shadow-2xl">
-              <Link href="/account" onClick={() => setAccountOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm hover:bg-[var(--bg-hover)]"><Settings size={15} /> Minha conta</Link>
+              <Link href="/account" onClick={() => setAccountOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"><Settings size={15} /> Minha conta</Link>
               <div className="my-2 border-t border-[var(--border-primary)] pt-2">
                 <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Aparência e moeda</p>
                 <QuickSettings />
