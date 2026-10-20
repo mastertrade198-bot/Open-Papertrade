@@ -42,9 +42,9 @@ export default function PolygonDepositPage() {
         </div>
         <section className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-6">
           <div className="flex items-center gap-2"><Landmark size={19} className="text-[var(--accent-primary)]" /><h2 className="font-semibold text-[var(--text-primary)]">Carteira-mãe de custódia</h2></div>
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">Destino provisório registrado para a integração. O valor abaixo é um marcador, não um endereço blockchain válido.</p>
-          <code className="mt-3 block break-all rounded-lg bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)]">0xtestealterar</code>
-          <p className="mt-2 text-xs text-amber-500">Configuração pendente: transferências automáticas bloqueadas até validar e substituir o endereço.</p>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">Endereço público configurado como destino previsto para a consolidação de depósitos. A titularidade e o controle da carteira ainda precisam ser confirmados.</p>
+          <code className="mt-3 block break-all rounded-lg bg-[var(--bg-primary)] px-3 py-2 text-sm text-[var(--text-primary)]">0x74816dD9c6e8731fc0fdBD973C5548EEfe7b37bd</code>
+          <p className="mt-2 text-xs text-amber-500">Transferências automáticas permanecem bloqueadas até implementar e testar a custódia, as confirmações blockchain e a conciliação.</p>
         </section>
         <section className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-6">
           <h2 className="font-semibold text-[var(--text-primary)]">Seu endereço de depósito</h2>
