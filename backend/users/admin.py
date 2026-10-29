@@ -374,3 +374,16 @@ class BacktestAdmin(ModelAdmin):
     search_fields = ("strategy_name", "symbol", "owner__username", "owner__email")
     readonly_fields = ("created_at", "results", "config_snapshot")
     date_hierarchy = "created_at"
+
+
+from .models import WithdrawalRequest
+
+@admin.register(WithdrawalRequest)
+class WithdrawalRequestAdmin(ModelAdmin):
+    list_display = ('user', 'amount', 'status', 'requested_at', 'reviewed_at')
+    list_filter = ('status', 'requested_at')
+    search_fields = ('user__name', 'user__email')
+    readonly_fields = ('id', 'user', 'amount', 'status', 'requested_at', 'reviewed_at', 'reviewed_by')
+    fields = ('id', 'user', 'amount', 'status', 'requested_at', 'reviewed_at', 'reviewed_by', 'admin_note')
+    # Status changes are intentionally disabled until atomic balance accounting
+    # and an auditable withdrawal approval/rejection service are integrated.
