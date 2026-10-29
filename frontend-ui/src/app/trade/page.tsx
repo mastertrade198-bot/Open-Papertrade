@@ -430,13 +430,13 @@ function TradePageContent() {
           {/* Left Panel - Stock Selection */}
           <div className="min-w-0 flex flex-col gap-2 p-2.5">
             {/* Market chart uses the existing historical-data provider. */}
-            <div className="trade-chart-shell order-2 overflow-hidden rounded-xl shadow-[0_12px_36px_rgba(0,0,0,.12)] border border-[var(--border-primary)] bg-[var(--bg-card)]">
+            <div className="trade-chart-shell order-0 overflow-hidden rounded-xl shadow-[0_12px_36px_rgba(0,0,0,.12)] border border-[var(--border-primary)] bg-[var(--bg-card)]">
               <div className="flex items-center justify-between gap-3 border-b border-[var(--border-primary)] px-4 py-3"><div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]"><BarChart3 size={16} className="text-[var(--accent-primary)]" /> Mercado em tempo real <span className="font-mono text-[var(--text-muted)]">{displaySymbol(selectedSymbol)}</span></div><span className="text-[10px] text-[var(--text-muted)]">Fonte de mercado integrada</span></div>
               <StockChart symbol={selectedSymbol} />
             </div>
 
             {/* Compact trading instrument toolbar */}
-            <div className="order-1 flex flex-col md:flex-row gap-2 items-stretch">
+            <div className="order-[-1] flex flex-col md:flex-row gap-2 items-stretch">
             <div className="relative min-w-0 md:w-[245px] md:shrink-0">
               <button
                 type="button"
