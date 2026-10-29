@@ -226,3 +226,53 @@ div:has(> .master-topnav) > main {
 @media (max-width: 1023px) {
   .trade-order-panel { position: static; }
 }
+
+/* Trading terminal: distinct from generic dashboard cards, responsive and compact. */
+.trade-terminal {
+  --trade-hairline: var(--border-primary);
+  background: var(--bg-primary);
+}
+.trade-terminal .trade-workspace { gap: 14px; }
+.trade-terminal .trade-eyebrow { color: var(--accent-primary); font-size: 10px; font-weight: 800; letter-spacing: .15em; }
+.trade-terminal .trade-overview-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--border-primary);
+  border-radius: 11px;
+  background: var(--bg-card);
+  padding: 14px 16px;
+  box-shadow: 0 2px 12px rgba(10,25,45,.025);
+}
+.trade-terminal .trade-overview-card > span {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+.trade-terminal .trade-overview-card > strong {
+  color: var(--text-primary);
+  font-family: "DM Mono","JetBrains Mono",monospace;
+  font-size: clamp(14px,1.3vw,18px);
+  font-weight: 650;
+  letter-spacing: -.035em;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.trade-terminal .trade-quickbar { scrollbar-width: thin; }
+.trade-terminal .trade-quick-symbol { font-variant-numeric: tabular-nums; }
+.trade-terminal .trade-ticket { box-shadow: 0 12px 38px rgba(10,25,45,.06); }
+.trade-terminal .trade-ticket input,
+.trade-terminal .trade-ticket select { min-height: 39px; }
+.trade-terminal .trade-ticket input:focus,
+.trade-terminal .trade-ticket select:focus { outline: 2px solid color-mix(in srgb,var(--accent-primary) 28%,transparent); outline-offset: 1px; }
+.trade-terminal .trade-form-divider { padding-top: 2px; border-top: 1px solid var(--border-primary); padding-top: 13px; }
+.trade-terminal .trade-chart-shell { min-width: 0; box-shadow: 0 8px 30px rgba(10,25,45,.035); }
+.trade-terminal .trade-asset-card { box-shadow: 0 4px 22px rgba(10,25,45,.025); }
+@media (max-width: 767px) {
+  .trade-terminal .trade-overview-card { padding: 11px 12px; }
+  .trade-terminal .trade-overview-card > strong { font-size: 14px; }
+  .trade-terminal .trade-terminal-heading { align-items: start; }
+}
