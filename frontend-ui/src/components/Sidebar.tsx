@@ -14,7 +14,6 @@ const navItems = [
   { icon: LayoutDashboard, label: "Painel", href: "/dashboard" },
   { icon: TrendingUp, label: "Mercados", href: "/markets" },
   { icon: ArrowLeftRight, label: "Negociar", href: "/trade" },
-  { icon: CandlestickChart, label: "Gráficos", href: "/chart" },
   { icon: Wallet, label: "Carteira", href: "/portfolio" },
   { icon: Star, label: "Favoritos", href: "/watchlist" },
   { icon: History, label: "Extrato", href: "/balance-history" },
