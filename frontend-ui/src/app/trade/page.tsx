@@ -367,11 +367,11 @@ function TradePageContent() {
   return (
     <div className="trade-terminal flex h-full bg-[var(--bg-primary)]">
       <Sidebar />
-      <main className="trade-workspace flex-1 min-w-0 flex flex-col gap-4 py-4 px-3 sm:px-5 lg:px-6 overflow-auto">
-        <div className="trade-terminal-heading flex flex-wrap items-center justify-between gap-4">
+      <main className="trade-workspace flex-1 min-w-0 flex flex-col gap-2 py-2 px-2 sm:px-3 overflow-auto">
+        <div className="trade-terminal-heading flex flex-wrap items-center justify-between gap-2 py-1">
           <div>
             <p className="trade-eyebrow flex items-center gap-2"><Activity size={13} /> TERMINAL / MERCADOS</p>
-            <h1 className="mt-1 text-[22px] font-bold tracking-tight text-[var(--text-primary)]">Mesa de negociação</h1>
+            <h1 className="mt-1 text-lg font-bold tracking-tight text-[var(--text-primary)]">Mesa de negociação</h1>
             <p className="mt-1 text-xs text-[var(--text-muted)]">Análise de mercado, execução e acompanhamento de posições.</p>
           </div>
           <div className="flex items-center gap-3">
@@ -381,14 +381,6 @@ function TradePageContent() {
             </div>
             <button type="button" onClick={() => { void refreshPositions(); void refreshUserData(); }} className="trade-refresh-button flex items-center gap-2 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><RefreshCw size={14} /> Atualizar</button>
           </div>
-        </div>
-        <div className="trade-quickbar flex items-center gap-2 overflow-x-auto rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-2">
-          <span className="shrink-0 px-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Acesso rápido</span>
-          {["AAPL","MSFT","NVDA","AMZN","GOOGL","TSLA","SPY","QQQ","BTC-USD","ETH-USD"].map(symbol => {
-            const item = getStockBySymbol(symbol);
-            const active = selectedSymbol === symbol;
-            return <button key={symbol} type="button" onClick={() => selectStock({ symbol, name: item?.name || symbol, provider: "catalog" })} aria-pressed={active} className={`trade-quick-symbol flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${active ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]" : "border-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]"}`}><span>{symbol.replace("-USD","")}</span>{item && Number.isFinite(item.changePercent) && <span className={item.changePercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}>{item.changePercent > 0 ? "+" : ""}{item.changePercent.toFixed(2)}%</span>}</button>;
-          })}
         </div>
         {/* Success/Error Message */}
         {message && (
@@ -409,17 +401,42 @@ function TradePageContent() {
         )}
 
         {/* Main Trade Area */}
-        <div className="trade-workspace-grid grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_310px] gap-3 items-start min-w-0">
+        <div className="trade-workspace-grid grid grid-cols-1 lg:grid-cols-[230px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)_300px] gap-0 items-stretch min-w-0 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card-inner)] overflow-hidden">
+          <aside aria-label="Lista de mercados" className="min-w-0 border-b lg:border-b-0 lg:border-r border-[var(--border-primary)] bg-[var(--bg-card-inner)]">
+            <div className="px-3 py-3 border-b border-[var(--border-primary)]">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-[var(--text-primary)]">Mercados</h2>
+                <span className="text-[10px] text-[var(--text-muted)]">Favoritos</span>
+              </div>
+              <label className="mt-3 flex items-center gap-2 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] px-2.5 py-2">
+                <Search size={15} className="text-[var(--text-muted)]" />
+                <input aria-label="Buscar mercados" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar ativo..." className="w-full min-w-0 bg-transparent outline-none text-xs text-[var(--text-primary)] placeholder:text-[var(--text-dim)]" />
+              </label>
+            </div>
+            <div className="max-h-[540px] overflow-y-auto">
+              {["AAPL","MSFT","NVDA","AMZN","GOOGL","TSLA","BTC-USD","ETH-USD","SPY","QQQ"].filter(symbol => {
+                const item = getStockBySymbol(symbol);
+                return !searchQuery || symbol.toLowerCase().includes(searchQuery.toLowerCase()) || (item?.name || "").toLowerCase().includes(searchQuery.toLowerCase());
+              }).map(symbol => {
+                const item = getStockBySymbol(symbol);
+                const change = item?.changePercent;
+                return <button key={symbol} type="button" onClick={() => selectStock({symbol,name:item?.name || symbol,provider:"catalog"})} aria-pressed={selectedSymbol === symbol} className={`w-full flex items-center justify-between gap-2 px-3 py-3 text-left border-b border-[var(--border-primary)]/50 hover:bg-[var(--bg-hover)] transition-colors ${selectedSymbol === symbol ? "bg-[var(--accent-primary)]/10 border-l-2 border-l-[var(--accent-primary)]" : ""}`}>
+                  <span className="min-w-0"><span className="block text-xs font-semibold text-[var(--text-primary)]">{symbol.replace("-USD","")}</span><span className="block truncate text-[10px] text-[var(--text-muted)]">{item?.name || symbol}</span></span>
+                  <span className="shrink-0 text-right"><span className="block text-xs font-semibold tabular-nums text-[var(--text-primary)]">{item && Number.isFinite(item.price) ? Number(item.price).toFixed(2) : "—"}</span><span className={`text-[10px] tabular-nums ${typeof change === "number" && change >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{typeof change === "number" && Number.isFinite(change) ? `${change > 0 ? "+" : ""}${change.toFixed(2)}%` : "—"}</span></span>
+                </button>;
+              })}
+            </div>
+          </aside>
           {/* Left Panel - Stock Selection */}
-          <div className="flex-1 min-w-0 flex flex-col gap-2">
+          <div className="min-w-0 flex flex-col gap-2 p-2.5">
             {/* Market chart uses the existing historical-data provider. */}
-            <div className="trade-chart-shell overflow-hidden rounded-xl shadow-[0_12px_36px_rgba(0,0,0,.12)] border border-[var(--border-primary)] bg-[var(--bg-card)]">
+            <div className="trade-chart-shell order-2 overflow-hidden rounded-xl shadow-[0_12px_36px_rgba(0,0,0,.12)] border border-[var(--border-primary)] bg-[var(--bg-card)]">
               <div className="flex items-center justify-between gap-3 border-b border-[var(--border-primary)] px-4 py-3"><div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]"><BarChart3 size={16} className="text-[var(--accent-primary)]" /> Mercado em tempo real <span className="font-mono text-[var(--text-muted)]">{displaySymbol(selectedSymbol)}</span></div><span className="text-[10px] text-[var(--text-muted)]">Fonte de mercado integrada</span></div>
               <StockChart symbol={selectedSymbol} />
             </div>
 
             {/* Compact trading instrument toolbar */}
-            <div className="flex flex-col md:flex-row gap-2 items-stretch">
+            <div className="order-1 flex flex-col md:flex-row gap-2 items-stretch">
             <div className="relative min-w-0 md:w-[245px] md:shrink-0">
               <button
                 type="button"
@@ -655,7 +672,7 @@ function TradePageContent() {
           </div>
 
           {/* Right Panel - Order Form */}
-          <aside aria-label="Painel de ordens" className="trade-order-panel w-full min-w-0 flex flex-col gap-2 xl:sticky xl:top-3">
+          <aside aria-label="Painel de ordens" className="trade-order-panel w-full min-w-0 flex flex-col gap-2 p-2.5 border-t xl:border-t-0 xl:border-l border-[var(--border-primary)]">
             {/* Order Form */}
             <div className="trade-ticket bg-[var(--bg-card)] rounded-xl p-3 border border-[var(--border-primary)] flex flex-col gap-3 shadow-[0_10px_30px_rgba(0,0,0,.045)]">
               <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] uppercase tracking-[.14em] text-[var(--text-muted)]">Boleta de negociação</p><h2 className="mt-1 text-base font-semibold text-[var(--text-primary)]">Nova ordem · {displaySymbol(selectedSymbol)}</h2></div><span className="rounded-md bg-[var(--bg-muted)] px-2 py-1 text-[10px] font-medium text-[var(--text-secondary)]">Mercado</span></div>
