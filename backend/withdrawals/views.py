@@ -1,11 +1,11 @@
 import re
 from decimal import Decimal, InvalidOperation
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import F
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from users.models import UserProfile
+from users.models import UserProfile, BalanceTransaction
 from users.views import get_user
 from .models import WithdrawalRequest
 
@@ -37,8 +37,11 @@ class WithdrawalRequestsView(APIView):
             return Response({'error': 'Cadastre seu CPF antes de solicitar saque via PIX.'}, status=400)
         with transaction.atomic():
             locked = UserProfile.objects.select_for_update().get(pk=user.pk)
-            pending = WithdrawalRequest.objects.filter(user_id=locked.pk, status='PENDING').aggregate(total=Sum('amount'))['total'] or Decimal('0')
-            if amount > locked.buying_power - pending:
-                return Response({'error': 'Saldo insuficiente, considerando solicitações pendentes.'}, status=400)
+            before = locked.buying_power
+            updated = UserProfile.objects.filter(pk=locked.pk, buying_power__gte=amount).update(buying_power=F('buying_power') - amount)
+            if not updated:
+                return Response({'error': 'Saldo insuficiente para a solicitação.'}, status=400)
+            locked.refresh_from_db(fields=['buying_power'])
             withdrawal = WithdrawalRequest.objects.create(user_id=locked.pk, amount=amount, method=method, destination=destination)
+            BalanceTransaction.objects.create(user=locked, amount=-amount, balance_before=before, balance_after=locked.buying_power, category='WITHDRAWAL_REQUEST', description=f'Saque {method} solicitado · {withdrawal.id}')
         return Response({'id': str(withdrawal.id), 'status': withdrawal.status}, status=status.HTTP_201_CREATED)
