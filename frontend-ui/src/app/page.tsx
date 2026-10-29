@@ -107,18 +107,19 @@ export default function Home() {
     return()=>window.removeEventListener("scroll",onScroll);
   },[]);
   return (
-    <div className="min-h-screen bg-white font-primary text-[#0C1726] [scroll-behavior:smooth]">
+    <div className="min-h-screen bg-white font-primary text-[#0C1726] motion-safe:[scroll-behavior:smooth]">
+      <a href="#conteudo-principal" className="sr-only fixed left-4 top-4 z-[100] rounded-lg bg-[#326BFF] px-4 py-3 font-semibold text-white focus:not-sr-only">Ir para o conteúdo principal</a>
       <header className={`sticky top-0 z-50 border-b border-slate-200/80 transition-all duration-300 ${scrolled?"bg-white/95 shadow-sm backdrop-blur-xl":"bg-white"}`}>
         <nav className="mx-auto flex h-[76px] max-w-7xl items-center justify-between gap-5 px-5 sm:px-8">
           <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Master Trade - Início"><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#18364A] text-white"><ChartNoAxesCombined size={22}/></span><span className="text-[15px] font-extrabold tracking-[.1em]">MASTER <span className="text-[#326BFF]">TRADE</span></span></Link>
           <div className="hidden items-center gap-7 lg:flex">{nav.map(n=><a key={n.href} href={n.href} className={`relative py-7 text-[13px] font-medium transition-colors hover:text-[#326BFF] ${active===n.href.slice(1)?"text-[#18364A]":"text-slate-500"}`}>{n.label}{active===n.href.slice(1)&&<span className="absolute bottom-5 left-0 h-0.5 w-full rounded-full bg-[#326BFF]"/>}</a>)}</div>
-          <div className="hidden items-center gap-4 sm:flex"><Link href="/login" className="text-sm font-semibold text-[#18364A] hover:text-[#326BFF]">Entrar</Link><Link href="/signup" className="inline-flex items-center gap-2 rounded-lg bg-[#18364A] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#20558e]">Criar conta <ArrowUpRight size={15}/></Link></div>
-          <button type="button" aria-label={menuOpen?"Fechar menu":"Abrir menu"} aria-expanded={menuOpen} onClick={()=>setMenuOpen(!menuOpen)} className="rounded-lg border border-slate-200 p-2 text-[#18364A] lg:hidden">{menuOpen?<X size={22}/>:<Menu size={22}/>}</button>
+          <div className="hidden items-center gap-4 lg:flex"><Link href="/login" className="text-sm font-semibold text-[#18364A] hover:text-[#326BFF]">Entrar</Link><Link href="/signup" className="inline-flex items-center gap-2 rounded-lg bg-[#326BFF] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#2454D4]">Criar conta <ArrowUpRight size={15}/></Link></div>
+          <button type="button" aria-label={menuOpen?"Fechar menu":"Abrir menu"} aria-expanded={menuOpen} onClick={()=>setMenuOpen(!menuOpen)} aria-controls="menu-principal" className="rounded-lg border border-slate-200 p-2 text-[#18364A] lg:hidden">{menuOpen?<X size={22}/>:<Menu size={22}/>}</button>
         </nav>
-        {menuOpen&&<div className="border-t border-slate-100 bg-white px-5 py-5 shadow-lg lg:hidden"><div className="mx-auto flex max-w-7xl flex-col gap-1">{nav.map(n=><a key={n.href} href={n.href} onClick={()=>setMenuOpen(false)} className="rounded-lg px-3 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">{n.label}</a>)}<div className="mt-3 flex gap-3 border-t border-slate-100 pt-4"><Link href="/login" className="flex-1 rounded-lg border border-slate-200 px-4 py-3 text-center text-sm font-semibold">Entrar</Link><Link href="/signup" className="flex-1 rounded-lg bg-[#18364A] px-4 py-3 text-center text-sm font-semibold text-white">Criar conta</Link></div></div></div>}
+        {menuOpen&&<div id="menu-principal" className="border-t border-slate-100 bg-white px-5 py-5 shadow-lg lg:hidden"><div className="mx-auto flex max-w-7xl flex-col gap-1">{nav.map(n=><a key={n.href} href={n.href} onClick={()=>setMenuOpen(false)} className="rounded-lg px-3 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50">{n.label}</a>)}<div className="mt-3 flex gap-3 border-t border-slate-100 pt-4"><Link href="/login" className="flex-1 rounded-lg border border-slate-200 px-4 py-3 text-center text-sm font-semibold">Entrar</Link><Link href="/signup" className="flex-1 rounded-lg bg-[#326BFF] px-4 py-3 text-center text-sm font-semibold text-white">Criar conta</Link></div></div></div>}
       </header>
 
-      <main>
+      <main id="conteudo-principal">
         <section id="inicio" className="relative overflow-hidden bg-[#F5F8FC]">
           <div className="pointer-events-none absolute right-0 top-0 h-full w-[45%] bg-[radial-gradient(ellipse_at_top_right,rgba(52,120,246,.10),transparent_65%)]"/>
           <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-16 sm:px-8 lg:grid-cols-[.88fr_1.12fr] lg:gap-14 lg:pb-24 lg:pt-24">
