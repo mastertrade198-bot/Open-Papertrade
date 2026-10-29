@@ -528,10 +528,6 @@ function TradePageContent() {
                     {[1, 2, 5, 10, 20, 25, 50, 100].map(value => <option key={value} value={value}>{value}x</option>)}
                   </select>
                 </label>
-                <div className="flex items-center justify-between rounded-md bg-[var(--bg-card-inner)] px-3 py-2.5 text-xs">
-                  <span className="text-[var(--text-muted)]">Valor nocional estimado</span>
-                  <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(estimatedMargin * leverage, false, { convertFromUSD: false })}</strong>
-                </div>
                 <button type="button" aria-expanded={showRiskControls} onClick={() => setShowRiskControls(value => !value)} className="flex items-center justify-between rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)] px-3 py-2.5 text-xs font-semibold text-[var(--text-secondary)]">Proteção da posição (SL / TP)<ChevronDown size={15} className={showRiskControls ? "rotate-180" : ""} /></button>
                 {showRiskControls && <div className="grid grid-cols-2 gap-2">
                   <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
