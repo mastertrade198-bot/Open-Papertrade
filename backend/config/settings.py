@@ -279,6 +279,17 @@ UNFOLD = {
                 ],
             },
             {
+                "title": "Financeiro",
+                "separator": True,
+                "items": [
+                    {
+                        "title": "Saques",
+                        "icon": "payments",
+                        "link": reverse_lazy("admin:users_withdrawalrequest_changelist"),
+                    },
+                ],
+            },
+            {
                 "title": "Configuration",
                 "separator": True,
                 "items": [
