@@ -13,6 +13,7 @@ class WithdrawalRequest(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
     created_at = models.DateTimeField(default=timezone.now)
     reviewed_at = models.DateTimeField(null=True, blank=True)
+    funds_reserved = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'withdrawal_requests'
