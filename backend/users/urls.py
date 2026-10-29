@@ -4,6 +4,7 @@ URL routes for user API endpoints.
 
 from django.urls import path
 from . import views
+from withdrawals.views import WithdrawalRequestsView
 from . import position_views
 from . import balance_views
 from . import polygon_custody_views
@@ -17,6 +18,7 @@ from . import copy_trading_views
 app_name = 'users'
 
 urlpatterns = [
+    path('withdrawals/', WithdrawalRequestsView.as_view(), name='withdrawal-requests'),
     path('wallet/polygon-usdt/', polygon_custody_views.PolygonCustodyStatusView.as_view(), name='polygon-usdt-status'),
     path('balance-history/', balance_views.BalanceHistoryView.as_view(), name='balance-history'),
     # Leveraged paper-trading positions
