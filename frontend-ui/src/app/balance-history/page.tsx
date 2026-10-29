@@ -7,6 +7,8 @@ import { userAPI, type BalanceTransaction } from "@/lib/api";
 
 const usd = (n: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD" }).format(n);
 const date = (s: string) => new Date(s).toLocaleString("pt-BR");
+const withdrawalStatus = (category: string) => category === "WITHDRAWAL_REQUEST" ? "Solicitado" : category === "WITHDRAWAL_APPROVED" ? "Confirmado" : category === "WITHDRAWAL_REFUND" || category === "WITHDRAWAL_REJECTED_LEGACY" ? "Rejeitado" : null;
+const transactionType = (category: string, amount: number) => withdrawalStatus(category) ? "Saque" : amount > 0 ? "Crédito" : amount < 0 ? "Débito" : "Registro";
 
 export default function BalanceHistoryPage() {
   const [transactions, setTransactions] = useState<BalanceTransaction[]>([]);
@@ -27,7 +29,7 @@ export default function BalanceHistoryPage() {
     }
   }, []);
   useEffect(() => { void load(); }, [load]);
-  const shown = useMemo(() => transactions.filter((t) => filter === "ALL" || (filter === "CREDIT" ? t.amount > 0 : t.amount < 0)), [transactions, filter]);
+  const shown = useMemo(() => transactions.filter((t) => filter === "ALL" || (filter === "CREDIT" ? t.amount > 0 : t.amount < 0 || t.category === "WITHDRAWAL_APPROVED" || t.category === "WITHDRAWAL_REJECTED_LEGACY")), [transactions, filter]);
   return (
     <div className="flex h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <Sidebar />
@@ -47,20 +49,21 @@ export default function BalanceHistoryPage() {
         </div>
         {error && <p role="alert" className="text-[var(--accent-red)] mb-4">{error}</p>}
         <div className="overflow-x-auto rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)]">
-          <table className="w-full min-w-[740px] text-sm">
+          <table className="w-full min-w-[900px] text-sm">
             <thead className="text-left text-[var(--text-muted)] border-b border-[var(--border-primary)]">
-              <tr>{["Data", "Movimentação", "Descrição", "Valor (USD)", "Saldo anterior", "Saldo após"].map(h => <th key={h} className="px-4 py-3">{h}</th>)}</tr>
+              <tr>{["Data", "Movimentação", "Situação", "Descrição", "Valor (USD)", "Saldo anterior", "Saldo após"].map(h => <th key={h} className="px-4 py-3">{h}</th>)}</tr>
             </thead>
             <tbody>
               {shown.map(t => <tr key={t.id} className="border-b border-[var(--border-primary)]">
                 <td className="px-4 py-3 whitespace-nowrap">{date(t.createdAt)}</td>
-                <td className="px-4 py-3">{t.amount >= 0 ? "Crédito" : "Débito"}</td>
+                <td className="px-4 py-3">{transactionType(t.category, t.amount)}</td>
+                <td className="px-4 py-3">{withdrawalStatus(t.category) ? <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${t.category === "WITHDRAWAL_APPROVED" ? "bg-[var(--accent-green)]/10 text-[var(--accent-green)]" : t.category === "WITHDRAWAL_REFUND" || t.category === "WITHDRAWAL_REJECTED_LEGACY" ? "bg-[var(--accent-red)]/10 text-[var(--accent-red)]" : "bg-[var(--bg-muted)] text-[var(--text-secondary)]"}`}>{withdrawalStatus(t.category)}</span> : <span className="text-[var(--text-muted)]">—</span>}</td>
                 <td className="px-4 py-3">{t.description}</td>
                 <td className={`px-4 py-3 font-mono font-semibold ${t.amount >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{t.amount >= 0 ? "+" : ""}{usd(t.amount)}</td>
                 <td className="px-4 py-3 font-mono">{usd(t.balanceBefore)}</td>
                 <td className="px-4 py-3 font-mono">{usd(t.balanceAfter)}</td>
               </tr>)}
-              {!shown.length && <tr><td colSpan={6} className="px-4 py-10 text-center text-[var(--text-muted)]">{loading ? "Carregando transações..." : "Nenhuma transação registrada neste filtro."}</td></tr>}
+              {!shown.length && <tr><td colSpan={7} className="px-4 py-10 text-center text-[var(--text-muted)]">{loading ? "Carregando transações..." : "Nenhuma transação registrada neste filtro."}</td></tr>}
             </tbody>
           </table>
         </div>
