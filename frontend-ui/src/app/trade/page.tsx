@@ -23,7 +23,9 @@ import {
 import Sidebar from "@/components/Sidebar";
 import PageHeader from "@/components/PageHeader";
 import MetricCard from "@/components/MetricCard";
-import StockChart from "@/components/StockChart";
+import AdvancedChart from "@/components/chart/AdvancedChart";
+import type { IndicatorId, ChartMode, Drawing } from "@/components/chart/types";
+import type { TimeRange } from "@/lib/api";
 
 import { usePortfolio } from "@/context/PortfolioContext";
 import { formatCurrency, formatPercent, formatTime, getMarketStatus, getMarketStatusLocal, MarketStatus } from "@/lib/utils";
@@ -58,6 +60,15 @@ function TradePageContent() {
 
   // Trade state
   const [selectedSymbol, setSelectedSymbol] = useState("AAPL");
+  const [chartLayout, setChartLayout] = useState<Partial<{timeframe:TimeRange;mode:ChartMode;indicators:IndicatorId[];drawings:Drawing[];logScale:boolean;compareSymbols:string[];showVolumeProfile:boolean;showNews:boolean}> | undefined>(undefined);
+  useEffect(() => {
+    try { const saved = localStorage.getItem(`chart_layout_${selectedSymbol.toUpperCase()}`); setChartLayout(saved ? JSON.parse(saved) : {}); }
+    catch { setChartLayout({}); }
+  }, [selectedSymbol]);
+  const saveChartLayout = useCallback((state: {timeframe:TimeRange;mode:ChartMode;indicators:IndicatorId[];drawings:Drawing[];logScale:boolean;compareSymbols:string[];showVolumeProfile:boolean;showNews:boolean}) => {
+    try { localStorage.setItem(`chart_layout_${selectedSymbol.toUpperCase()}`, JSON.stringify(state)); } catch {}
+  }, [selectedSymbol]);
+
   const [selectedQuote, setSelectedQuote] = useState<StockQuote | null>(null);
   const [showAssetMenu, setShowAssetMenu] = useState(false);
   const [showRiskControls, setShowRiskControls] = useState(false);
@@ -441,101 +452,20 @@ function TradePageContent() {
           </aside>
           {/* Left Panel - Stock Selection */}
           <div className="min-w-0 flex flex-col gap-2 p-2.5">
-            {/* Selected Stock Card */}
-            <div className="trade-asset-card bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] overflow-hidden">
-              <div className="flex items-center justify-between gap-4 px-5 py-4">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-xl font-bold text-[var(--text-primary)]">
-                      {displaySymbol(selectedSymbol)}
-                    </span>
-                    {isLoadingQuote && (
-                      <Loader2 size={18} className="text-[var(--accent-primary)] animate-spin" />
-                    )}
-                  </div>
-                  <span className="text-sm text-[var(--text-muted)]">
-                    {selectedQuote?.name || getStockBySymbol(selectedSymbol)?.name || selectedSymbol}
-                  </span>
-                </div>
-                <div className="text-right">
-                  <div className="font-mono text-xl font-bold text-[var(--text-primary)]">
-                    {formatCurrency(currentPrice, false, { sourceCurrency })}
-                  </div>
-                  {selectedQuote && (
-                    <div
-                      className={`flex items-center justify-end gap-1 font-mono text-sm ${
-                        selectedQuote.changePercent >= 0
-                          ? "text-[var(--accent-green)]"
-                          : "text-[var(--accent-red)]"
-                      }`}
-                    >
-                      {selectedQuote.changePercent >= 0 ? (
-                        <ArrowUpRight size={16} />
-                      ) : (
-                        <ArrowDownRight size={16} />
-                      )}
-                      {formatCurrency(Math.abs(selectedQuote.change), false, { sourceCurrency })} ({formatPercent(selectedQuote.changePercent)})
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Stock Stats */}
-              {selectedQuote && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 px-4 py-2.5 bg-[var(--bg-card-inner)] border-t border-[var(--border-primary)]">
-                  <div>
-                    <span className="text-[11px] text-[var(--text-muted)]">Abertura</span>
-                    <div className="font-mono text-sm text-[var(--text-primary)]">
-                      {formatCurrency(selectedQuote.open, false, { sourceCurrency })}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-[11px] text-[var(--text-muted)]">Máxima</span>
-                    <div className="font-mono text-sm text-[var(--accent-green)]">
-                      {formatCurrency(selectedQuote.high, false, { sourceCurrency })}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-[11px] text-[var(--text-muted)]">Mínima</span>
-                    <div className="font-mono text-sm text-[var(--accent-red)]">
-                      {formatCurrency(selectedQuote.low, false, { sourceCurrency })}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-[11px] text-[var(--text-muted)]">Fechamento anterior</span>
-                    <div className="font-mono text-sm text-[var(--text-primary)]">
-                      {formatCurrency(selectedQuote.previousClose, false, { sourceCurrency })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Holding info */}
-              {selectedHolding && (
-                <div className="px-5 py-3 border-t border-[var(--border-primary)]">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-[var(--text-muted)]">Sua posição</span>
-                    <div className="text-right">
-                      <span className="font-mono text-sm font-medium text-[var(--text-primary)]">
-                        {selectedHolding.shares} ações
-                      </span>
-                      <span className="text-[var(--text-muted)] mx-2">&bull;</span>
-                      <span className="font-mono text-sm text-[var(--text-muted)]">
-                        {formatCurrency(selectedHolding.shares * currentPrice, false, { sourceCurrency })}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-2.5 text-xs">
+              <strong className="text-sm text-[var(--text-primary)]">{displaySymbol(selectedSymbol)}</strong>
+              <span className="max-w-32 truncate text-[var(--text-muted)]">{selectedQuote?.name || selectedSymbol}</span>
+              <strong className="text-sm tabular-nums text-[var(--text-primary)]">{formatCurrency(currentPrice, false, {sourceCurrency})}</strong>
+              {selectedQuote && <>
+                <span className="text-[var(--text-muted)]">Abert. <b className="tabular-nums text-[var(--text-primary)]">{selectedQuote.open.toFixed(2)}</b></span>
+                <span className="text-[var(--text-muted)]">Máx. <b className="tabular-nums text-[var(--accent-green)]">{selectedQuote.high.toFixed(2)}</b></span>
+                <span className="text-[var(--text-muted)]">Mín. <b className="tabular-nums text-[var(--accent-red)]">{selectedQuote.low.toFixed(2)}</b></span>
+                <span className="text-[var(--text-muted)]">Anterior <b className="tabular-nums text-[var(--text-primary)]">{selectedQuote.previousClose.toFixed(2)}</b></span>
+              </>}
             </div>
-
-
-            {/* Market chart uses the existing historical-data provider. */}
-            <div className="trade-chart-shell order-0 overflow-hidden rounded-xl shadow-[0_12px_36px_rgba(0,0,0,.12)] border border-[var(--border-primary)] bg-[var(--bg-card)]">
-              <div className="flex items-center justify-between gap-3 border-b border-[var(--border-primary)] px-4 py-3"><div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]"><BarChart3 size={16} className="text-[var(--accent-primary)]" /> Mercado em tempo real <span className="font-mono text-[var(--text-muted)]">{displaySymbol(selectedSymbol)}</span></div><span className="text-[10px] text-[var(--text-muted)]">Fonte de mercado integrada</span></div>
-              <StockChart symbol={selectedSymbol} />
-            </div>
-
+            <section aria-label="Gráfico avançado de negociação" className="min-w-0">
+              {chartLayout !== undefined ? <AdvancedChart key={selectedSymbol} symbol={selectedSymbol} symbolName={selectedQuote?.name || undefined} initialState={chartLayout} onStateChange={saveChartLayout} height={560} /> : <div className="h-[560px] rounded-xl bg-[var(--bg-card)]" />}
+            </section>
           </div>
 
           {/* Right Panel - Order Form */}
