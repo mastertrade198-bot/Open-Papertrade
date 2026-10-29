@@ -23,6 +23,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
+import WalletActions from "@/components/WalletActions";
 import LeveragedTradeHistory from "@/components/LeveragedTradeHistory";
 import PageHeader from "@/components/PageHeader";
 import { usePortfolio } from "@/context/PortfolioContext";
@@ -147,11 +148,8 @@ export default function PortfolioPage() {
     return (
       <div className="flex h-full bg-[var(--bg-primary)]">
         <Sidebar />
-        <main className="flex-1 flex flex-col gap-7 py-8 px-10 overflow-auto">
-          <Link href="/portfolio/deposit" className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-4 hover:border-[var(--accent-primary)]">
-            <div className="flex items-center gap-3"><ShieldCheck size={22} className="text-[var(--accent-primary)]" /><div><p className="font-semibold text-[var(--text-primary)]">Depósitos USDT · Polygon</p><p className="text-xs text-[var(--text-secondary)]">Configuração em andamento · depósitos ainda desativados</p></div></div>
-            <ChevronRight size={18} className="text-[var(--text-muted)]" />
-          </Link>
+        <main className="flex-1 flex flex-col gap-7 py-8 px-4 sm:px-8 lg:px-10 overflow-auto">
+          <WalletActions balance={buyingPower} />
           <div className="flex items-start justify-between">
             <PageHeader
               title="Carteira"
@@ -229,11 +227,8 @@ export default function PortfolioPage() {
   return (
     <div className="flex h-full bg-[var(--bg-primary)]">
       <Sidebar />
-      <main className="flex-1 flex flex-col gap-6 py-8 px-10 overflow-auto">
-        <Link href="/portfolio/deposit" className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-4 hover:border-[var(--accent-primary)]">
-          <div className="flex items-center gap-3"><ShieldCheck size={22} className="text-[var(--accent-primary)]" /><div><p className="font-semibold text-[var(--text-primary)]">Depósitos USDT · Polygon</p><p className="text-xs text-[var(--text-secondary)]">Configuração em andamento · depósitos ainda desativados</p></div></div>
-          <ChevronRight size={18} className="text-[var(--text-muted)]" />
-        </Link>
+      <main className="flex-1 flex flex-col gap-6 py-8 px-4 sm:px-8 lg:px-10 overflow-auto">
+        <WalletActions balance={buyingPower} />
         <PageHeader
           title="Carteira"
           subtitle="Acompanhe seus ativos e o desempenho dos investimentos"
