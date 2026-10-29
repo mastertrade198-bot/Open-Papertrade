@@ -208,7 +208,6 @@ div:has(> .master-topnav) > main {
   h1, h2, h3, h4, h5, h6,
   [data-page-title] {
     font-family: "Manrope", "Inter", system-ui, sans-serif !important;
-    font-weight: 600 !important;
-    letter-spacing: normal !important;
+    letter-spacing: -0.025em;
   }
 }
