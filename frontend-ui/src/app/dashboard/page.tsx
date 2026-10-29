@@ -146,12 +146,13 @@ export default function Dashboard() {
     <div className="flex h-full bg-[var(--bg-primary)]">
       <Sidebar />
 
-      <main className="flex-1 flex flex-col gap-6 py-8 px-10 overflow-auto">
+      <main className="flex-1 flex flex-col gap-4 py-5 px-4 md:px-6 xl:px-8 overflow-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(220px,1fr)_minmax(0,3fr)] gap-4 items-stretch">
         {/* Header */}
-        <header className="flex items-start justify-between">
+        <header className="flex min-w-0 flex-col justify-center lg:pr-3">
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-3">
-              <h1 className="font-primary text-2xl font-semibold tracking-normal text-[var(--text-primary)]">
+              <h1 className="font-primary text-xl xl:text-2xl font-semibold tracking-normal text-[var(--text-primary)]">
                 Bem-vindo de volta{user.name ? `, ${user.name.split(" ")[0]}` : ""}
               </h1>
               {lastUpdated && (
@@ -166,6 +167,96 @@ export default function Dashboard() {
             </p>
           </div>
         </header>
+
+        {/* Main Stats Row */}
+        <div className="grid min-w-0 grid-cols-2 xl:grid-cols-4 gap-2">
+          {/* Total Portfolio */}
+          <div className="group bg-[var(--bg-card)] rounded-xl p-3 xl:p-4 border border-[var(--border-primary)] flex flex-col gap-2 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-medium text-[var(--text-muted)]">Patrimônio total</span>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)] animate-pulse" />
+                <span className="text-[10px] font-medium text-[var(--accent-green)]">Ao vivo</span>
+              </div>
+            </div>
+            <span className="font-mono text-lg xl:text-xl font-semibold text-[var(--text-primary)] tracking-tight">
+              {formatCurrency(totalPortfolioValue, false)}
+            </span>
+            <div className="flex items-center gap-1.5">
+              {dayGain >= 0 ? (
+                <ArrowUpRight size={14} className="text-[var(--accent-green)]" />
+              ) : (
+                <ArrowDownRight size={14} className="text-[var(--accent-red)]" />
+              )}
+              <span className={`text-xs font-medium ${dayGain >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
+                {dayGain >= 0 ? "+" : ""}{formatCurrency(dayGain, false)} ({formatPercent(dayGainPercent)}) hoje
+              </span>
+            </div>
+          </div>
+
+          {/* Total Returns / Total Invested */}
+          {settings.showProfitLoss ? (
+            <div className="group bg-[var(--bg-card)] rounded-xl p-3 xl:p-4 border border-[var(--border-primary)] flex flex-col gap-2 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
+              <span className="text-[11px] font-medium text-[var(--text-muted)]">Retorno total</span>
+              <span className={`font-mono text-lg xl:text-xl font-semibold tracking-tight ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
+                {totalReturns >= 0 ? "+" : ""}{formatCurrency(totalReturns, false)}
+              </span>
+              <div className="flex items-center gap-1.5">
+                {totalReturns >= 0 ? (
+                  <TrendingUp size={14} className="text-[var(--accent-green)]" />
+                ) : (
+                  <TrendingDown size={14} className="text-[var(--accent-red)]" />
+                )}
+                <span className={`text-xs font-medium ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
+                  {formatPercent(returnsPercent)} desde o início
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="group bg-[var(--bg-card)] rounded-xl p-3 xl:p-4 border border-[var(--border-primary)] flex flex-col gap-2 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
+              <span className="text-[11px] font-medium text-[var(--text-muted)]">Total investido</span>
+              <span className="font-mono text-lg xl:text-xl font-semibold text-[var(--text-primary)] tracking-tight">
+                {formatCurrency(totalInvested, false)}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <Wallet size={14} className="text-[var(--text-muted)]" />
+                <span className="text-xs text-[var(--text-muted)]">
+                  Across {holdings.length} positions
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Buying Power */}
+          <div className="group bg-[var(--bg-card)] rounded-xl p-3 xl:p-4 border border-[var(--border-primary)] flex flex-col gap-2 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
+            <span className="text-[11px] font-medium text-[var(--text-muted)]">Saldo disponível</span>
+            <span className="font-mono text-lg xl:text-xl font-semibold text-[var(--text-primary)] tracking-tight">
+              {formatCurrency(buyingPower, false, { convertFromUSD: false })}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Wallet size={14} className="text-[var(--text-muted)]" />
+              <span className="text-xs text-[var(--text-muted)]">
+                Disponível para negociar
+              </span>
+            </div>
+          </div>
+
+          {/* Active Positions */}
+          <div className="group bg-[var(--bg-card)] rounded-xl p-3 xl:p-4 border border-[var(--border-primary)] flex flex-col gap-2 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
+            <span className="text-[11px] font-medium text-[var(--text-muted)]">Posições abertas</span>
+            <span className="font-mono text-lg xl:text-xl font-semibold text-[var(--accent-primary)] tracking-tight">
+              {holdings.length}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Activity size={14} className="text-[var(--text-muted)]" />
+              <span className="text-xs text-[var(--text-muted)]">
+                {holdings.filter((h) => !cryptoSymbolSet.has(h.symbol)).length} stocks, {holdings.filter((h) => cryptoSymbolSet.has(h.symbol)).length} crypto
+              </span>
+            </div>
+          </div>
+        </div>
+
+        </div>
 
         {/* Scrolling market ticker: duplicated sequence for seamless motion */}
         {(() => {
@@ -200,94 +291,6 @@ export default function Dashboard() {
             </div>
           );
         })()}
-
-        {/* Main Stats Row */}
-        <div className="grid grid-cols-4 gap-4">
-          {/* Total Portfolio */}
-          <div className="group bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-[var(--text-muted)]">Patrimônio total</span>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)] animate-pulse" />
-                <span className="text-[10px] font-medium text-[var(--accent-green)]">Ao vivo</span>
-              </div>
-            </div>
-            <span className="font-mono text-[28px] font-semibold text-[var(--text-primary)] tracking-tight">
-              {formatCurrency(totalPortfolioValue, false)}
-            </span>
-            <div className="flex items-center gap-1.5">
-              {dayGain >= 0 ? (
-                <ArrowUpRight size={14} className="text-[var(--accent-green)]" />
-              ) : (
-                <ArrowDownRight size={14} className="text-[var(--accent-red)]" />
-              )}
-              <span className={`text-xs font-medium ${dayGain >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                {dayGain >= 0 ? "+" : ""}{formatCurrency(dayGain, false)} ({formatPercent(dayGainPercent)}) hoje
-              </span>
-            </div>
-          </div>
-
-          {/* Total Returns / Total Invested */}
-          {settings.showProfitLoss ? (
-            <div className="group bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
-              <span className="text-xs font-medium text-[var(--text-muted)]">Retorno total</span>
-              <span className={`font-mono text-[28px] font-semibold tracking-tight ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                {totalReturns >= 0 ? "+" : ""}{formatCurrency(totalReturns, false)}
-              </span>
-              <div className="flex items-center gap-1.5">
-                {totalReturns >= 0 ? (
-                  <TrendingUp size={14} className="text-[var(--accent-green)]" />
-                ) : (
-                  <TrendingDown size={14} className="text-[var(--accent-red)]" />
-                )}
-                <span className={`text-xs font-medium ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                  {formatPercent(returnsPercent)} desde o início
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="group bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
-              <span className="text-xs font-medium text-[var(--text-muted)]">Total investido</span>
-              <span className="font-mono text-[28px] font-semibold text-[var(--text-primary)] tracking-tight">
-                {formatCurrency(totalInvested, false)}
-              </span>
-              <div className="flex items-center gap-1.5">
-                <Wallet size={14} className="text-[var(--text-muted)]" />
-                <span className="text-xs text-[var(--text-muted)]">
-                  Across {holdings.length} positions
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Buying Power */}
-          <div className="group bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
-            <span className="text-xs font-medium text-[var(--text-muted)]">Saldo disponível</span>
-            <span className="font-mono text-[28px] font-semibold text-[var(--text-primary)] tracking-tight">
-              {formatCurrency(buyingPower, false, { convertFromUSD: false })}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <Wallet size={14} className="text-[var(--text-muted)]" />
-              <span className="text-xs text-[var(--text-muted)]">
-                Disponível para negociar
-              </span>
-            </div>
-          </div>
-
-          {/* Active Positions */}
-          <div className="group bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
-            <span className="text-xs font-medium text-[var(--text-muted)]">Posições abertas</span>
-            <span className="font-mono text-[28px] font-semibold text-[var(--accent-primary)] tracking-tight">
-              {holdings.length}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <Activity size={14} className="text-[var(--text-muted)]" />
-              <span className="text-xs text-[var(--text-muted)]">
-                {holdings.filter((h) => !cryptoSymbolSet.has(h.symbol)).length} stocks, {holdings.filter((h) => cryptoSymbolSet.has(h.symbol)).length} crypto
-              </span>
-            </div>
-          </div>
-        </div>
 
         {/* Content Row */}
         <div className="grid grid-cols-3 gap-5">
