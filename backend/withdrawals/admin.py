@@ -34,19 +34,28 @@ class WithdrawalRequestAdmin(ModelAdmin):
         if not request.user.is_active or not request.user.is_superuser:
             raise PermissionDenied('Somente superusuários podem revisar saques.')
         processed = 0
+        legacy_skipped = 0
         for pk in queryset.values_list('pk', flat=True):
             with transaction.atomic():
                 withdrawal = WithdrawalRequest.objects.select_for_update().get(pk=pk)
                 if withdrawal.status != 'PENDING':
                     continue
+                if not withdrawal.funds_reserved and decision == 'APPROVED':
+                    legacy_skipped += 1
+                    continue
                 user = UserProfile.objects.select_for_update().get(pk=withdrawal.user_id)
                 before = user.buying_power
                 if decision == 'REJECTED':
-                    UserProfile.objects.filter(pk=user.pk).update(buying_power=F('buying_power') + withdrawal.amount)
-                    user.refresh_from_db(fields=['buying_power'])
-                    amount = withdrawal.amount
-                    category = 'WITHDRAWAL_REFUND'
-                    description = f'Saque rejeitado e saldo devolvido · {withdrawal.pk}'
+                    if withdrawal.funds_reserved:
+                        UserProfile.objects.filter(pk=user.pk).update(buying_power=F('buying_power') + withdrawal.amount)
+                        user.refresh_from_db(fields=['buying_power'])
+                        amount = withdrawal.amount
+                        category = 'WITHDRAWAL_REFUND'
+                        description = f'Saque rejeitado e saldo devolvido · {withdrawal.pk}'
+                    else:
+                        amount = Decimal('0.00')
+                        category = 'WITHDRAWAL_REJECTED_LEGACY'
+                        description = f'Saque antigo rejeitado; saldo nunca foi reservado · {withdrawal.pk}'
                 else:
                     amount = Decimal('0.00')
                     category = 'WITHDRAWAL_APPROVED'
@@ -60,6 +69,8 @@ class WithdrawalRequestAdmin(ModelAdmin):
                     description=f'{description} · Admin: {request.user.get_username()}'[:255],
                 )
                 processed += 1
+        if legacy_skipped:
+            self.message_user(request, f'{legacy_skipped} saque(s) antigo(s) não aprovado(s): requerem conciliação manual de saldo.', messages.WARNING)
         if processed:
             self.message_user(request, f'{processed} solicitação(ões) atualizada(s).', messages.SUCCESS)
         else:
