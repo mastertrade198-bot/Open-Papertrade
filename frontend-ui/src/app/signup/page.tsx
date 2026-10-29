@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 
 const features = [
   "US$ 100 mil de capital virtual para começar",
-  "Dados de mercado em tempo real",
+  "Cotações conforme as fontes disponíveis",
   "Acompanhe o desempenho",
   "Não é necessário cartão de crédito",
 ];
@@ -115,19 +115,19 @@ export default function SignupPage() {
   // Show verification sent screen
   if (verificationSent) {
     return (
-      <div className="flex h-full w-full bg-[var(--bg-primary)]">
+      <div className="flex min-h-screen w-full bg-[var(--bg-primary)]">
         {/* Left Panel - Branding */}
-        <div className="hidden lg:flex flex-1 flex-col justify-between bg-[var(--bg-sidebar)] p-[60px]">
+        <div className="hidden lg:flex min-w-0 flex-1 flex-col justify-between border-r border-[var(--border-primary)] bg-[var(--bg-sidebar)] px-10 py-12 xl:px-16 xl:py-16">
           <Link href="/" className="flex items-center gap-3.5 hover:opacity-80 transition-opacity">
             <img src="/logo.png" alt="Master Trade" width={40} height={40} />
             <div className="flex items-center gap-1.5">
-              <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">MASTER</span>
-              <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">TRADE</span>
+              <span className="text-base font-semibold tracking-[.08em] text-[var(--text-primary)]">MASTER</span>
+              <span className="text-base font-bold tracking-[.08em] text-[var(--accent-primary)]">TRADE</span>
             </div>
           </Link>
 
           <div className="flex flex-col gap-8">
-            <h1 className="font-serif text-[56px] font-medium leading-[1.1] tracking-[-1px] text-[var(--text-primary)]">
+            <h1 className="font-serif max-w-[580px] text-[40px] font-semibold leading-[1.2] tracking-tight xl:text-[48px] text-[var(--text-primary)]">
               Falta pouco.
             </h1>
             <p className="text-lg text-[var(--text-muted)] leading-[1.6]">
@@ -141,7 +141,7 @@ export default function SignupPage() {
         </div>
 
         {/* Right Panel - Verification Message */}
-        <div className="flex flex-col items-center justify-center w-full lg:w-[520px] lg:min-w-[520px] px-8 py-10 lg:px-[80px]">
+        <div className="flex w-full flex-col items-center justify-center px-6 py-12 sm:px-10 lg:w-[520px] lg:min-w-[520px] lg:px-14">
           <div className="flex flex-col items-center gap-6 w-full max-w-[360px] text-center">
             <div className="w-16 h-16 rounded-full bg-[var(--accent-primary)]/10 flex items-center justify-center">
               <Mail size={32} className="text-[var(--accent-primary)]" />
@@ -207,17 +207,15 @@ export default function SignupPage() {
         <Link href="/" className="flex items-center gap-3.5 hover:opacity-80 transition-opacity">
           <img src="/logo.png" alt="Master Trade" width={40} height={40} />
           <div className="flex items-center gap-1.5">
-            <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">MASTER</span>
-            <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">TRADE</span>
+            <span className="text-base font-semibold tracking-[.08em] text-[var(--text-primary)]">MASTER</span>
+            <span className="text-base font-bold tracking-[.08em] text-[var(--accent-primary)]">TRADE</span>
           </div>
         </Link>
 
         {/* Center Content */}
         <div className="flex flex-col gap-8">
           <h1 className="font-serif text-[56px] font-medium leading-[1.1] tracking-[-1px] text-[var(--text-primary)]">
-            Comece sua
-            <br />
-            Jornada de Negociação.
+            Seu ambiente de prática começa aqui.
           </h1>
           <p className="text-lg text-[var(--text-muted)] leading-[1.6]">
             Desenvolva suas habilidades de negociação
@@ -238,24 +236,7 @@ export default function SignupPage() {
           </div>
         </div>
 
-        {/* Testimonial */}
-        <div className="flex flex-col gap-4 rounded-xl border border-[var(--border-primary)] p-6">
-          <p className="text-base italic text-[var(--text-primary)] leading-[1.5]">
-            &ldquo;Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-            Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.&rdquo;
-          </p>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[var(--border-muted)]" />
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-semibold text-[var(--text-primary)]">
-                John Doe
-              </span>
-              <span className="text-[13px] text-[var(--text-muted)]">
-                Trader, há 3 meses na plataforma
-              </span>
-            </div>
-          </div>
-        </div>
+        <p className="max-w-md border-t border-[var(--border-primary)] pt-6 text-sm leading-6 text-[var(--text-muted)]">Ambiente de trading simulado. Operações demonstrativas não representam negociações reais.</p>
       </div>
 
       {/* Right Panel - Signup Form */}
@@ -264,8 +245,8 @@ export default function SignupPage() {
         <div className="flex items-center gap-3.5 mb-10 lg:hidden">
           <img src="/logo.png" alt="Master Trade" width={40} height={40} />
           <div className="flex items-center gap-1.5">
-            <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">MASTER</span>
-            <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">TRADE</span>
+            <span className="text-base font-semibold tracking-[.08em] text-[var(--text-primary)]">MASTER</span>
+            <span className="text-base font-bold tracking-[.08em] text-[var(--accent-primary)]">TRADE</span>
           </div>
         </div>
 
@@ -276,7 +257,7 @@ export default function SignupPage() {
               Crie sua conta
             </h2>
             <p className="text-[15px] text-[var(--text-muted)]">
-              Comece em menos de 2 minutos
+              Preencha seus dados para criar uma conta de simulação
             </p>
           </div>
 
