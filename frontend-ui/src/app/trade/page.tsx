@@ -134,6 +134,14 @@ function TradePageContent() {
     return Array.from(groups, ([name, assets]) => ({ name, assets }));
   }, [availableAssets]);
 
+  const [marketCategory, setMarketCategory] = useState("Todos");
+  const visibleMarketAssets = useMemo(() => availableAssets.filter(asset =>
+    (marketCategory === "Todos" || asset.category === marketCategory) &&
+    (!searchQuery.trim() || `${asset.symbol} ${asset.displaySymbol || ""} ${asset.name}`.toLocaleLowerCase("pt-BR").includes(searchQuery.trim().toLocaleLowerCase("pt-BR")))
+  ), [availableAssets, marketCategory, searchQuery]);
+
+  useEffect(() => { void refreshCatalog(); }, [refreshCatalog]);
+
   const [orderType, setOrderType] = useState<"BUY" | "SELL">("BUY");
   const [marginInput, setMarginInput] = useState("100.00");
   const [stopLossInput, setStopLossInput] = useState("");
@@ -413,42 +421,37 @@ function TradePageContent() {
 
         {/* Main Trade Area */}
         <div className="trade-workspace-grid grid grid-cols-1 lg:grid-cols-[230px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)_300px] gap-0 items-stretch min-w-0 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card-inner)] overflow-hidden">
-          <aside aria-label="Lista de mercados" className="min-w-0 border-b lg:border-b-0 lg:border-r border-[var(--border-primary)] bg-[var(--bg-card-inner)]">
-            <div className="px-3 py-3 border-b border-[var(--border-primary)]">
-              <div className="flex items-center justify-between">
+          <aside aria-label="Lista de mercados" className="min-w-0 border-b lg:border-b-0 lg:border-r border-[var(--border-primary)] bg-[var(--bg-card-inner)] flex flex-col">
+            <div className="p-3 border-b border-[var(--border-primary)]">
+              <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-[var(--text-primary)]">Mercados</h2>
-                <span className="text-[10px] text-[var(--text-muted)]">Favoritos</span>
+                <button type="button" onClick={() => void refreshCatalog()} disabled={catalogLoading} title="Atualizar lista de ativos" aria-label="Atualizar mercados" className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50"><RefreshCw size={14} className={catalogLoading ? "animate-spin" : ""}/></button>
               </div>
-              <label className="mt-3 flex items-center gap-2 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] px-2.5 py-2">
-                <Search size={15} className="text-[var(--text-muted)]" />
-                <input aria-label="Buscar mercados" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar ativo..." className="w-full min-w-0 bg-transparent outline-none text-xs text-[var(--text-primary)] placeholder:text-[var(--text-dim)]" />
+              <label className="flex items-center gap-2 rounded-md border border-[var(--border-primary)] bg-[var(--bg-card)] px-2.5 py-2">
+                <Search size={15} className="text-[var(--text-muted)]"/>
+                <input aria-label="Buscar ativo por nome ou código" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar símbolo ou nome" className="w-full min-w-0 bg-transparent outline-none text-xs text-[var(--text-primary)] placeholder:text-[var(--text-dim)]"/>
+                {searchQuery && <button type="button" onClick={() => setSearchQuery("")} aria-label="Limpar busca"><X size={13}/></button>}
               </label>
             </div>
-            <div className="max-h-[540px] overflow-y-auto">
-              {["AAPL","MSFT","NVDA","AMZN","GOOGL","TSLA","BTC-USD","ETH-USD","SPY","QQQ"].filter(symbol => {
-                const item = getStockBySymbol(symbol);
-                return !searchQuery || symbol.toLowerCase().includes(searchQuery.toLowerCase()) || (item?.name || "").toLowerCase().includes(searchQuery.toLowerCase());
-              }).map(symbol => {
-                const item = getStockBySymbol(symbol);
+            <div className="flex gap-1 overflow-x-auto px-2 py-2 border-b border-[var(--border-primary)]" role="tablist" aria-label="Categorias de ativos">
+              {["Todos", ...assetCategories.map(category => category.name)].map(category => (
+                <button key={category} type="button" role="tab" aria-selected={marketCategory === category} onClick={() => setMarketCategory(category)} className={`shrink-0 rounded px-2 py-1.5 text-[11px] font-semibold transition-colors ${marketCategory === category ? "bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]" : "text-[var(--text-muted)] hover:bg-[var(--bg-muted)]"}`}>{category}</button>
+              ))}
+            </div>
+            <div className="flex items-center justify-between px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"><span>Ativo</span><span>Último / 24h</span></div>
+            <div className="max-h-[560px] overflow-y-auto flex-1">
+              {visibleMarketAssets.map(asset => {
+                const item = getStockBySymbol(asset.symbol);
                 const change = item?.changePercent;
-                return <button key={symbol} type="button" onClick={() => selectStock({symbol,name:item?.name || symbol,provider:"catalog"})} aria-pressed={selectedSymbol === symbol} className={`w-full flex items-center justify-between gap-2 px-3 py-3 text-left border-b border-[var(--border-primary)]/50 hover:bg-[var(--bg-hover)] transition-colors ${selectedSymbol === symbol ? "bg-[var(--accent-primary)]/10 border-l-2 border-l-[var(--accent-primary)]" : ""}`}>
-                  <span className="min-w-0"><span className="block text-xs font-semibold text-[var(--text-primary)]">{symbol.replace("-USD","")}</span><span className="block truncate text-[10px] text-[var(--text-muted)]">{item?.name || symbol}</span></span>
+                return <button key={asset.symbol} type="button" onClick={() => selectStock({symbol:asset.symbol,name:asset.name,provider:"catalog"})} aria-pressed={selectedSymbol === asset.symbol} className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left border-b border-[var(--border-primary)]/40 hover:bg-[var(--bg-hover)] transition-colors ${selectedSymbol === asset.symbol ? "bg-[var(--accent-primary)]/10 border-l-2 border-l-[var(--accent-primary)]" : ""}`}>
+                  <span className="min-w-0"><span className="block text-xs font-semibold text-[var(--text-primary)]">{asset.displaySymbol || asset.symbol}</span><span className="block truncate text-[10px] text-[var(--text-muted)]">{asset.name}</span></span>
                   <span className="shrink-0 text-right"><span className="block text-xs font-semibold tabular-nums text-[var(--text-primary)]">{item && Number.isFinite(item.price) ? Number(item.price).toFixed(2) : "—"}</span><span className={`text-[10px] tabular-nums ${typeof change === "number" && change >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{typeof change === "number" && Number.isFinite(change) ? `${change > 0 ? "+" : ""}${change.toFixed(2)}%` : "—"}</span></span>
                 </button>;
               })}
+              {visibleMarketAssets.length === 0 && <p className="px-3 py-6 text-center text-xs text-[var(--text-muted)]">{catalogLoading ? "Carregando ativos..." : "Nenhum ativo encontrado nesta categoria."}</p>}
+              {catalogError && <p className="p-3 text-xs text-[var(--accent-red)]">{catalogError}</p>}
             </div>
-            <div className="border-t border-[var(--border-primary)] p-3 space-y-2">
-              <p className="text-[11px] font-semibold text-[var(--text-muted)]">Catálogo completo por categoria</p>
-              <button type="button" onClick={() => setShowAssetMenu(v => !v)} className="flex w-full items-center justify-between rounded-lg border border-[var(--border-primary)] px-3 py-2 text-xs text-[var(--text-primary)]"><span>Selecionar ativo · {displaySymbol(selectedSymbol)}</span><ChevronDown size={14}/></button>
-              {showAssetMenu && <div className="max-h-64 overflow-y-auto rounded-lg border border-[var(--border-primary)]">
-                {assetCategories.map(({name,assets}) => <div key={name}>
-                  <button type="button" onClick={() => setExpandedAssetCategory(v => v===name?null:name)} className="w-full flex justify-between px-3 py-2 text-xs font-semibold text-[var(--text-primary)] bg-[var(--bg-muted)]">{name}<span>{assets.length}</span></button>
-                  {expandedAssetCategory===name && assets.map(asset => <button key={asset.symbol} type="button" onClick={() => {selectStock({symbol:asset.symbol,name:asset.name,provider:"catalog"});setShowAssetMenu(false);}} className="w-full block truncate px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]">{asset.displaySymbol || asset.symbol} · {asset.name}</button>)}
-                </div>)}
-                {catalogLoading && <p className="p-3 text-xs">Carregando catálogo...</p>}
-                {catalogError && <p className="p-3 text-xs text-[var(--accent-red)]">{catalogError}</p>}
-              </div>}
-            </div>
+            <div className="border-t border-[var(--border-primary)] px-3 py-2 text-[10px] text-[var(--text-muted)]">{visibleMarketAssets.length} ativos exibidos</div>
           </aside>
           {/* Left Panel - Stock Selection */}
           <div className="min-w-0 flex flex-col gap-2 p-2.5">
