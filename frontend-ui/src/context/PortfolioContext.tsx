@@ -164,6 +164,16 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     setThemeState(t);
   }, []);
 
+  // Keep AUTO in sync when the operating-system theme changes.
+  useEffect(() => {
+    if (theme !== "AUTO") return;
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const sync = () => document.documentElement.classList.toggle("light", !media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, [theme]);
+
   // Loading states
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
