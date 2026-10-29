@@ -295,11 +295,27 @@ function TradePageContent() {
     setIsLoadingQuote(true);
     try {
       const result = await stockAPI.getQuote(symbol);
-      if (result.success && result.data) {
+      if (result.success && result.data && Number.isFinite(result.data.price)) {
         setSelectedQuote(result.data);
+      } else {
+        setSelectedQuote(null);
       }
     } catch (error) {
-      console.error("Failed to fetch quote:", error);
+      // A provider may not support a symbol through the single-quote endpoint.
+      // Try the existing bulk endpoint before reporting the quote as unavailable.
+      try {
+        const response = await stockAPI.getQuotes([symbol]);
+        const result = response.quotes?.[symbol] || response.quotes?.[symbol.toUpperCase()];
+        if (result?.success && result.data && Number.isFinite(result.data.price)) {
+          setSelectedQuote(result.data);
+        } else {
+          setSelectedQuote(null);
+          console.warn("Cotação indisponível para", symbol);
+        }
+      } catch (fallbackError) {
+        setSelectedQuote(null);
+        console.warn("Falha ao consultar cotação de", symbol, fallbackError);
+      }
     } finally {
       setIsLoadingQuote(false);
     }
