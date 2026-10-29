@@ -390,13 +390,6 @@ function TradePageContent() {
             return <button key={symbol} type="button" onClick={() => selectStock({ symbol, name: item?.name || symbol, provider: "catalog" })} aria-pressed={active} className={`trade-quick-symbol flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${active ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]" : "border-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]"}`}><span>{symbol.replace("-USD","")}</span>{item && Number.isFinite(item.changePercent) && <span className={item.changePercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}>{item.changePercent > 0 ? "+" : ""}{item.changePercent.toFixed(2)}%</span>}</button>;
           })}
         </div>
-        <div className="trade-overview grid grid-cols-2 gap-3 md:grid-cols-4">
-          <div className="trade-overview-card"><span>Saldo para margem</span><strong>{marginBalance === null ? "—" : formatCurrency(marginBalance, false, { convertFromUSD: false })}</strong></div>
-          <div className="trade-overview-card"><span>Posições abertas</span><strong>{positions.filter(p => p.status === "OPEN").length}</strong></div>
-          <div className="trade-overview-card"><span>Exposição desta ordem</span><strong>{Number.isFinite(estimatedTotal) && estimatedTotal > 0 ? formatCurrency(estimatedTotal, false, { convertFromUSD: false }) : "—"}</strong></div>
-          <div className="trade-overview-card"><span>Instrumento selecionado</span><strong>{displaySymbol(selectedSymbol)}</strong></div>
-        </div>
-
         {/* Success/Error Message */}
         {message && (
           <div
@@ -416,18 +409,24 @@ function TradePageContent() {
         )}
 
         {/* Main Trade Area */}
-        <div className="trade-workspace-grid grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-4 items-start min-w-0">
+        <div className="trade-workspace-grid grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_310px] gap-3 items-start min-w-0">
           {/* Left Panel - Stock Selection */}
-          <div className="flex-1 min-w-0 flex flex-col gap-3">
+          <div className="flex-1 min-w-0 flex flex-col gap-2">
+            {/* Market chart uses the existing historical-data provider. */}
+            <div className="trade-chart-shell overflow-hidden rounded-xl shadow-[0_12px_36px_rgba(0,0,0,.12)] border border-[var(--border-primary)] bg-[var(--bg-card)]">
+              <div className="flex items-center justify-between gap-3 border-b border-[var(--border-primary)] px-4 py-3"><div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]"><BarChart3 size={16} className="text-[var(--accent-primary)]" /> Mercado em tempo real <span className="font-mono text-[var(--text-muted)]">{displaySymbol(selectedSymbol)}</span></div><span className="text-[10px] text-[var(--text-muted)]">Fonte de mercado integrada</span></div>
+              <StockChart symbol={selectedSymbol} />
+            </div>
+
             {/* Compact trading instrument toolbar */}
-            <div className="flex flex-col md:flex-row gap-2.5 items-stretch">
+            <div className="flex flex-col md:flex-row gap-2 items-stretch">
             <div className="relative min-w-0 md:w-[245px] md:shrink-0">
               <button
                 type="button"
                 aria-expanded={showAssetMenu}
                 aria-haspopup="listbox"
                 onClick={() => setShowAssetMenu((open) => !open)}
-                className="h-12 w-full flex items-center justify-between gap-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-1.5 text-left hover:border-[var(--accent-primary)]"
+                className="h-10 w-full flex items-center justify-between gap-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-1.5 text-left hover:border-[var(--accent-primary)]"
               >
                 <span className="min-w-0">
                   <span className="block text-[10px] text-[var(--text-muted)]">Selecionar ativo</span>
@@ -652,29 +651,17 @@ function TradePageContent() {
               )}
             </div>
 
-            {/* Market chart uses the existing historical-data provider. */}
-            <div className="trade-chart-shell overflow-hidden rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)]">
-              <div className="flex items-center justify-between gap-3 border-b border-[var(--border-primary)] px-4 py-3"><div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]"><BarChart3 size={16} className="text-[var(--accent-primary)]" /> Gráfico de preços <span className="font-mono text-[var(--text-muted)]">{displaySymbol(selectedSymbol)}</span></div><span className="text-[10px] text-[var(--text-muted)]">Fonte de mercado integrada</span></div>
-              <StockChart symbol={selectedSymbol} />
-            </div>
 
           </div>
 
           {/* Right Panel - Order Form */}
-          <aside aria-label="Painel de ordens" className="trade-order-panel w-full min-w-0 flex flex-col gap-3 xl:sticky xl:top-3">
+          <aside aria-label="Painel de ordens" className="trade-order-panel w-full min-w-0 flex flex-col gap-2 xl:sticky xl:top-3">
             {/* Order Form */}
-            <div className="trade-ticket bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] flex flex-col gap-4 shadow-[0_10px_30px_rgba(0,0,0,.045)]">
+            <div className="trade-ticket bg-[var(--bg-card)] rounded-xl p-3 border border-[var(--border-primary)] flex flex-col gap-3 shadow-[0_10px_30px_rgba(0,0,0,.045)]">
               <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] uppercase tracking-[.14em] text-[var(--text-muted)]">Boleta de negociação</p><h2 className="mt-1 text-base font-semibold text-[var(--text-primary)]">Nova ordem · {displaySymbol(selectedSymbol)}</h2></div><span className="rounded-md bg-[var(--bg-muted)] px-2 py-1 text-[10px] font-medium text-[var(--text-secondary)]">Mercado</span></div>
-              {/* Saldo disponível */}
-              <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)] p-2.5" aria-live="polite">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-[var(--text-muted)]">Saldo disponível (USD)</span>
-                  <button type="button" onClick={() => void refreshPositions()} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]" title="Atualizar saldo disponível">Atualizar</button>
-                </div>
-                <div className="mt-1 font-mono text-xl font-bold text-[var(--text-primary)] tabular-nums">
-                  {marginBalance === null ? "Carregando…" : formatCurrency(marginBalance, false, { convertFromUSD: false })}
-                </div>
-                <p className="mt-1 text-xs text-[var(--text-muted)]">Saldo disponível para margem das operações</p>
+              <div className="flex items-center justify-between gap-2 border-b border-[var(--border-primary)] pb-3" aria-live="polite">
+                <span className="text-xs text-[var(--text-muted)]">Saldo para margem</span>
+                <span className="font-primary tabular-nums text-sm font-semibold text-[var(--text-primary)]">{marginBalance === null ? "Carregando…" : formatCurrency(marginBalance, false, { convertFromUSD: false })}</span>
               </div>
 
               {/* Buy/Sell Toggle */}
