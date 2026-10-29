@@ -89,7 +89,7 @@ export default function SignupPage() {
         setVerificationEmail(email);
         setVerificationSent(true);
       } else {
-        router.push("/");
+        router.push("/dashboard");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha ao criar conta");
