@@ -1,55 +1,91 @@
 @import "tailwindcss/index.css";
 
+/* Master Trade — Modern Finance. Existing component tokens remain stable. */
 :root {
-  /* Background colors */
-  --bg-primary: #0A0A0B;
-  --bg-sidebar: #111113;
-  --bg-card: #111113;
-  --bg-card-inner: #0A0A0B;
-  --bg-muted: #1F1F23;
-  --bg-hover: #1A1A1D;
-  --bg-bar: #2A2A2E;
+  color-scheme: dark;
+  --brand-primary: #0C1726;
+  --brand-secondary: #18364A;
+  --brand-action: #326BFF;
+  --brand-accent: #64D9C2;
+  --background: #0C1726;
+  --surface: #18364A;
+  --border: #30485C;
+  --success: #64D9C2;
+  --danger: #F2788B;
+  --warning: #E5AB58;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
 
-  /* Accent colors */
-  --accent-primary: #FF5C00;
-  --accent-secondary: #FF8A4C;
-  --accent-green: #22C55E;
-  --accent-red: #EF4444;
+  --bg-primary: #0C1726;
+  --bg-sidebar: #102235;
+  --bg-card: #183044;
+  --bg-card-inner: #102538;
+  --bg-muted: #223D51;
+  --bg-hover: #29475D;
+  --bg-bar: #355066;
 
-  /* Text colors */
-  --text-primary: #FFFFFF;
-  --text-secondary: #8B8B90;
-  --text-muted: #6B6B70;
-  --text-dim: #4A4A4E;
-  --text-label: #666666;
+  --accent-primary: #326BFF;
+  --accent-secondary: #7FA4FF;
+  --accent-green: #64D9C2;
+  --accent-red: #F2788B;
 
-  /* Border colors */
-  --border-primary: #1F1F23;
-  --border-muted: #2A2A2E;
+  --text-primary: #F5F8FC;
+  --text-secondary: #D3E0ED;
+  --text-muted: #A8BACB;
+  --text-dim: #91A7BB;
+  --text-label: #C1CFDC;
+
+  --border-primary: #30485C;
+  --border-muted: #39546A;
 }
 
-.light {
-  --bg-primary: #F5F5F7;
+:root.light {
+  color-scheme: light;
+  --background: #F5F8FC;
+  --surface: #FFFFFF;
+  --border: #E3EAF1;
+  --success: #16866A;
+  --danger: #D34F65;
+  --warning: #B77720;
+
+  --bg-primary: #F5F8FC;
   --bg-sidebar: #FFFFFF;
   --bg-card: #FFFFFF;
-  --bg-card-inner: #F5F5F7;
-  --bg-muted: #E8E8ED;
-  --bg-hover: #EDEDF0;
-  --bg-bar: #D4D4D8;
+  --bg-card-inner: #F5F8FC;
+  --bg-muted: #EAF0F6;
+  --bg-hover: #E9F0FA;
+  --bg-bar: #D5E1EC;
 
-  --accent-primary: #FF5C00;
-  --accent-secondary: #FF8A4C;
-  --accent-green: #16A34A;
-  --accent-red: #DC2626;
+  --accent-primary: #326BFF;
+  --accent-secondary: #2454D4;
+  --accent-green: #16866A;
+  --accent-red: #D34F65;
 
-  --text-primary: #1A1A1D;
-  --text-secondary: #6B6B70;
-  --text-muted: #8B8B90;
-  --text-dim: #ABABAF;
-  --text-label: #999999;
+  --text-primary: #152538;
+  --text-secondary: #4D6378;
+  --text-muted: #607386;
+  --text-dim: #667B8F;
+  --text-label: #4D6378;
 
-  --border-primary: #E4E4E7;
-  --border-muted: #D4D4D8;
+  --border-primary: #E3EAF1;
+  --border-muted: #D0DCE8;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-action);
+  outline-offset: 3px;
+}
+button, a, input, select, textarea {
+  transition: border-color 180ms ease, background-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @layer base {
@@ -171,7 +207,7 @@ div:has(> .master-topnav) > main {
 @layer utilities {
   h1, h2, h3, h4, h5, h6,
   [data-page-title] {
-    font-family: "Inter", system-ui, sans-serif !important;
+    font-family: "Manrope", "Inter", system-ui, sans-serif !important;
     font-weight: 600 !important;
     letter-spacing: normal !important;
   }
