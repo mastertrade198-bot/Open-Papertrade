@@ -1102,7 +1102,9 @@ export default function AdvancedChart({
             <button
               key={id}
               onClick={() => setMode(id)}
-              title={label}
+              title={label === "Cursor" ? "Selecionar / mover" : label === "Trendline" ? "Linha de tendência: marque dois pontos" : label === "Horizontal Line" ? "Linha horizontal: clique no nível desejado" : label === "Rectangle" ? "Retângulo: marque dois cantos" : label === "Fibonacci" ? "Fibonacci: marque dois extremos" : "Nota de texto: clique no gráfico"}
+              aria-label={label}
+              aria-pressed={activeTool === id}
               className={`p-1.5 rounded transition-all ${
                 mode === id
                   ? "bg-[var(--bg-muted)] text-[var(--accent-primary)]"
@@ -1116,6 +1118,16 @@ export default function AdvancedChart({
 
         <div className="w-px h-8 bg-[var(--border-primary)]" />
 
+        <div className="flex items-center gap-1 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-muted)] p-1">
+          <span className="px-2 text-[10px] font-bold uppercase tracking-wide text-[var(--text-muted)]">Médias</span>
+          {(["ma20", "ma50", "ma200", "ema9", "ema21"] as IndicatorId[]).map(id => {
+            const meta = INDICATOR_CATALOG[id];
+            const active = activeIndicators.has(id);
+            const available = normalisedBars.length >= meta.minBars;
+            return <button key={id} type="button" title={meta.description} disabled={!available} onClick={() => toggleIndicator(id)} aria-pressed={active} className={`rounded-md px-2 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-30 ${active ? "bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]" : "text-[var(--text-muted)] hover:bg-[var(--bg-card)]"}`}>{meta.shortLabel}</button>;
+          })}
+        </div>
+
         {/* Indicators menu */}
         <div className="relative">
           <button
@@ -1123,7 +1135,7 @@ export default function AdvancedChart({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[var(--bg-muted)] text-[var(--text-primary)] text-xs font-medium hover:bg-[var(--bg-card-hover,rgba(255,255,255,0.06))] transition-all"
           >
             <Activity size={14} />
-            Indicators
+            Indicadores
             <span className="text-[10px] text-[var(--accent-primary)]">({activeIndicators.size})</span>
             <ChevronDown size={12} />
           </button>
@@ -1196,7 +1208,7 @@ export default function AdvancedChart({
           <div className="relative">
             <FeatureButton
               icon={GitCompare}
-              label="Compare"
+              label="Comparar"
               active={compareSymbols.length > 0}
               badge={compareSymbols.length || undefined}
               onClick={() => setShowCompareMenu((v) => !v)}
@@ -1257,13 +1269,13 @@ export default function AdvancedChart({
           </div>
           <FeatureButton
             icon={Bell}
-            label="Alert"
+            label="Alertas"
             badge={alerts.length || undefined}
             onClick={handleCreateAlert}
           />
           <FeatureButton
             icon={Scan}
-            label="Patterns"
+            label="Padrões"
             active={showPatterns}
             badge={showPatterns ? patterns.length || undefined : undefined}
             onClick={togglePatterns}
@@ -1276,19 +1288,11 @@ export default function AdvancedChart({
           />
           <FeatureButton
             icon={Newspaper}
-            label="News"
+            label="Notícias"
             active={showNews}
             onClick={() => setShowNews((v) => !v)}
           />
-          <Link
-            href={`/backtesting?symbol=${symbol}`}
-            title="Backtest this chart"
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded bg-[var(--accent-primary)]/10 text-[var(--accent-primary)] text-[11px] font-semibold hover:bg-[var(--accent-primary)]/20 transition-all"
-          >
-            <Target size={13} />
-            Backtest
-            <ArrowRight size={12} />
-          </Link>
+
         </div>
 
         <div className="ml-auto flex items-center gap-1">
@@ -1365,10 +1369,15 @@ export default function AdvancedChart({
         </div>
       )}
 
+      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border-primary)] bg-[var(--bg-muted)]/40 px-3 py-2 text-[11px]">
+        <span className="font-semibold text-[var(--text-primary)]">Desenho:</span>
+        <span className="text-[var(--text-muted)]">{activeTool === "cursor" ? "Selecione uma ferramenta na barra lateral" : activeTool === "horizontalLine" ? "Clique uma vez no preço para criar a linha horizontal" : activeTool === "trendline" ? "Clique em dois pontos para traçar a tendência" : activeTool === "fibonacci" ? "Marque o início e o fim do movimento" : activeTool === "rectangle" ? "Marque dois cantos da área" : "Clique no local desejado"}</span>
+        {activeTool !== "cursor" && <button type="button" onClick={() => setActiveTool("cursor")} className="ml-auto rounded border border-[var(--border-primary)] px-2 py-1 text-[var(--text-primary)]">Cancelar (Esc)</button>}
+      </div>
       {/* --- Body: left toolbar + chart area --- */}
       <div className="flex flex-1" style={{ minHeight: chartHeight }}>
         {/* Drawing toolbar (vertical) */}
-        <div className="flex flex-col gap-1 p-2 border-r border-[var(--border-primary)] bg-[var(--bg-card)]">
+        <div className="flex flex-col gap-1 p-2 border-r border-[var(--border-primary)] bg-[var(--bg-card)]" aria-label="Ferramentas de desenho">
           {DRAWING_TOOLS.map(({ id, icon: Icon, label }) => (
             <button
               key={id}
