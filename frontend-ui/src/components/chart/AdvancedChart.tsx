@@ -164,7 +164,7 @@ export default function AdvancedChart({
   const [patterns, setPatterns] = useState<DetectedPattern[]>([]);
   const [showPatterns, setShowPatterns] = useState(false);
   const [showVolumeProfile, setShowVolumeProfile] = useState(initialState?.showVolumeProfile ?? false);
-  const [showNews, setShowNews] = useState(initialState?.showNews ?? false);
+  const [showNews, setShowNews] = useState(false);
   const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
   const [indicatorValues, setIndicatorValues] = useState<Record<string, number | null>>({});
 
@@ -1285,12 +1285,6 @@ export default function AdvancedChart({
             label="V.Profile"
             active={showVolumeProfile}
             onClick={() => setShowVolumeProfile((v) => !v)}
-          />
-          <FeatureButton
-            icon={Newspaper}
-            label="Notícias"
-            active={showNews}
-            onClick={() => setShowNews((v) => !v)}
           />
 
         </div>
