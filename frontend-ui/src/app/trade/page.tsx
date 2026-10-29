@@ -144,6 +144,31 @@ function TradePageContent() {
     (!searchQuery.trim() || `${asset.symbol} ${asset.displaySymbol || ""} ${asset.name}`.toLocaleLowerCase("pt-BR").includes(searchQuery.trim().toLocaleLowerCase("pt-BR")))
   ), [availableAssets, marketCategory, searchQuery, favoriteSymbols]);
 
+  const [marketQuotes, setMarketQuotes] = useState<Record<string, StockQuote>>({});
+  const [marketQuotesLoading, setMarketQuotesLoading] = useState(false);
+  const [marketQuotesUpdatedAt, setMarketQuotesUpdatedAt] = useState<number | null>(null);
+  const marketSymbols = useMemo(() => availableAssets.map(asset => asset.symbol), [availableAssets]);
+  const refreshMarketQuotes = useCallback(async () => {
+    if (!marketSymbols.length) return;
+    setMarketQuotesLoading(true);
+    try {
+      const batchSize = 25;
+      const next: Record<string, StockQuote> = {};
+      for (let i = 0; i < marketSymbols.length; i += batchSize) {
+        const batch = marketSymbols.slice(i, i + batchSize);
+        try {
+          const response = await stockAPI.getQuotes(batch);
+          for (const [symbol, result] of Object.entries(response.quotes || {})) {
+            if (result.success && result.data && Number.isFinite(result.data.price)) next[symbol.toUpperCase()] = result.data;
+          }
+        } catch (error) { console.warn("Market quote batch failed", error); }
+      }
+      setMarketQuotes(previous => ({ ...previous, ...next }));
+      setMarketQuotesUpdatedAt(Date.now());
+    } finally { setMarketQuotesLoading(false); }
+  }, [marketSymbols]);
+  useEffect(() => { void refreshMarketQuotes(); const timer = window.setInterval(() => void refreshMarketQuotes(), 300000); return () => window.clearInterval(timer); }, [refreshMarketQuotes]);
+
   useEffect(() => { void refreshCatalog(); }, [refreshCatalog]);
 
   const [orderType, setOrderType] = useState<"BUY" | "SELL">("BUY");
@@ -433,7 +458,7 @@ function TradePageContent() {
             <div className="p-3 border-b border-[var(--border-primary)]">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-[var(--text-primary)]">Mercados</h2>
-                <button type="button" onClick={() => void refreshCatalog()} disabled={catalogLoading} title="Atualizar lista de ativos" aria-label="Atualizar mercados" className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50"><RefreshCw size={14} className={catalogLoading ? "animate-spin" : ""}/></button>
+                <button type="button" onClick={() => { void refreshCatalog(); void refreshMarketQuotes(); }} disabled={catalogLoading || marketQuotesLoading} title="Atualizar ativos e cotações" aria-label="Atualizar mercados" className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50"><RefreshCw size={14} className={catalogLoading || marketQuotesLoading ? "animate-spin" : ""}/></button>
               </div>
               <label className="flex items-center gap-2 rounded-md border border-[var(--border-primary)] bg-[var(--bg-card)] px-2.5 py-2">
                 <Search size={15} className="text-[var(--text-muted)]"/>
@@ -449,7 +474,7 @@ function TradePageContent() {
             <div className="grid grid-cols-[minmax(0,1fr)_68px_82px] gap-2 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"><span>Nome / Símbolo</span><span className="text-right">Preço</span><span className="text-right">Variação</span></div>
             <div className="max-h-[560px] overflow-y-auto flex-1">
               {visibleMarketAssets.map(asset => {
-                const item = getStockBySymbol(asset.symbol);
+                const item = marketQuotes[asset.symbol.toUpperCase()] || getStockBySymbol(asset.symbol);
                 const change = item?.changePercent;
                 return <div key={asset.symbol} className={`flex items-center border-b border-[var(--border-primary)]/40 hover:bg-[var(--bg-hover)] transition-colors ${selectedSymbol === asset.symbol ? "bg-[var(--accent-primary)]/10 border-l-2 border-l-[var(--accent-primary)]" : ""}`}><button type="button" onClick={() => toggleFavorite(asset.symbol)} title={favoriteSymbols.includes(asset.symbol) ? "Remover dos favoritos" : "Adicionar aos favoritos"} aria-label={`Favoritar ${asset.symbol}`} className="shrink-0 pl-2 py-3 text-[var(--accent-primary)]"><Star size={15} fill={favoriteSymbols.includes(asset.symbol) ? "currentColor" : "none"}/></button><button type="button" onClick={() => selectStock({symbol:asset.symbol,name:asset.name,provider:"catalog"})} aria-pressed={selectedSymbol === asset.symbol} className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2 py-2.5 text-left">
                   <span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold text-[var(--text-primary)]" title={asset.name}>{asset.name && asset.name !== asset.symbol ? asset.name : (item?.name || asset.symbol)}</span><span className="block text-[10px] font-medium text-[var(--text-muted)]">{asset.displaySymbol || asset.symbol}</span></span>
@@ -459,7 +484,7 @@ function TradePageContent() {
               {visibleMarketAssets.length === 0 && <p className="px-3 py-6 text-center text-xs text-[var(--text-muted)]">{catalogLoading ? "Carregando ativos..." : "Nenhum ativo encontrado nesta categoria."}</p>}
               {catalogError && <p className="p-3 text-xs text-[var(--accent-red)]">{catalogError}</p>}
             </div>
-            <div className="border-t border-[var(--border-primary)] px-3 py-2 text-[10px] text-[var(--text-muted)]">{visibleMarketAssets.length} ativos exibidos</div>
+            <div className="border-t border-[var(--border-primary)] px-3 py-2 text-[10px] text-[var(--text-muted)]">{visibleMarketAssets.length} ativos · {marketQuotesLoading ? "Atualizando cotações..." : marketQuotesUpdatedAt ? `Última consulta ${new Date(marketQuotesUpdatedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"})}` : "Aguardando cotações"}</div>
           </aside>
           {/* Left Panel - Stock Selection */}
           <div className="min-w-0 flex flex-col gap-0 p-2">
