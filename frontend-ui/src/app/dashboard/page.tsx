@@ -204,7 +204,7 @@ export default function Dashboard() {
         {/* Main Stats Row */}
         <div className="grid grid-cols-4 gap-4">
           {/* Total Portfolio */}
-          <div className="group bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(255,92,0,0.12)]">
+          <div className="group bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-[var(--text-muted)]">Patrimônio total</span>
               <div className="flex items-center gap-1.5">
@@ -229,7 +229,7 @@ export default function Dashboard() {
 
           {/* Total Returns / Total Invested */}
           {settings.showProfitLoss ? (
-            <div className="group bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(255,92,0,0.12)]">
+            <div className="group bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
               <span className="text-xs font-medium text-[var(--text-muted)]">Retorno total</span>
               <span className={`font-mono text-[28px] font-semibold tracking-tight ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
                 {totalReturns >= 0 ? "+" : ""}{formatCurrency(totalReturns, false)}
@@ -246,7 +246,7 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            <div className="group bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(255,92,0,0.12)]">
+            <div className="group bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
               <span className="text-xs font-medium text-[var(--text-muted)]">Total investido</span>
               <span className="font-mono text-[28px] font-semibold text-[var(--text-primary)] tracking-tight">
                 {formatCurrency(totalInvested, false)}
@@ -261,7 +261,7 @@ export default function Dashboard() {
           )}
 
           {/* Buying Power */}
-          <div className="group bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(255,92,0,0.12)]">
+          <div className="group bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
             <span className="text-xs font-medium text-[var(--text-muted)]">Saldo disponível</span>
             <span className="font-mono text-[28px] font-semibold text-[var(--text-primary)] tracking-tight">
               {formatCurrency(buyingPower, false, { convertFromUSD: false })}
@@ -275,7 +275,7 @@ export default function Dashboard() {
           </div>
 
           {/* Active Positions */}
-          <div className="group bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(255,92,0,0.12)]">
+          <div className="group bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)] flex flex-col gap-3 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
             <span className="text-xs font-medium text-[var(--text-muted)]">Posições abertas</span>
             <span className="font-mono text-[28px] font-semibold text-[var(--accent-primary)] tracking-tight">
               {holdings.length}
