@@ -471,18 +471,18 @@ function TradePageContent() {
           {/* Right Panel - Order Form */}
           <aside aria-label="Painel de ordens" className="trade-order-panel w-full min-w-0 flex flex-col gap-2 p-2.5 border-t xl:border-t-0 xl:border-l border-[var(--border-primary)]">
             {/* Order Form */}
-            <div className="trade-ticket bg-[var(--bg-card)] rounded-xl p-3 border border-[var(--border-primary)] flex flex-col gap-3 shadow-[0_10px_30px_rgba(0,0,0,.045)]">
-              <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] uppercase tracking-[.14em] text-[var(--text-muted)]">Boleta de negociação</p><h2 className="mt-1 text-base font-semibold text-[var(--text-primary)]">Nova ordem · {displaySymbol(selectedSymbol)}</h2></div><span className="rounded-md bg-[var(--bg-muted)] px-2 py-1 text-[10px] font-medium text-[var(--text-secondary)]">Mercado</span></div>
+            <div className="trade-ticket bg-[var(--bg-card)] rounded-lg p-3 border border-[var(--border-primary)] flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-2 border-b border-[var(--border-primary)] pb-3"><div><p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Enviar ordem</p><h2 className="mt-0.5 text-base font-bold text-[var(--text-primary)]">{displaySymbol(selectedSymbol)} <span className="text-xs font-normal text-[var(--text-muted)]">/ USD</span></h2></div><span className="rounded bg-[var(--bg-muted)] px-2 py-1 text-[10px] font-semibold text-[var(--text-secondary)]">A mercado</span></div>
               <div className="flex items-center justify-between gap-2 border-b border-[var(--border-primary)] pb-3" aria-live="polite">
                 <span className="text-xs text-[var(--text-muted)]">Saldo para margem</span>
                 <span className="font-primary tabular-nums text-sm font-semibold text-[var(--text-primary)]">{marginBalance === null ? "Carregando…" : formatCurrency(marginBalance, false, { convertFromUSD: false })}</span>
               </div>
 
               {/* Buy/Sell Toggle */}
-              <div className="flex p-1 rounded-lg bg-[var(--bg-card-inner)]">
+              <div className="grid grid-cols-2 gap-1 rounded-lg bg-[var(--bg-card-inner)] p-1">
                 <button
                   onClick={() => setOrderType("BUY")}
-                  className={`flex-1 py-2 rounded-md text-sm font-semibold transition-all ${
+                  className={`min-w-0 py-2.5 rounded-md text-sm font-semibold transition-colors ${
                     orderType === "BUY"
                       ? "bg-[var(--accent-green)] text-black shadow-lg"
                       : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -513,21 +513,25 @@ function TradePageContent() {
                 </div>
               )}
 
-              <div className="trade-form-divider flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--text-muted)]">Parâmetros da ordem</span><span className="font-mono text-[10px] text-[var(--text-muted)]">{displaySymbol(selectedSymbol)} / USD</span></div>
+              <div <div className="trade-form-divider flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--text-muted)]">Configurar posição</span><span className="text-[10px] text-[var(--text-muted)]">Margem × Alavancagem</span></div>
               {/* Exact margin, leverage and optional exit price levels */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2.5">
                 <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
                   Margem (USD)
                   <input type="number" min="0.01" step="0.01" value={marginInput} onChange={(e) => setMarginInput(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-base text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
+                    className="w-full px-3 py-2.5 rounded-md border border-[var(--border-muted)] bg-[var(--bg-card-inner)] font-primary tabular-nums text-base font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
                 </label>
                 <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
                   Alavancagem (1–100x)
                   <select value={leverage} onChange={(e) => setLeverage(Number(e.target.value))}
-                    className="p-2 rounded-lg border border-[var(--border-muted)] bg-[var(--bg-card)] text-[var(--text-primary)]">
+                    className="w-full p-2.5 rounded-md border border-[var(--border-muted)] bg-[var(--bg-card-inner)] font-semibold text-[var(--text-primary)]">
                     {[1, 2, 5, 10, 20, 25, 50, 100].map(value => <option key={value} value={value}>{value}x</option>)}
                   </select>
                 </label>
+                <div className="flex items-center justify-between rounded-md bg-[var(--bg-card-inner)] px-3 py-2.5 text-xs">
+                  <span className="text-[var(--text-muted)]">Valor nocional estimado</span>
+                  <strong className="tabular-nums text-[var(--text-primary)]">{formatCurrency(estimatedMargin * leverage, false, { convertFromUSD: false })}</strong>
+                </div>
                 <button type="button" aria-expanded={showRiskControls} onClick={() => setShowRiskControls(value => !value)} className="flex items-center justify-between rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)] px-3 py-2.5 text-xs font-semibold text-[var(--text-secondary)]">Proteção da posição (SL / TP)<ChevronDown size={15} className={showRiskControls ? "rotate-180" : ""} /></button>
                 {showRiskControls && <div className="grid grid-cols-2 gap-2">
                   <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
@@ -541,7 +545,7 @@ function TradePageContent() {
                       className="min-w-0 w-full px-2 py-2 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-sm text-[var(--text-primary)]" />
                   </label>
                 </div>}
-                <p className="text-[11px] text-[var(--text-muted)]">Percentual de variação do preço do ativo (não da margem). A alavancagem amplia o resultado sobre a margem.</p>
+                {showRiskControls && <p className="text-[11px] text-[var(--text-muted)]">SL/TP são variações do preço do ativo, não da margem.</p>}
                 {(stopLoss !== null || takeProfit !== null) && currentPrice > 0 && (
                   <p className="text-[11px] text-[var(--text-muted)]">
                     {stopLoss !== null && validStopLoss ? `SL estimado: ${formatCurrency(stopLoss, false, { sourceCurrency })}` : ""}
@@ -550,9 +554,9 @@ function TradePageContent() {
                   </p>
                 )}
                 {(!validStopLoss || !validTakeProfit) && <p className="text-xs text-[var(--accent-red)]">Informe percentuais positivos que resultem em preços válidos para a operação.</p>}
-                <div className="flex gap-2">
+                <div className="grid grid-cols-4 gap-1.5">
                   {[0.25, 0.5, 0.75, 1].map(pct => <button key={pct} type="button" onClick={() => setMarginPercent(pct)}
-                    className="flex-1 py-1.5 rounded-md text-[11px] bg-[var(--bg-card-inner)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]">{pct * 100}%</button>)}
+                    className="py-2 rounded-md border border-[var(--border-primary)] text-[11px] font-semibold bg-[var(--bg-card-inner)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]">{pct * 100}%</button>)}
                 </div>
               </div>
 
@@ -614,7 +618,7 @@ function TradePageContent() {
               <button
                 onClick={handleTradeClick}
                 disabled={!canTrade}
-                className={`w-full py-4 rounded-lg text-sm font-bold transition-all ${
+                className={`w-full py-3.5 rounded-md text-sm font-bold transition-colors ${
                   canTrade
                     ? orderType === "BUY"
                       ? "bg-[var(--accent-green)] text-black hover:brightness-110 shadow-lg shadow-[var(--accent-green)]/20"
