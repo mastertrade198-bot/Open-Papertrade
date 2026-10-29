@@ -15,6 +15,10 @@ import {
   ArrowDownRight,
   Clock,
   AlertTriangle,
+  Activity,
+  BarChart3,
+  RefreshCw,
+  ShieldCheck,
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import PageHeader from "@/components/PageHeader";
@@ -56,6 +60,7 @@ function TradePageContent() {
   const [selectedSymbol, setSelectedSymbol] = useState("AAPL");
   const [selectedQuote, setSelectedQuote] = useState<StockQuote | null>(null);
   const [showAssetMenu, setShowAssetMenu] = useState(false);
+  const [showRiskControls, setShowRiskControls] = useState(false);
   const [expandedAssetCategory, setExpandedAssetCategory] = useState<string | null>("Ações");
   const [catalogAssets, setCatalogAssets] = useState<CatalogAsset[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
@@ -360,13 +365,37 @@ function TradePageContent() {
   };
 
   return (
-    <div className="flex h-full bg-[var(--bg-primary)]">
+    <div className="trade-terminal flex h-full bg-[var(--bg-primary)]">
       <Sidebar />
       <main className="trade-workspace flex-1 min-w-0 flex flex-col gap-4 py-4 px-3 sm:px-5 lg:px-6 overflow-auto">
-        <PageHeader
-          title="Negociar"
-          subtitle="Acompanhe o mercado, configure sua ordem e gerencie posições em um único lugar"
-        />
+        <div className="trade-terminal-heading flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="trade-eyebrow flex items-center gap-2"><Activity size={13} /> TERMINAL / MERCADOS</p>
+            <h1 className="mt-1 text-[22px] font-bold tracking-tight text-[var(--text-primary)]">Mesa de negociação</h1>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">Análise de mercado, execução e acompanhamento de posições.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="trade-session-pill flex items-center gap-2 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-2">
+              <span className={`h-2 w-2 rounded-full ${marketStatus.isOpen ? "bg-emerald-500" : "bg-amber-500"}`} />
+              <span className="text-xs font-semibold">{marketStatus.isOpen ? "Mercado aberto" : "Mercado fechado"}</span>
+            </div>
+            <button type="button" onClick={() => { void refreshPositions(); void refreshUserData(); }} className="trade-refresh-button flex items-center gap-2 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"><RefreshCw size={14} /> Atualizar</button>
+          </div>
+        </div>
+        <div className="trade-quickbar flex items-center gap-2 overflow-x-auto rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-2">
+          <span className="shrink-0 px-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Acesso rápido</span>
+          {["AAPL","MSFT","NVDA","AMZN","GOOGL","TSLA","SPY","QQQ","BTC-USD","ETH-USD"].map(symbol => {
+            const item = getStockBySymbol(symbol);
+            const active = selectedSymbol === symbol;
+            return <button key={symbol} type="button" onClick={() => selectStock({ symbol, name: item?.name || symbol, provider: "catalog" })} aria-pressed={active} className={`trade-quick-symbol flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${active ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/10 text-[var(--accent-primary)]" : "border-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]"}`}><span>{symbol.replace("-USD","")}</span>{item && Number.isFinite(item.changePercent) && <span className={item.changePercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}>{item.changePercent > 0 ? "+" : ""}{item.changePercent.toFixed(2)}%</span>}</button>;
+          })}
+        </div>
+        <div className="trade-overview grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="trade-overview-card"><span>Saldo para margem</span><strong>{marginBalance === null ? "—" : formatCurrency(marginBalance, false, { convertFromUSD: false })}</strong></div>
+          <div className="trade-overview-card"><span>Posições abertas</span><strong>{positions.filter(p => p.status === "OPEN").length}</strong></div>
+          <div className="trade-overview-card"><span>Exposição desta ordem</span><strong>{Number.isFinite(estimatedTotal) && estimatedTotal > 0 ? formatCurrency(estimatedTotal, false, { convertFromUSD: false }) : "—"}</strong></div>
+          <div className="trade-overview-card"><span>Instrumento selecionado</span><strong>{displaySymbol(selectedSymbol)}</strong></div>
+        </div>
 
         {/* Success/Error Message */}
         {message && (
@@ -387,7 +416,7 @@ function TradePageContent() {
         )}
 
         {/* Main Trade Area */}
-        <div className="trade-workspace-grid grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(280px,310px)] gap-4 items-start min-w-0">
+        <div className="trade-workspace-grid grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_340px] gap-4 items-start min-w-0">
           {/* Left Panel - Stock Selection */}
           <div className="flex-1 min-w-0 flex flex-col gap-3">
             {/* Compact trading instrument toolbar */}
@@ -536,7 +565,7 @@ function TradePageContent() {
             </div>
 
             {/* Selected Stock Card */}
-            <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] overflow-hidden">
+            <div className="trade-asset-card bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] overflow-hidden">
               <div className="flex items-center justify-between gap-4 px-5 py-4">
                 <div>
                   <div className="flex items-center gap-3">
@@ -623,15 +652,18 @@ function TradePageContent() {
               )}
             </div>
 
-            {/* Price Chart */}
-            <StockChart symbol={selectedSymbol} />
+            {/* Market chart uses the existing historical-data provider. */}
+            <div className="trade-chart-shell overflow-hidden rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)]">
+              <div className="flex items-center justify-between gap-3 border-b border-[var(--border-primary)] px-4 py-3"><div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]"><BarChart3 size={16} className="text-[var(--accent-primary)]" /> Gráfico de preços <span className="font-mono text-[var(--text-muted)]">{displaySymbol(selectedSymbol)}</span></div><span className="text-[10px] text-[var(--text-muted)]">Fonte de mercado integrada</span></div>
+              <StockChart symbol={selectedSymbol} />
+            </div>
 
           </div>
 
           {/* Right Panel - Order Form */}
-          <aside aria-label="Painel de ordens" className="trade-order-panel w-full min-w-0 flex flex-col gap-3 lg:sticky lg:top-3">
+          <aside aria-label="Painel de ordens" className="trade-order-panel w-full min-w-0 flex flex-col gap-3 xl:sticky xl:top-3">
             {/* Order Form */}
-            <div className="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] flex flex-col gap-4 shadow-[0_10px_30px_rgba(0,0,0,.045)]">
+            <div className="trade-ticket bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] flex flex-col gap-4 shadow-[0_10px_30px_rgba(0,0,0,.045)]">
               <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] uppercase tracking-[.14em] text-[var(--text-muted)]">Boleta de negociação</p><h2 className="mt-1 text-base font-semibold text-[var(--text-primary)]">Nova ordem · {displaySymbol(selectedSymbol)}</h2></div><span className="rounded-md bg-[var(--bg-muted)] px-2 py-1 text-[10px] font-medium text-[var(--text-secondary)]">Mercado</span></div>
               {/* Saldo disponível */}
               <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)] p-2.5" aria-live="polite">
@@ -680,6 +712,7 @@ function TradePageContent() {
                 </div>
               )}
 
+              <div className="trade-form-divider flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--text-muted)]">Parâmetros da ordem</span><span className="font-mono text-[10px] text-[var(--text-muted)]">{displaySymbol(selectedSymbol)} / USD</span></div>
               {/* Exact margin, leverage and optional exit price levels */}
               <div className="flex flex-col gap-3">
                 <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
@@ -694,7 +727,8 @@ function TradePageContent() {
                     {[1, 2, 5, 10, 20, 25, 50, 100].map(value => <option key={value} value={value}>{value}x</option>)}
                   </select>
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <button type="button" aria-expanded={showRiskControls} onClick={() => setShowRiskControls(value => !value)} className="flex items-center justify-between rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)] px-3 py-2.5 text-xs font-semibold text-[var(--text-secondary)]">Proteção da posição (SL / TP)<ChevronDown size={15} className={showRiskControls ? "rotate-180" : ""} /></button>
+                {showRiskControls && <div className="grid grid-cols-2 gap-2">
                   <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
                     Stop Loss (%)
                     <input type="number" min="0.01" step="0.01" placeholder="Ex.: 2" value={stopLossInput} onChange={(e) => setStopLossInput(e.target.value)}
@@ -705,7 +739,7 @@ function TradePageContent() {
                     <input type="number" min="0.01" step="0.01" placeholder="Ex.: 5" value={takeProfitInput} onChange={(e) => setTakeProfitInput(e.target.value)}
                       className="min-w-0 w-full px-2 py-2 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-sm text-[var(--text-primary)]" />
                   </label>
-                </div>
+                </div>}
                 <p className="text-[11px] text-[var(--text-muted)]">Percentual de variação do preço do ativo (não da margem). A alavancagem amplia o resultado sobre a margem.</p>
                 {(stopLoss !== null || takeProfit !== null) && currentPrice > 0 && (
                   <p className="text-[11px] text-[var(--text-muted)]">
@@ -789,7 +823,7 @@ function TradePageContent() {
               >
                 {getButtonText()}
               </button>
-              <p className="text-[10px] leading-4 text-[var(--text-muted)]">Ambiente de demonstração: as ordens não são encaminhadas a uma bolsa.</p>
+              <p className="flex items-start gap-2 text-[10px] leading-4 text-[var(--text-muted)]"><ShieldCheck size={13} className="mt-0.5 shrink-0" /> Ambiente de demonstração; ordens não encaminhadas a bolsas.</p>
             </div>
 
 
