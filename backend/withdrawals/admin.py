@@ -4,17 +4,45 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
+from django.urls import path, reverse
+from django.shortcuts import redirect
+from django.template.response import TemplateResponse
+from django.utils.html import format_html
 from unfold.admin import ModelAdmin
 from users.models import UserProfile, BalanceTransaction
 from .models import WithdrawalRequest, AdminDeposit
 
 @admin.register(WithdrawalRequest)
 class WithdrawalRequestAdmin(ModelAdmin):
-    list_display = ('id', 'user_email', 'amount', 'method', 'status', 'created_at', 'reviewed_at')
+    list_display = ('id', 'user_email', 'amount', 'method', 'status', 'created_at', 'reviewed_at', 'review_buttons')
     list_filter = ('status', 'method', 'created_at')
     search_fields = ('id', 'user_id', 'destination')
     readonly_fields = ('id', 'user_id', 'amount', 'method', 'destination', 'status', 'created_at', 'reviewed_at')
     actions = ('approve_requests', 'reject_requests')
+
+    def get_urls(self):
+        custom = [path('<uuid:request_id>/review/<str:decision>/', self.admin_site.admin_view(self.review_detail), name='withdrawals_withdrawalrequest_review')]
+        return custom + super().get_urls()
+
+    @admin.display(description='Decisão')
+    def review_buttons(self, obj):
+        if obj.status != 'PENDING':
+            return 'Concluído'
+        url_approve = reverse('admin:withdrawals_withdrawalrequest_review', args=[obj.pk, 'approve'])
+        url_reject = reverse('admin:withdrawals_withdrawalrequest_review', args=[obj.pk, 'reject'])
+        return format_html('<a href="{}">Autorizar</a> &nbsp; | &nbsp; <a href="{}">Rejeitar</a>', url_approve, url_reject)
+
+    def review_detail(self, request, request_id, decision):
+        if not request.user.is_active or not request.user.is_superuser:
+            raise PermissionDenied('Somente superusuários podem revisar saques.')
+        if decision not in ('approve', 'reject'):
+            raise PermissionDenied('Decisão inválida.')
+        withdrawal = WithdrawalRequest.objects.get(pk=request_id)
+        if request.method == 'POST':
+            self._review(request, WithdrawalRequest.objects.filter(pk=withdrawal.pk), 'APPROVED' if decision == 'approve' else 'REJECTED')
+            return redirect(reverse('admin:withdrawals_withdrawalrequest_changelist'))
+        context = dict(self.admin_site.each_context(request), title='Confirmar decisão sobre saque', withdrawal=withdrawal, decision=decision, opts=self.model._meta)
+        return TemplateResponse(request, 'admin/withdrawals/review.html', context)
 
     @admin.display(description='Conta')
     def user_email(self, obj):
