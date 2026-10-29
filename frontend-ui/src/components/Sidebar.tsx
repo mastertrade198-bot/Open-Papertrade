@@ -41,7 +41,7 @@ export default function Sidebar() {
 
   return (
     <header className="master-topnav relative z-[100] min-h-[66px] border-b border-[var(--border-primary)] bg-[var(--bg-sidebar)]/95 backdrop-blur-xl">
-      <div className="mx-auto flex min-h-[66px] w-full max-w-[1920px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 lg:px-6">
+      <div className="mx-auto flex min-h-[66px] w-full max-w-[1440px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 lg:px-6">
         <Link href="/dashboard" className="flex shrink-0 items-center gap-2.5 hover:opacity-90" aria-label="Master Trade — Painel">
           <img src="/logo.png" alt="" width={26} height={26} className="rounded-lg" />
           <span className="whitespace-nowrap text-[12px] font-extrabold tracking-[.07em] text-[var(--text-primary)]">
