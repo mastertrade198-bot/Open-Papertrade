@@ -426,160 +426,21 @@ function TradePageContent() {
                 </button>;
               })}
             </div>
+            <div className="border-t border-[var(--border-primary)] p-3 space-y-2">
+              <p className="text-[11px] font-semibold text-[var(--text-muted)]">Catálogo completo por categoria</p>
+              <button type="button" onClick={() => setShowAssetMenu(v => !v)} className="flex w-full items-center justify-between rounded-lg border border-[var(--border-primary)] px-3 py-2 text-xs text-[var(--text-primary)]"><span>Selecionar ativo · {displaySymbol(selectedSymbol)}</span><ChevronDown size={14}/></button>
+              {showAssetMenu && <div className="max-h-64 overflow-y-auto rounded-lg border border-[var(--border-primary)]">
+                {assetCategories.map(({name,assets}) => <div key={name}>
+                  <button type="button" onClick={() => setExpandedAssetCategory(v => v===name?null:name)} className="w-full flex justify-between px-3 py-2 text-xs font-semibold text-[var(--text-primary)] bg-[var(--bg-muted)]">{name}<span>{assets.length}</span></button>
+                  {expandedAssetCategory===name && assets.map(asset => <button key={asset.symbol} type="button" onClick={() => {selectStock({symbol:asset.symbol,name:asset.name,provider:"catalog"});setShowAssetMenu(false);}} className="w-full block truncate px-3 py-2 text-left text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]">{asset.displaySymbol || asset.symbol} · {asset.name}</button>)}
+                </div>)}
+                {catalogLoading && <p className="p-3 text-xs">Carregando catálogo...</p>}
+                {catalogError && <p className="p-3 text-xs text-[var(--accent-red)]">{catalogError}</p>}
+              </div>}
+            </div>
           </aside>
           {/* Left Panel - Stock Selection */}
           <div className="min-w-0 flex flex-col gap-2 p-2.5">
-            {/* Market chart uses the existing historical-data provider. */}
-            <div className="trade-chart-shell order-0 overflow-hidden rounded-xl shadow-[0_12px_36px_rgba(0,0,0,.12)] border border-[var(--border-primary)] bg-[var(--bg-card)]">
-              <div className="flex items-center justify-between gap-3 border-b border-[var(--border-primary)] px-4 py-3"><div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]"><BarChart3 size={16} className="text-[var(--accent-primary)]" /> Mercado em tempo real <span className="font-mono text-[var(--text-muted)]">{displaySymbol(selectedSymbol)}</span></div><span className="text-[10px] text-[var(--text-muted)]">Fonte de mercado integrada</span></div>
-              <StockChart symbol={selectedSymbol} />
-            </div>
-
-            {/* Compact trading instrument toolbar */}
-            <div className="order-[-1] flex flex-col md:flex-row gap-2 items-stretch">
-            <div className="relative min-w-0 md:w-[245px] md:shrink-0">
-              <button
-                type="button"
-                aria-expanded={showAssetMenu}
-                aria-haspopup="listbox"
-                onClick={() => setShowAssetMenu((open) => !open)}
-                className="h-10 w-full flex items-center justify-between gap-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-1.5 text-left hover:border-[var(--accent-primary)]"
-              >
-                <span className="min-w-0">
-                  <span className="block text-[10px] text-[var(--text-muted)]">Selecionar ativo</span>
-                  <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">{displaySymbol(selectedSymbol)} — {selectedQuote?.name || "Ativo selecionado"}</span>
-                </span>
-                <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)]" />
-              </button>
-              {showAssetMenu && (
-                <div aria-label="Ativos por categoria" className="absolute left-0 top-full z-40 mt-2 w-[min(440px,calc(100vw-48px))] max-h-[420px] overflow-y-auto rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] shadow-2xl">
-                  <div className="sticky top-0 z-10 border-b border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-3">
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">Mercados disponíveis</p>
-                    <p className="text-[11px] text-[var(--text-muted)]">{catalogLoading ? "Carregando catálogo..." : `${availableAssets.length} ativos USD · Escolha uma categoria`}</p>
-                    {catalogError && <p role="alert" className="mt-1 text-[11px] text-[var(--accent-red)]">{catalogError}</p>}
-                  </div>
-                  {assetCategories.map(({ name, assets }) => (
-                    <div key={name} className="border-b border-[var(--border-primary)] last:border-b-0">
-                      <button
-                        type="button"
-                        aria-expanded={expandedAssetCategory === name}
-                        onClick={() => setExpandedAssetCategory(current => current === name ? null : name)}
-                        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-[var(--bg-muted)] transition-colors"
-                      >
-                        <span className="flex min-w-0 items-center gap-2">
-                          <span className="text-sm font-medium text-[var(--text-primary)]">{name}</span>
-                          <span className="rounded-md bg-[var(--bg-muted)] px-1.5 py-0.5 text-[10px] text-[var(--text-muted)]">{assets.length}</span>
-                        </span>
-                        <ChevronDown size={16} className={`shrink-0 text-[var(--text-muted)] transition-transform ${expandedAssetCategory === name ? "rotate-180" : ""}`} />
-                      </button>
-                      {expandedAssetCategory === name && (
-                        <div className="border-t border-[var(--border-primary)] bg-[var(--bg-card-inner)] py-1">
-                          {assets.map(asset => (
-                            <button
-                              type="button"
-                              key={asset.symbol}
-                              aria-current={selectedSymbol === asset.symbol ? "true" : undefined}
-                              onClick={() => {
-                                selectStock({ symbol: asset.symbol, name: asset.name, provider: "catalog" });
-                                setShowAssetMenu(false);
-                              }}
-                              className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-[var(--bg-muted)] transition-colors ${selectedSymbol === asset.symbol ? "text-[var(--accent-primary)]" : "text-[var(--text-primary)]"}`}
-                            >
-                              <span className="min-w-0">
-                                <span className="block font-mono text-xs font-semibold">{asset.displaySymbol || asset.symbol}</span>
-                                <span className="block truncate text-[11px] text-[var(--text-muted)]">{asset.name}</span>
-                              </span>
-                              {selectedSymbol === asset.symbol && <span className="shrink-0 text-[10px] text-[var(--accent-primary)]">Selecionado</span>}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {assetCategories.length === 0 && <p className="px-4 py-6 text-center text-xs text-[var(--text-muted)]">Nenhum ativo carregado</p>}
-                </div>
-              )}
-            </div>
-
-            <div className="relative min-w-0 flex-1">
-              <div className="flex h-12 items-center gap-3 px-4 rounded-xl bg-[var(--bg-card)] border border-[var(--border-primary)] focus-within:border-[var(--accent-primary)] transition-colors">
-                <Search size={20} className="text-[var(--text-muted)]" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
-                  placeholder="Buscar ativo por nome ou símbolo..."
-                  className="min-w-0 flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => {
-                      setSearchQuery("");
-                      setShowSearchResults(false);
-                    }}
-                    className="p-1 hover:bg-[var(--bg-muted)] rounded"
-                  >
-                    <X size={16} className="text-[var(--text-muted)]" />
-                  </button>
-                )}
-                {isSearching && (
-                  <Loader2 size={18} className="text-[var(--accent-primary)] animate-spin" />
-                )}
-              </div>
-
-              {/* Search Results Dropdown */}
-              {showSearchResults && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] shadow-xl z-20 overflow-hidden">
-                  {isSearching ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 size={24} className="text-[var(--accent-primary)] animate-spin" />
-                    </div>
-                  ) : searchResults.length > 0 ? (
-                    <div className="py-2">
-                      {searchResults.map((result) => (
-                        <button
-                          key={result.symbol}
-                          onClick={() => selectStock(result)}
-                          className="w-full flex items-center gap-4 px-4 py-3 hover:bg-[var(--bg-muted)] transition-colors"
-                        >
-                          <div className="w-10 h-10 rounded-lg bg-[var(--bg-muted)] flex items-center justify-center">
-                            <span className="font-mono text-xs font-bold text-[var(--text-primary)]">
-                              {result.symbol.slice(0, 2)}
-                            </span>
-                          </div>
-                          <div className="flex-1 text-left">
-                            <div className="font-mono text-sm font-semibold text-[var(--text-primary)]">
-                              {result.symbol}
-                            </div>
-                            <div className="text-xs text-[var(--text-muted)]">
-                              {result.name}
-                            </div>
-                          </div>
-                          {result.type && (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-[var(--bg-muted)] text-[var(--text-muted)]">
-                              {result.type}
-                            </span>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <Search size={24} className="text-[var(--text-dim)] mb-2" />
-                      <span className="text-sm text-[var(--text-muted)]">
-                        Nenhum resultado para &quot;{searchQuery}&quot;
-                      </span>
-                      <span className="text-xs text-[var(--text-dim)] mt-1">
-                        Tente outro símbolo
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            </div>
-
             {/* Selected Stock Card */}
             <div className="trade-asset-card bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] overflow-hidden">
               <div className="flex items-center justify-between gap-4 px-5 py-4">
@@ -668,6 +529,12 @@ function TradePageContent() {
               )}
             </div>
 
+
+            {/* Market chart uses the existing historical-data provider. */}
+            <div className="trade-chart-shell order-0 overflow-hidden rounded-xl shadow-[0_12px_36px_rgba(0,0,0,.12)] border border-[var(--border-primary)] bg-[var(--bg-card)]">
+              <div className="flex items-center justify-between gap-3 border-b border-[var(--border-primary)] px-4 py-3"><div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-primary)]"><BarChart3 size={16} className="text-[var(--accent-primary)]" /> Mercado em tempo real <span className="font-mono text-[var(--text-muted)]">{displaySymbol(selectedSymbol)}</span></div><span className="text-[10px] text-[var(--text-muted)]">Fonte de mercado integrada</span></div>
+              <StockChart symbol={selectedSymbol} />
+            </div>
 
           </div>
 
