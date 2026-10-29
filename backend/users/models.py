@@ -740,3 +740,28 @@ class Backtest(models.Model):
             'results': self.results,
             'created_at': self.created_at.isoformat(),
         }
+
+
+class WithdrawalRequest(models.Model):
+    """Administrative tracking for simulated withdrawal requests."""
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'Pendente'
+        APPROVED = 'APPROVED', 'Aprovado'
+        REJECTED = 'REJECTED', 'Rejeitado'
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(UserProfile, on_delete=models.PROTECT, related_name='withdrawal_requests')
+    amount = models.DecimalField(max_digits=20, decimal_places=2)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    requested_at = models.DateTimeField(default=timezone.now)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey('auth.User', null=True, blank=True, on_delete=models.SET_NULL)
+    admin_note = models.TextField(blank=True, default='')
+
+    class Meta:
+        ordering = ['-requested_at']
+        verbose_name = 'Saque'
+        verbose_name_plural = 'Saques'
+
+    def __str__(self):
+        return f'{self.user} - {self.amount} - {self.get_status_display()}'
