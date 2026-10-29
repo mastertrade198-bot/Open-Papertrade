@@ -32,10 +32,16 @@ export default function StockChart({ symbol }: StockChartProps) {
   const [chartType, setChartType] = useState<ChartType>("candlestick");
   const [bars, setBars] = useState<HistoricalBar[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [sma20, setSma20] = useState(false);
+  const [sma50, setSma50] = useState(false);
+  const [lineMode, setLineMode] = useState(false);
+  const [levels, setLevels] = useState<number[]>([]);
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<SeriesType> | null>(null);
+
+  useEffect(() => { setLevels([]); setLineMode(false); }, [symbol]);
 
   // Fetch data — clear bars immediately so stale data doesn't render
   // with a new timeRange (which would cause a format mismatch → NaN times).
@@ -80,11 +86,11 @@ export default function StockChart({ symbol }: StockChartProps) {
 
     const chart = createChart(container, {
       width: container.clientWidth,
-      height: 420,
+      height: 520,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
-        textColor: "rgba(255, 255, 255, 0.5)",
-        fontFamily: "'DM Mono', monospace",
+        textColor: "#9db0c3",
+        fontFamily: "'Inter', system-ui, sans-serif",
         fontSize: 11,
       },
       grid: {
@@ -93,7 +99,7 @@ export default function StockChart({ symbol }: StockChartProps) {
       },
       crosshair: {
         mode: CrosshairMode.Magnet,
-        vertLine: { color: "rgba(255, 92, 0, 0.3)", width: 1, style: 2 },
+        vertLine: { color: "rgba(95, 155, 255, 0.45)", width: 1, style: 2 },
         horzLine: { color: "rgba(255, 92, 0, 0.3)", width: 1, style: 2 },
       },
       rightPriceScale: {
@@ -120,12 +126,12 @@ export default function StockChart({ symbol }: StockChartProps) {
 
     if (chartType === "candlestick") {
       const series = chart.addSeries(CandlestickSeries, {
-        upColor: "#22C55E",
-        downColor: "#EF4444",
-        borderUpColor: "#22C55E",
-        borderDownColor: "#EF4444",
-        wickUpColor: "#22C55E",
-        wickDownColor: "#EF4444",
+        upColor: "#26c7a2",
+        downColor: "#f36b78",
+        borderUpColor: "#26c7a2",
+        borderDownColor: "#f36b78",
+        wickUpColor: "#26c7a2",
+        wickDownColor: "#f36b78",
       });
       const data: CandlestickData[] = bars.map((bar) => ({
         time: formatTime(bar),
@@ -138,11 +144,11 @@ export default function StockChart({ symbol }: StockChartProps) {
       seriesRef.current = series;
     } else if (chartType === "line") {
       const series = chart.addSeries(LineSeries, {
-        color: "#FF5C00",
+        color: "#528bff",
         lineWidth: 2,
         crosshairMarkerVisible: true,
         crosshairMarkerRadius: 4,
-        crosshairMarkerBackgroundColor: "#FF5C00",
+        crosshairMarkerBackgroundColor: "#528bff",
       });
       const data: LineData[] = bars.map((bar) => ({
         time: formatTime(bar),
@@ -154,11 +160,11 @@ export default function StockChart({ symbol }: StockChartProps) {
       const series = chart.addSeries(AreaSeries, {
         topColor: "rgba(255, 92, 0, 0.4)",
         bottomColor: "rgba(255, 92, 0, 0.02)",
-        lineColor: "#FF5C00",
+        lineColor: "#528bff",
         lineWidth: 2,
         crosshairMarkerVisible: true,
         crosshairMarkerRadius: 4,
-        crosshairMarkerBackgroundColor: "#FF5C00",
+        crosshairMarkerBackgroundColor: "#528bff",
       });
       const data: AreaData[] = bars.map((bar) => ({
         time: formatTime(bar),
@@ -168,6 +174,35 @@ export default function StockChart({ symbol }: StockChartProps) {
       seriesRef.current = series;
     }
 
+    // Optional moving averages, calculated from historical close prices.
+    const addSma = (period: number, color: string) => {
+      if (bars.length < period) return;
+      const values: LineData[] = [];
+      let sum = 0;
+      for (let i = 0; i < bars.length; i++) {
+        sum += bars[i].close;
+        if (i >= period) sum -= bars[i - period].close;
+        if (i >= period - 1) values.push({ time: formatTime(bars[i]), value: sum / period });
+      }
+      const indicator = chart.addSeries(LineSeries, { color, lineWidth: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
+      indicator.setData(values);
+    };
+    if (sma20) addSma(20, "#f6b94c");
+    if (sma50) addSma(50, "#9d8cff");
+
+    const primary = seriesRef.current;
+    if (primary) {
+      levels.forEach(price => primary.createPriceLine({price,color:"#5b9aff",lineWidth:1,lineStyle:2,axisLabelVisible:true,title:"Nível"}));
+    }
+    const onClick = (param: {point?: {x:number;y:number}}) => {
+      if (!lineMode || !param.point || !seriesRef.current) return;
+      const price = seriesRef.current.coordinateToPrice(param.point.y);
+      if (typeof price === "number" && Number.isFinite(price) && price > 0) {
+        setLevels(prev => [...prev, Number(price.toFixed(4))]);
+        setLineMode(false);
+      }
+    };
+    chart.subscribeClick(onClick);
     chart.timeScale().fitContent();
 
     // Responsive resize
@@ -180,12 +215,13 @@ export default function StockChart({ symbol }: StockChartProps) {
     resizeObserver.observe(container);
 
     return () => {
+      chart.unsubscribeClick(onClick);
       resizeObserver.disconnect();
       chart.remove();
       chartRef.current = null;
       seriesRef.current = null;
     };
-  }, [bars, chartType]);
+  }, [bars, chartType, sma20, sma50, levels, lineMode]);
 
   return (
     <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] overflow-hidden shrink-0">
@@ -246,8 +282,17 @@ export default function StockChart({ symbol }: StockChartProps) {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border-primary)] px-3 py-2">
+        <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Ferramentas</span>
+        <button type="button" onClick={() => setLineMode(v => !v)} aria-pressed={lineMode} className={`rounded-md px-3 py-1.5 text-xs ${lineMode ? "bg-[var(--accent-primary)] text-white" : "bg-[var(--bg-muted)] text-[var(--text-secondary)]"}`}>{lineMode ? "Clique no gráfico..." : "Linha horizontal"}</button>
+        <button type="button" onClick={() => setLevels([])} disabled={!levels.length} className="rounded-md px-2 py-1.5 text-xs text-[var(--text-muted)] disabled:opacity-40">Limpar linhas ({levels.length})</button>
+        <span className="mx-1 h-4 w-px bg-[var(--border-primary)]" />
+        <button type="button" onClick={() => setSma20(v => !v)} aria-pressed={sma20} className={`rounded-md px-3 py-1.5 text-xs ${sma20 ? "bg-amber-500/20 text-amber-300" : "bg-[var(--bg-muted)] text-[var(--text-secondary)]"}`}>Média 20</button>
+        <button type="button" onClick={() => setSma50(v => !v)} aria-pressed={sma50} className={`rounded-md px-3 py-1.5 text-xs ${sma50 ? "bg-violet-500/20 text-violet-300" : "bg-[var(--bg-muted)] text-[var(--text-secondary)]"}`}>Média 50</button>
+      </div>
+
       {/* Chart area */}
-      <div className="relative" style={{ height: 420 }}>
+      <div className="relative" style={{ height: 520 }}>
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-[var(--bg-card)]/80 z-10">
             <Loader2 size={28} className="text-[var(--accent-primary)] animate-spin" />
@@ -255,7 +300,7 @@ export default function StockChart({ symbol }: StockChartProps) {
         )}
         {!isLoading && bars.length === 0 ? (
           <div className="flex items-center justify-center h-full text-sm text-[var(--text-muted)]">
-            No chart data available
+            Dados históricos indisponíveis
           </div>
         ) : (
           <div ref={chartContainerRef} className="w-full h-full" />
