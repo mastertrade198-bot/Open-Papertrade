@@ -179,7 +179,7 @@ export default function Dashboard() {
                 <span className="text-[10px] font-medium text-[var(--accent-green)]">Ao vivo</span>
               </div>
             </div>
-            <span className="font-mono text-lg xl:text-xl font-semibold text-[var(--text-primary)] tracking-tight">
+            <span className="font-primary tabular-nums text-lg xl:text-xl font-semibold text-[var(--text-primary)] tracking-tight">
               {formatCurrency(totalPortfolioValue, false)}
             </span>
             <div className="flex items-center gap-1.5">
@@ -198,7 +198,7 @@ export default function Dashboard() {
           {settings.showProfitLoss ? (
             <div className="group bg-[var(--bg-card)] rounded-xl p-3 xl:p-4 border border-[var(--border-primary)] flex flex-col gap-2 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
               <span className="text-[11px] font-medium text-[var(--text-muted)]">Retorno total</span>
-              <span className={`font-mono text-lg xl:text-xl font-semibold tracking-tight ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
+              <span className={`font-primary tabular-nums text-lg xl:text-xl font-semibold tracking-tight ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
                 {totalReturns >= 0 ? "+" : ""}{formatCurrency(totalReturns, false)}
               </span>
               <div className="flex items-center gap-1.5">
@@ -215,7 +215,7 @@ export default function Dashboard() {
           ) : (
             <div className="group bg-[var(--bg-card)] rounded-xl p-3 xl:p-4 border border-[var(--border-primary)] flex flex-col gap-2 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
               <span className="text-[11px] font-medium text-[var(--text-muted)]">Total investido</span>
-              <span className="font-mono text-lg xl:text-xl font-semibold text-[var(--text-primary)] tracking-tight">
+              <span className="font-primary tabular-nums text-lg xl:text-xl font-semibold text-[var(--text-primary)] tracking-tight">
                 {formatCurrency(totalInvested, false)}
               </span>
               <div className="flex items-center gap-1.5">
@@ -230,7 +230,7 @@ export default function Dashboard() {
           {/* Buying Power */}
           <div className="group bg-[var(--bg-card)] rounded-xl p-3 xl:p-4 border border-[var(--border-primary)] flex flex-col gap-2 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
             <span className="text-[11px] font-medium text-[var(--text-muted)]">Saldo disponível</span>
-            <span className="font-mono text-lg xl:text-xl font-semibold text-[var(--text-primary)] tracking-tight">
+            <span className="font-primary tabular-nums text-lg xl:text-xl font-semibold text-[var(--text-primary)] tracking-tight">
               {formatCurrency(buyingPower, false, { convertFromUSD: false })}
             </span>
             <div className="flex items-center gap-1.5">
@@ -244,7 +244,7 @@ export default function Dashboard() {
           {/* Active Positions */}
           <div className="group bg-[var(--bg-card)] rounded-xl p-3 xl:p-4 border border-[var(--border-primary)] flex flex-col gap-2 transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
             <span className="text-[11px] font-medium text-[var(--text-muted)]">Posições abertas</span>
-            <span className="font-mono text-lg xl:text-xl font-semibold text-[var(--accent-primary)] tracking-tight">
+            <span className="font-primary tabular-nums text-lg xl:text-xl font-semibold text-[var(--accent-primary)] tracking-tight">
               {holdings.length}
             </span>
             <div className="flex items-center gap-1.5">
@@ -277,10 +277,10 @@ export default function Dashboard() {
                     {items.map((item, index) => (
                       <div key={`${copy}-${item.symbol}-${index}`} className="flex shrink-0 items-center gap-2.5 whitespace-nowrap">
                         <span className="text-xs font-semibold text-[var(--text-muted)]">{item.label}</span>
-                        <span className="font-mono text-sm font-medium text-[var(--text-primary)]">
+                        <span className="font-primary tabular-nums text-sm font-medium text-[var(--text-primary)]">
                           {item.label === "USD/BRL" ? `R$ ${item.price.toLocaleString("pt-BR", { minimumFractionDigits: 4, maximumFractionDigits: 4 })}` : item.price.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}
                         </span>
-                        <span className={`font-mono text-xs font-medium ${item.changePercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
+                        <span className={`font-primary tabular-nums text-xs font-medium ${item.changePercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
                           {formatPercent(item.changePercent)}
                         </span>
                       </div>
@@ -329,16 +329,16 @@ export default function Dashboard() {
                       className={`flex items-center justify-between px-5 ${settings.compactMode ? "py-2.5" : "py-4"} hover:bg-[var(--bg-muted)] cursor-pointer transition-colors`}
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-[var(--bg-muted)] flex items-center justify-center font-mono text-sm font-bold text-[var(--text-primary)]">
+                        <div className="w-10 h-10 rounded-lg bg-[var(--bg-muted)] flex items-center justify-center font-primary tabular-nums text-sm font-bold text-[var(--text-primary)]">
                           {holding.symbol.slice(0, 2)}
                         </div>
                         <div>
-                          <div className="font-mono text-sm font-semibold text-[var(--text-primary)]">{holding.symbol}</div>
+                          <div className="font-primary tabular-nums text-sm font-semibold text-[var(--text-primary)]">{holding.symbol}</div>
                           <div className="text-xs text-[var(--text-muted)]">{holding.shares} shares</div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-mono text-sm font-semibold text-[var(--text-primary)]">
+                        <div className="font-primary tabular-nums text-sm font-semibold text-[var(--text-primary)]">
                           {formatCurrency(holding.value, false, { sourceCurrency: holding.currency || "USD" })}
                         </div>
                         {settings.showProfitLoss ? (
@@ -372,11 +372,11 @@ export default function Dashboard() {
                   {bestPerformer && (
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-mono text-lg font-semibold text-[var(--text-primary)]">{bestPerformer.symbol}</div>
+                        <div className="font-primary tabular-nums text-lg font-semibold text-[var(--text-primary)]">{bestPerformer.symbol}</div>
                         <div className="text-xs text-[var(--text-muted)]">{bestPerformer.name}</div>
                       </div>
                       <div className="text-right">
-                        <div className="font-mono text-lg font-semibold text-[var(--accent-green)]">
+                        <div className="font-primary tabular-nums text-lg font-semibold text-[var(--accent-green)]">
                           {formatPercent(bestPerformer.gainPercent)}
                         </div>
                       </div>
@@ -395,11 +395,11 @@ export default function Dashboard() {
                   {worstPerformer && worstPerformer.gainPercent < 0 ? (
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-mono text-lg font-semibold text-[var(--text-primary)]">{worstPerformer.symbol}</div>
+                        <div className="font-primary tabular-nums text-lg font-semibold text-[var(--text-primary)]">{worstPerformer.symbol}</div>
                         <div className="text-xs text-[var(--text-muted)]">{worstPerformer.name}</div>
                       </div>
                       <div className="text-right">
-                        <div className="font-mono text-lg font-semibold text-[var(--accent-red)]">
+                        <div className="font-primary tabular-nums text-lg font-semibold text-[var(--accent-red)]">
                           {formatPercent(worstPerformer.gainPercent)}
                         </div>
                       </div>
@@ -421,7 +421,7 @@ export default function Dashboard() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1">
                     <span className="text-xs text-[var(--text-muted)]">Operações nesta semana</span>
-                    <span className="font-mono text-lg font-semibold text-[var(--text-primary)]">
+                    <span className="font-primary tabular-nums text-lg font-semibold text-[var(--text-primary)]">
                       {transactions.filter((tx) => {
                         const txDate = new Date(tx.date);
                         const now = new Date();
@@ -432,19 +432,19 @@ export default function Dashboard() {
                   </div>
                   <div className="flex flex-col gap-1">
                     <span className="text-xs text-[var(--text-muted)]">Variação da carteira</span>
-                    <span className={`font-mono text-lg font-semibold ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
+                    <span className={`font-primary tabular-nums text-lg font-semibold ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
                       {totalReturns >= 0 ? "+" : ""}{formatCurrency(totalReturns, false)}
                     </span>
                   </div>
                   <div className="flex flex-col gap-1">
                     <span className="text-xs text-[var(--text-muted)]">Posições abertas</span>
-                    <span className="font-mono text-lg font-semibold text-[var(--text-primary)]">
+                    <span className="font-primary tabular-nums text-lg font-semibold text-[var(--text-primary)]">
                       {holdings.length}
                     </span>
                   </div>
                   <div className="flex flex-col gap-1">
                     <span className="text-xs text-[var(--text-muted)]">Saldo disponível</span>
-                    <span className="font-mono text-lg font-semibold text-[var(--text-primary)]">
+                    <span className="font-primary tabular-nums text-lg font-semibold text-[var(--text-primary)]">
                       {formatCurrency(buyingPower, false, { convertFromUSD: false })}
                     </span>
                   </div>
@@ -476,8 +476,8 @@ export default function Dashboard() {
                           onClick={() => router.push(`/trade?symbol=${stock.symbol}`)}
                           className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-[var(--bg-muted)] cursor-pointer transition-colors"
                         >
-                          <span className="font-mono text-sm font-medium text-[var(--text-primary)]">{stock.symbol}</span>
-                          <span className="font-mono text-xs font-semibold text-[var(--accent-green)]">{formatPercent(stock.changePercent)}</span>
+                          <span className="font-primary tabular-nums text-sm font-medium text-[var(--text-primary)]">{stock.symbol}</span>
+                          <span className="font-primary tabular-nums text-xs font-semibold text-[var(--accent-green)]">{formatPercent(stock.changePercent)}</span>
                         </div>
                       )) : (
                         <span className="text-xs text-[var(--text-dim)] py-2">Carregando...</span>
@@ -495,8 +495,8 @@ export default function Dashboard() {
                           onClick={() => router.push(`/trade?symbol=${stock.symbol}`)}
                           className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-[var(--bg-muted)] cursor-pointer transition-colors"
                         >
-                          <span className="font-mono text-sm font-medium text-[var(--text-primary)]">{stock.symbol}</span>
-                          <span className="font-mono text-xs font-semibold text-[var(--accent-red)]">{formatPercent(stock.changePercent)}</span>
+                          <span className="font-primary tabular-nums text-sm font-medium text-[var(--text-primary)]">{stock.symbol}</span>
+                          <span className="font-primary tabular-nums text-xs font-semibold text-[var(--accent-red)]">{formatPercent(stock.changePercent)}</span>
                         </div>
                       )) : (
                         <span className="text-xs text-[var(--text-dim)] py-2">Carregando...</span>
@@ -542,8 +542,8 @@ export default function Dashboard() {
                       <span className="text-xs text-[var(--text-muted)]">{item.label}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-xs text-[var(--text-primary)]">{formatCurrency(item.value, false)}</span>
-                      <span className="font-mono text-[10px] text-[var(--text-dim)] w-10 text-right">{item.percent.toFixed(1)}%</span>
+                      <span className="font-primary tabular-nums text-xs text-[var(--text-primary)]">{formatCurrency(item.value, false)}</span>
+                      <span className="font-primary tabular-nums text-[10px] text-[var(--text-dim)] w-10 text-right">{item.percent.toFixed(1)}%</span>
                     </div>
                   </div>
                 ))}
@@ -580,13 +580,13 @@ export default function Dashboard() {
                     >
                       <div className="flex items-center gap-2">
                         {item.starred && <Star size={10} className="text-[var(--accent-primary)] fill-[var(--accent-primary)]" />}
-                        <span className="font-mono text-sm font-medium text-[var(--text-primary)]">{item.symbol}</span>
+                        <span className="font-primary tabular-nums text-sm font-medium text-[var(--text-primary)]">{item.symbol}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs text-[var(--text-muted)]">
+                        <span className="font-primary tabular-nums text-xs text-[var(--text-muted)]">
                           {formatCurrency(item.price, false, { sourceCurrency: item.currency || "USD" })}
                         </span>
-                        <span className={`font-mono text-xs font-medium ${item.changePercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
+                        <span className={`font-primary tabular-nums text-xs font-medium ${item.changePercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
                           {formatPercent(item.changePercent)}
                         </span>
                       </div>
@@ -638,7 +638,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className={`font-mono text-xs font-medium ${tx.type === "BUY" ? "text-[var(--accent-green)]" : "text-[var(--text-muted)]"}`}>
+                        <div className={`font-primary tabular-nums text-xs font-medium ${tx.type === "BUY" ? "text-[var(--accent-green)]" : "text-[var(--text-muted)]"}`}>
                           {tx.type === "BUY" ? "-" : "+"}{formatCurrency(tx.total, false)}
                         </div>
                         <div className="text-[10px] text-[var(--text-dim)]">
