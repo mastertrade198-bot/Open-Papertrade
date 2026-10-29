@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     # Local
     'stocks',
     'users',
+    'withdrawals',
     'filings',
 ]
 
