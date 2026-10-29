@@ -147,12 +147,12 @@ export default function Dashboard() {
       <Sidebar />
 
       <main className="flex-1 min-w-0 flex flex-col gap-4 py-5 px-4 md:px-6 xl:px-8 overflow-auto">
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(280px,1.15fr)_minmax(0,3fr)] gap-4 items-stretch">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(290px,1.1fr)_minmax(0,3fr)] gap-4 items-stretch">
         {/* Header */}
-        <header className="flex min-w-0 flex-col justify-center lg:pr-3">
+        <header className="relative flex min-w-0 flex-col justify-center rounded-2xl bg-[#102b49] px-5 py-5 text-white overflow-hidden shadow-[0_12px_32px_rgba(16,43,73,0.16)]">
           <div className="flex flex-col gap-1">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="font-primary text-xl 2xl:text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
+              <h1 className="font-primary text-xl 2xl:text-2xl font-semibold tracking-tight text-white">
                 Bem-vindo de volta{user.name ? `, ${user.name.split(" ")[0]}` : ""}
               </h1>
               {lastUpdated && (
@@ -162,16 +162,16 @@ export default function Dashboard() {
                 </span>
               )}
             </div>
-            <p className="text-sm text-[var(--text-muted)]">
+            <p className="text-sm text-slate-200/80">
               Confira o resumo da sua carteira de hoje
             </p>
           </div>
         </header>
 
         {/* Main Stats Row */}
-        <div className="grid min-w-0 grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <div className="grid min-w-0 grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Total Portfolio */}
-          <div className="group bg-[var(--bg-card)] rounded-xl p-3 xl:p-4 border border-[var(--border-primary)] flex flex-col justify-between min-w-0 gap-2 shadow-[0_2px_12px_rgba(15,35,60,0.035)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
+          <div className="group bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-primary)] border-b-[3px] border-b-[#dce8f7] flex flex-col justify-between min-w-0 gap-3 shadow-[0_6px_22px_rgba(15,35,60,0.045)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-medium text-[var(--text-muted)]">Patrimônio total</span>
               <div className="flex items-center gap-1.5">
@@ -196,7 +196,7 @@ export default function Dashboard() {
 
           {/* Total Returns / Total Invested */}
           {settings.showProfitLoss ? (
-            <div className="group bg-[var(--bg-card)] rounded-xl p-3 xl:p-4 border border-[var(--border-primary)] flex flex-col justify-between min-w-0 gap-2 shadow-[0_2px_12px_rgba(15,35,60,0.035)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
+            <div className="group bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-primary)] border-b-[3px] border-b-[#dce8f7] flex flex-col justify-between min-w-0 gap-3 shadow-[0_6px_22px_rgba(15,35,60,0.045)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
               <span className="text-[11px] font-medium text-[var(--text-muted)]">Retorno total</span>
               <span className={`font-primary tabular-nums text-xl 2xl:text-[22px] font-semibold tracking-tight ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
                 {totalReturns >= 0 ? "+" : ""}{formatCurrency(totalReturns, false)}
@@ -213,7 +213,7 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            <div className="group bg-[var(--bg-card)] rounded-xl p-3 xl:p-4 border border-[var(--border-primary)] flex flex-col justify-between min-w-0 gap-2 shadow-[0_2px_12px_rgba(15,35,60,0.035)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
+            <div className="group bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-primary)] border-b-[3px] border-b-[#dce8f7] flex flex-col justify-between min-w-0 gap-3 shadow-[0_6px_22px_rgba(15,35,60,0.045)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
               <span className="text-[11px] font-medium text-[var(--text-muted)]">Total investido</span>
               <span className="font-primary tabular-nums text-xl 2xl:text-[22px] font-semibold text-[var(--text-primary)] tracking-tight">
                 {formatCurrency(totalInvested, false)}
@@ -228,9 +228,9 @@ export default function Dashboard() {
           )}
 
           {/* Buying Power */}
-          <div className="group bg-[var(--bg-card)] rounded-xl p-3 xl:p-4 border border-[var(--border-primary)] flex flex-col justify-between min-w-0 gap-2 shadow-[0_2px_12px_rgba(15,35,60,0.035)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
+          <div className="group bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-primary)] border-b-[3px] border-b-[#dce8f7] flex flex-col justify-between min-w-0 gap-3 shadow-[0_6px_22px_rgba(15,35,60,0.045)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
             <span className="text-[11px] font-medium text-[var(--text-muted)]">Saldo disponível</span>
-            <span className="font-primary tabular-nums text-xl 2xl:text-[22px] font-semibold text-[var(--text-primary)] tracking-tight">
+            <span className="font-primary tabular-nums text-[23px] 2xl:text-[26px] font-bold text-[#245cdb] dark:text-[#91b3ff] tracking-tight">
               {formatCurrency(buyingPower, false, { convertFromUSD: false })}
             </span>
             <div className="flex items-center gap-1.5">
@@ -242,7 +242,7 @@ export default function Dashboard() {
           </div>
 
           {/* Active Positions */}
-          <div className="group bg-[var(--bg-card)] rounded-xl p-3 xl:p-4 border border-[var(--border-primary)] flex flex-col justify-between min-w-0 gap-2 shadow-[0_2px_12px_rgba(15,35,60,0.035)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
+          <div className="group bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-primary)] border-b-[3px] border-b-[#dce8f7] flex flex-col justify-between min-w-0 gap-3 shadow-[0_6px_22px_rgba(15,35,60,0.045)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
             <span className="text-[11px] font-medium text-[var(--text-muted)]">Posições abertas</span>
             <span className="font-primary tabular-nums text-xl 2xl:text-[22px] font-semibold text-[var(--accent-primary)] tracking-tight">
               {holdings.length}
@@ -270,7 +270,9 @@ export default function Dashboard() {
           return (
             <div className="shrink-0 min-h-[44px] flex items-center overflow-hidden bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] py-2.5 shadow-[0_2px_10px_rgba(15,35,60,0.025)]" aria-label="Cotações de mercado">
               <style>{`@keyframes dashboardTickerScroll { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
-                .dashboard-ticker-track { display: flex; flex: none; width: max-content; min-width: max-content; will-change: transform; animation: dashboardTickerScroll 65s linear infinite; }\n                @media (prefers-reduced-motion: reduce) { .dashboard-ticker-track { animation: none; } }\n                .dashboard-ticker-track:hover { animation-play-state: paused; }`}</style>
+                .dashboard-ticker-track { display: flex; flex: none; width: max-content; min-width: max-content; will-change: transform; animation: dashboardTickerScroll 65s linear infinite; }
+                @media (prefers-reduced-motion: reduce) { .dashboard-ticker-track { animation: none; } }
+                .dashboard-ticker-track:hover { animation-play-state: paused; }`}</style>
               <div className="dashboard-ticker-track items-center">
                 {[0, 1].map((copy) => (
                   <div key={copy} className="flex shrink-0 items-center gap-6 pr-6" aria-hidden={copy === 1}>
@@ -309,9 +311,9 @@ export default function Dashboard() {
               </div>
 
               {holdings.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-7 px-4 text-center">
-                  <PieChart size={32} className="text-[var(--text-dim)] mb-2" />
-                  <span className="text-sm text-[var(--text-muted)] mb-1">Nenhum ativo na carteira</span>
+                <div className="flex flex-col items-center justify-center py-9 px-4 text-center bg-[radial-gradient(ellipse_at_center,rgba(50,107,255,0.055),transparent_65%)]">
+                  <PieChart size={32} className="text-[#326bff] mb-3" />
+                  <span className="text-base font-semibold text-[var(--text-primary)] mb-1">Nenhum ativo na carteira</span>
                   <span className="text-xs text-[var(--text-dim)]">Comece a negociar para montar sua carteira</span>
                   <Link
                     href="/trade"
@@ -511,26 +513,28 @@ export default function Dashboard() {
           {/* Right Column - Allocation, Watchlist, Recent */}
           <div className="flex flex-col gap-5">
             {/* Portfolio Allocation */}
-            <div className="bg-[var(--bg-card)] rounded-xl p-5 border border-[var(--border-primary)]">
+            <div className="bg-[var(--bg-card)] rounded-2xl p-5 border border-[var(--border-primary)] shadow-[0_6px_24px_rgba(15,35,60,0.045)]">
               <div className="flex items-center gap-2 mb-4">
                 <PieChart size={16} className="text-[var(--accent-primary)]" />
                 <span className="text-sm font-semibold text-[var(--text-primary)]">Alocação</span>
               </div>
 
-              {/* Allocation Bar */}
-              <div className="h-3 rounded-full overflow-hidden flex mb-4 bg-[var(--bg-muted)]">
-                {allocation.map((item, idx) => (
-                  item.percent > 0 && (
-                    <div
-                      key={item.label}
-                      className="h-full transition-all"
-                      style={{
-                        width: `${item.percent}%`,
-                        backgroundColor: item.color,
-                      }}
-                    />
-                  )
-                ))}
+              <div className="flex items-center gap-5 mb-5">
+                <div className="relative h-28 w-28 shrink-0 rounded-full" style={{
+                  background: totalValue > 0
+                    ? `conic-gradient(var(--accent-primary) 0% ${allocation[0].percent}%, var(--accent-green) ${allocation[0].percent}% ${allocation[0].percent + allocation[1].percent}%, var(--text-muted) ${allocation[0].percent + allocation[1].percent}% 100%)`
+                    : "var(--bg-muted)"
+                }}>
+                  <div className="absolute inset-[15px] rounded-full bg-[var(--bg-card)] flex flex-col items-center justify-center">
+                    <span className="text-[10px] text-[var(--text-muted)]">Distribuição</span>
+                    <span className="text-lg font-semibold tabular-nums text-[var(--text-primary)]">100%</span>
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-[var(--text-muted)]">Composição da carteira</p>
+                  <p className="text-lg font-semibold tabular-nums text-[var(--text-primary)] break-words">{formatCurrency(totalValue, false)}</p>
+                  <p className="mt-1 text-[11px] text-[var(--text-dim)]">Saldo e ativos em carteira</p>
+                </div>
               </div>
 
               {/* Legend */}
@@ -567,7 +571,7 @@ export default function Dashboard() {
                   <Star size={24} className="text-[var(--text-dim)] mb-2" />
                   <span className="text-xs text-[var(--text-muted)]">Nenhum ativo na lista</span>
                   <Link href="/watchlist" className="text-[11px] text-[var(--accent-primary)] mt-1 hover:underline">
-                    Add stocks to watch
+                    Adicionar ativos à lista
                   </Link>
                 </div>
               ) : (
