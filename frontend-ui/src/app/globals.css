@@ -211,3 +211,18 @@ div:has(> .master-topnav) > main {
     letter-spacing: -0.025em;
   }
 }
+
+/* Compact desktop density: preserve touch-friendly controls on narrow screens. */
+@media (min-width: 1024px) {
+  html { font-size: 15px; }
+  div:has(> .master-topnav) > main {
+    max-width: 1440px;
+    margin-inline: auto;
+  }
+}
+.trade-workspace { width: 100%; }
+.trade-workspace-grid { align-items: start; }
+.trade-order-panel { align-self: start; }
+@media (max-width: 1023px) {
+  .trade-order-panel { position: static; }
+}
