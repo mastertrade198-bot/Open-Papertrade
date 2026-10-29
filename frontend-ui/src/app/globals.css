@@ -140,8 +140,12 @@ button, a, input, select, textarea {
     font-family: "Inter", system-ui, sans-serif;
   }
 
+  /* Financial figures across the interface use the same modern Inter family. */
   .font-mono {
-    font-family: "DM Mono", "JetBrains Mono", monospace;
+    font-family: "Inter", system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    letter-spacing: -0.015em;
   }
 
   .font-serif {
@@ -254,7 +258,7 @@ div:has(> .master-topnav) > main {
 }
 .trade-terminal .trade-overview-card > strong {
   color: var(--text-primary);
-  font-family: "DM Mono","JetBrains Mono",monospace;
+  font-family: "Inter",system-ui,sans-serif;
   font-size: clamp(14px,1.3vw,18px);
   font-weight: 650;
   letter-spacing: -.035em;
