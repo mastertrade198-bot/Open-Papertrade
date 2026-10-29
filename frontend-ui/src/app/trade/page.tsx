@@ -721,6 +721,13 @@ function TradePageContent() {
                 </div>
               </div>
 
+              {/* Secondary calculations stay accessible without competing with order entry. */}
+              <details className="group rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)]">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-xs font-semibold text-[var(--text-secondary)] marker:hidden">
+                  Detalhes e projeções da ordem
+                  <ChevronDown size={15} className="text-[var(--text-muted)] transition-transform group-open:rotate-180" />
+                </summary>
+                <div className="border-t border-[var(--border-primary)] px-3 py-2">
               {/* Order Summary */}
               <div className="flex flex-col gap-0 border-y border-[var(--border-primary)]">
                 <div className="flex items-center justify-between py-1.5 border-b border-[var(--border-primary)]">
@@ -754,6 +761,9 @@ function TradePageContent() {
                   </span>
                 </div>
               </div>
+
+                </div>
+              </details>
 
               {/* Available Balance */}
               <div className="hidden items-center justify-between text-xs py-1">
