@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, [pathname, router]);
 
-  const publicPaths = ["/login", "/signup", "/verify-email", "/forgot-password", "/reset-password", "/maintenance"];
+  const publicPaths = ["/", "/login", "/signup", "/verify-email", "/forgot-password", "/reset-password", "/maintenance"];
 
   // Redirect unauthenticated users to login
   useEffect(() => {
