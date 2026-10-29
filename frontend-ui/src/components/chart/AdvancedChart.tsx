@@ -1048,9 +1048,9 @@ export default function AdvancedChart({
       className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] overflow-hidden flex flex-col"
     >
       {/* --- Header: symbol + price + timeframe + chart type + indicators + scale + snapshot --- */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border-primary)] flex-wrap">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border-primary)] flex-wrap">
         {/* Symbol + price */}
-        <div className="flex items-center gap-3 min-w-[180px]">
+        <div className="flex items-center gap-2 min-w-[150px]">
           <div>
             <div className="font-mono text-sm font-semibold text-[var(--text-primary)]">{symbol}</div>
             {symbolName && (
@@ -1197,96 +1197,10 @@ export default function AdvancedChart({
           )}
         </div>
 
-        {/* Feature buttons */}
-        <div className="flex items-center gap-1">
-          <FeatureButton
-            icon={Play}
-            label="Replay"
-            active={replayActive}
-            onClick={() => (replayActive ? exitReplay() : startReplay())}
-          />
-          <div className="relative">
-            <FeatureButton
-              icon={GitCompare}
-              label="Comparar"
-              active={compareSymbols.length > 0}
-              badge={compareSymbols.length || undefined}
-              onClick={() => setShowCompareMenu((v) => !v)}
-            />
-            {showCompareMenu && (
-              <div className="absolute top-full left-0 mt-1 w-64 bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-lg shadow-2xl z-50 p-3">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)] mb-2">
-                  Overlay Symbols ({compareSymbols.length}/5)
-                </div>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    addCompareSymbol();
-                  }}
-                  className="flex gap-1 mb-2"
-                >
-                  <input
-                    value={compareInput}
-                    onChange={(e) => setCompareInput(e.target.value)}
-                    placeholder="Symbol…"
-                    className="flex-1 px-2 py-1.5 rounded bg-[var(--bg-muted)] border border-[var(--border-primary)] text-xs font-mono text-[var(--text-primary)] placeholder:text-[var(--text-dim)] focus:border-[var(--accent-primary)] outline-none"
-                  />
-                  <button
-                    type="submit"
-                    className="px-2 py-1.5 rounded bg-[var(--accent-primary)] text-black"
-                  >
-                    <Plus size={14} />
-                  </button>
-                </form>
-                {compareSymbols.length === 0 ? (
-                  <div className="text-[11px] text-[var(--text-dim)] text-center py-2">
-                    No compare symbols
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-1">
-                    {compareSymbols.map((s, i) => (
-                      <div
-                        key={s}
-                        className="flex items-center gap-2 px-2 py-1.5 rounded bg-[var(--bg-muted)]/50"
-                      >
-                        <span
-                          className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: COMPARE_COLORS[i % COMPARE_COLORS.length] }}
-                        />
-                        <span className="font-mono text-xs text-[var(--text-primary)] flex-1">{s}</span>
-                        <button
-                          onClick={() => removeCompareSymbol(s)}
-                          className="text-[var(--text-muted)] hover:text-[var(--accent-red)]"
-                        >
-                          <X size={12} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <FeatureButton
-            icon={Bell}
-            label="Alertas"
-            badge={alerts.length || undefined}
-            onClick={handleCreateAlert}
-          />
-          <FeatureButton
-            icon={Scan}
-            label="Padrões"
-            active={showPatterns}
-            badge={showPatterns ? patterns.length || undefined : undefined}
-            onClick={togglePatterns}
-          />
-          <FeatureButton
-            icon={BarChartHorizontal}
-            label="V.Profile"
-            active={showVolumeProfile}
-            onClick={() => setShowVolumeProfile((v) => !v)}
-          />
-
+        {/* Essential trading tools; advanced overlays remain in the indicators menu. */}
+        <div className="flex shrink-0 items-center gap-1">
+          <FeatureButton icon={Bell} label="Alertas" badge={alerts.length || undefined} onClick={handleCreateAlert} />
+          <FeatureButton icon={BarChartHorizontal} label="Volume" active={showVolumeProfile} onClick={() => setShowVolumeProfile(v => !v)} />
         </div>
 
         <div className="ml-auto flex items-center gap-1">
@@ -1363,7 +1277,7 @@ export default function AdvancedChart({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border-primary)] bg-[var(--bg-muted)]/40 px-3 py-2 text-[11px]">
+      <div className="flex items-center gap-2 border-b border-[var(--border-primary)] bg-[var(--bg-muted)]/30 px-3 py-1.5 text-[10px]">
         <span className="font-semibold text-[var(--text-primary)]">Desenho:</span>
         <span className="text-[var(--text-muted)]">{activeTool === "cursor" ? "Selecione uma ferramenta na barra lateral" : activeTool === "horizontalLine" ? "Clique uma vez no preço para criar a linha horizontal" : activeTool === "trendline" ? "Clique em dois pontos para traçar a tendência" : activeTool === "fibonacci" ? "Marque o início e o fim do movimento" : activeTool === "rectangle" ? "Marque dois cantos da área" : "Clique no local desejado"}</span>
         {activeTool !== "cursor" && <button type="button" onClick={() => setActiveTool("cursor")} className="ml-auto rounded border border-[var(--border-primary)] px-2 py-1 text-[var(--text-primary)]">Cancelar (Esc)</button>}
@@ -1371,7 +1285,7 @@ export default function AdvancedChart({
       {/* --- Body: left toolbar + chart area --- */}
       <div className="flex flex-1" style={{ minHeight: chartHeight }}>
         {/* Drawing toolbar (vertical) */}
-        <div className="flex flex-col gap-1 p-2 border-r border-[var(--border-primary)] bg-[var(--bg-card)]" aria-label="Ferramentas de desenho">
+        <div className="flex flex-col gap-1 p-1 border-r border-[var(--border-primary)] bg-[var(--bg-card)]" aria-label="Ferramentas de desenho">
           {DRAWING_TOOLS.map(({ id, icon: Icon, label }) => (
             <button
               key={id}
