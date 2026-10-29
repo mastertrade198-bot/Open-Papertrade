@@ -75,24 +75,24 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex h-full w-full bg-[var(--bg-primary)]">
+    <div className="flex min-h-screen w-full bg-[var(--bg-primary)]">
       {/* Left Panel - Branding */}
-      <div className="hidden lg:flex flex-1 flex-col justify-between bg-[var(--bg-sidebar)] p-[60px]">
+      <div className="hidden lg:flex min-w-0 flex-1 flex-col justify-between border-r border-[var(--border-primary)] bg-[var(--bg-sidebar)] px-10 py-12 xl:px-16 xl:py-16">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3.5 hover:opacity-80 transition-opacity">
           <img src="/logo.png" alt="Master Trade" width={40} height={40} />
           <div className="flex items-center gap-1.5">
-            <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">MASTER</span>
-            <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">TRADE</span>
+            <span className="text-base font-semibold tracking-[.08em] text-[var(--text-primary)]">MASTER</span>
+            <span className="text-base font-bold tracking-[.08em] text-[var(--accent-primary)]">TRADE</span>
           </div>
         </Link>
 
         {/* Center Content */}
         <div className="flex flex-col gap-8">
-          <h1 className="font-serif text-[56px] font-medium leading-[1.1] tracking-[-1px] text-[var(--text-primary)]">
-            Negocie com inteligência.
+          <h1 className="font-serif max-w-[580px] text-[40px] font-semibold leading-[1.2] tracking-tight xl:text-[48px] text-[var(--text-primary)]">
+            Explore mercados com clareza.
             <br />
-            Gerencie seus riscos.
+            Pratique com confiança.
           </h1>
           <p className="text-lg text-[var(--text-muted)] leading-[1.6]">
             Pratique com US$ 100 mil em saldo virtual.
@@ -100,55 +100,20 @@ export default function LoginPage() {
             Conheça os mercados antes de operar.
           </p>
 
-          {/* Stats */}
-          <div className="flex gap-12">
-            <div className="flex flex-col gap-1">
-              <span className="font-mono text-[32px] font-semibold text-[var(--accent-primary)]">
-                10,000+
-              </span>
-              <span className="text-sm text-[var(--text-muted)]">
-                Ações e criptomoedas
-              </span>
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="font-mono text-[32px] font-semibold text-[var(--accent-primary)]">
-                Ao vivo
-              </span>
-              <span className="text-sm text-[var(--text-muted)]">
-                Cotações de mercado
-              </span>
-            </div>
-          </div>
+
         </div>
 
-        {/* Testimonial */}
-        <div className="flex flex-col gap-4 rounded-xl border border-[var(--border-primary)] p-6">
-          <p className="text-base italic text-[var(--text-primary)] leading-[1.5]">
-            &ldquo;Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-            Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.&rdquo;
-          </p>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[var(--border-muted)]" />
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-semibold text-[var(--text-primary)]">
-                Jane Doe
-              </span>
-              <span className="text-[13px] text-[var(--text-muted)]">
-                Trader, há 2 anos na plataforma
-              </span>
-            </div>
-          </div>
-        </div>
+        <p className="max-w-md border-t border-[var(--border-primary)] pt-6 text-sm leading-6 text-[var(--text-muted)]">Ambiente de trading simulado. Operações demonstrativas não representam negociações reais.</p>
       </div>
 
       {/* Right Panel - Login Form */}
-      <div className="flex flex-col items-center justify-center w-full lg:w-[520px] lg:min-w-[520px] px-8 py-[60px] lg:px-[80px]">
+      <div className="flex w-full flex-col items-center justify-center px-6 py-12 sm:px-10 lg:w-[520px] lg:min-w-[520px] lg:px-14">
         {/* Mobile Logo */}
         <div className="flex items-center gap-3.5 mb-12 lg:hidden">
           <img src="/logo.png" alt="Master Trade" width={40} height={40} />
           <div className="flex items-center gap-1.5">
-            <span className="font-mono text-lg tracking-[4px] text-[var(--text-primary)]">MASTER</span>
-            <span className="font-mono text-lg font-bold tracking-[4px] text-[var(--accent-primary)]">TRADE</span>
+            <span className="text-base font-semibold tracking-[.08em] text-[var(--text-primary)]">MASTER</span>
+            <span className="text-base font-bold tracking-[.08em] text-[var(--accent-primary)]">TRADE</span>
           </div>
         </div>
 
