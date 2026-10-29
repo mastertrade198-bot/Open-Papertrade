@@ -119,8 +119,6 @@ export default function AccountPage() {
   // Edit state
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState("");
-  const [editUsername, setEditUsername] = useState("");
-  const [usernameError, setUsernameError] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editCpf, setEditCpf] = useState("");
   const [editDateOfBirth, setEditDateOfBirth] = useState("");
@@ -161,7 +159,6 @@ export default function AccountPage() {
       setProfile(profileRes.profile);
       setSettings(profileRes.settings);
       setEditName(profileRes.profile.name);
-      setEditUsername(profileRes.profile.username || '');
       setEditEmail(profileRes.profile.email);
       setEditCpf(profileRes.profile.cpf || "");
       setEditDateOfBirth(profileRes.profile.dateOfBirth || "");
@@ -193,13 +190,6 @@ export default function AccountPage() {
   const handleSaveProfile = async () => {
     if (!profile) return;
 
-    // Validate username
-    if (editUsername && !/^[a-z0-9](?:[a-z0-9-]{1,28}[a-z0-9])?$/.test(editUsername)) {
-      setUsernameError("Use de 3 a 30 caracteres: letras minúsculas, números e hífens");
-      return;
-    }
-    setUsernameError("");
-
     setIsSaving(true);
     try {
       const updated = await userAPI.updateProfile({
@@ -208,7 +198,6 @@ export default function AccountPage() {
         cpf: editCpf,
         dateOfBirth: editDateOfBirth,
         phone: editPhone,
-        ...(editUsername ? { username: editUsername } : {}),
       } as any);
       setProfile({ ...profile, ...updated });
       setIsEditing(false);
@@ -670,12 +659,10 @@ export default function AccountPage() {
                     setIsEditing(!isEditing);
                     if (!isEditing) {
                       setEditName(profile.name);
-                      setEditUsername(profile.username || '');
                       setEditEmail(profile.email);
                       setEditCpf(profile.cpf || "");
                       setEditDateOfBirth(profile.dateOfBirth || "");
                       setEditPhone(profile.phone || "");
-                      setUsernameError("");
                     }
                   }}
                   className="flex items-center gap-2 text-[11px] font-medium text-[var(--accent-primary)] hover:underline"
@@ -744,27 +731,6 @@ export default function AccountPage() {
                       </div>
                       <div>
                         <label className="text-[11px] font-medium text-[var(--text-muted)] mb-1 block">
-                          Username
-                        </label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-[var(--text-dim)]">@</span>
-                          <input
-                            type="text"
-                            value={editUsername}
-                            onChange={(e) => {
-                              setEditUsername(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
-                              setUsernameError("");
-                            }}
-                            maxLength={30}
-                            className="w-full pl-7 pr-3 py-2 rounded-lg bg-[var(--bg-card-inner)] border border-[var(--border-muted)] text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]"
-                          />
-                        </div>
-                        {usernameError && (
-                          <span className="text-[10px] text-[var(--accent-red)] mt-1 block">{usernameError}</span>
-                        )}
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-medium text-[var(--text-muted)] mb-1 block">
                           Email
                         </label>
                         <input
@@ -801,11 +767,6 @@ export default function AccountPage() {
                       <h3 className="text-xl font-semibold text-[var(--text-primary)]">
                         {profile.name}
                       </h3>
-                      {profile.username && (
-                        <p className="text-sm text-[var(--text-muted)] mt-0.5">
-                          @{profile.username}
-                        </p>
-                      )}
                       <p className="text-sm text-[var(--text-muted)] mt-1">{profile.email}</p>
                       <p className="text-xs text-[var(--text-muted)] mt-2">CPF: {profile.cpf || "Não informado"}</p>
                       <p className="text-xs text-[var(--text-muted)] mt-1">Data de nascimento: {profile.dateOfBirth ? profile.dateOfBirth.split("-").reverse().join("/") : "Não informada"}</p>
