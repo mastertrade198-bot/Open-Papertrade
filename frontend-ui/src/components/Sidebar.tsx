@@ -41,7 +41,7 @@ export default function Sidebar() {
 
   return (
     <header className="master-topnav relative z-[100] min-h-[66px] border-b border-[var(--border-primary)] bg-[var(--bg-sidebar)]/95 backdrop-blur-xl">
-      <div className="mx-auto flex min-h-[66px] w-full max-w-[1920px] flex-wrap items-center gap-x-2 gap-y-1 px-3 py-2 lg:px-4">
+      <div className="mx-auto flex min-h-[66px] w-full max-w-[1920px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 lg:px-6">
         <Link href="/dashboard" className="flex shrink-0 items-center gap-2.5 hover:opacity-90" aria-label="Master Trade — Painel">
           <img src="/logo.png" alt="" width={26} height={26} className="rounded-lg" />
           <span className="whitespace-nowrap text-[12px] font-extrabold tracking-[.07em] text-[var(--text-primary)]">
@@ -49,12 +49,12 @@ export default function Sidebar() {
           </span>
         </Link>
         <div className="hidden h-6 w-px bg-[var(--border-primary)] xl:block" />
-        <nav aria-label="Navegação principal" className="order-3 flex w-full min-w-0 flex-wrap items-center justify-start gap-1 lg:order-none lg:w-auto lg:flex-1">
+        <nav aria-label="Navegação principal" className="order-3 flex w-full min-w-0 items-center justify-start gap-1 overflow-x-auto whitespace-nowrap pb-1 lg:order-none lg:w-auto lg:flex-1 lg:pb-0">
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
             return (
               <Link key={href} href={href} aria-current={active ? "page" : undefined}
-                className={`flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-2 text-[13px] font-semibold transition-colors ${active ? "bg-[var(--bg-hover)] text-[var(--accent-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"}`}>
+                className={`flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-2 text-[12px] font-medium transition-colors ${active ? "bg-[var(--bg-muted)] text-[var(--accent-primary)]" : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"}`}>
                 <Icon size={15} strokeWidth={1.8} />{label}
               </Link>
             );
