@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff, CircleCheck, Mail, ArrowLeft, AtSign, Check, X as XIcon } from "lucide-react";
+import { Eye, EyeOff, CircleCheck, Mail, ArrowLeft, Check, X as XIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 const features = [
@@ -16,8 +16,6 @@ const features = [
 export default function SignupPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [username, setUsername] = useState("");
-  const [usernameError, setUsernameError] = useState("");
   const [email, setEmail] = useState("");
   const [cpf, setCpf] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
@@ -34,46 +32,8 @@ export default function SignupPage() {
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
 
-  const [usernameManuallyEdited, setUsernameManuallyEdited] = useState(false);
   const { signup, resendVerification } = useAuth();
   const router = useRouter();
-
-  // Validate username format
-  const validateUsername = useCallback((value: string) => {
-    if (!value) {
-      setUsernameError("");
-      return;
-    }
-    if (value.length < 3) {
-      setUsernameError("Use pelo menos 3 caracteres");
-      return;
-    }
-    if (!/^[a-z0-9](?:[a-z0-9-]{0,28}[a-z0-9])?$/.test(value)) {
-      setUsernameError("Use apenas letras minúsculas, números e hífens");
-      return;
-    }
-    setUsernameError("");
-  }, []);
-
-  // Auto-generate username from name if not manually edited
-  useEffect(() => {
-    if (usernameManuallyEdited) return;
-    const name = `${firstName} ${lastName}`.trim();
-    if (!name) {
-      setUsername("");
-      return;
-    }
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-    setUsername(slug);
-    validateUsername(slug);
-  }, [firstName, lastName, usernameManuallyEdited, validateUsername]);
-
-  const handleUsernameChange = (value: string) => {
-    const cleaned = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-    setUsername(cleaned);
-    setUsernameManuallyEdited(true);
-    validateUsername(cleaned);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +43,7 @@ export default function SignupPage() {
     try {
       const name = `${firstName} ${lastName}`.trim();
       if (cpf && !/^\d{11}$/.test(cpf)) { setError("CPF deve conter 11 dígitos"); setIsLoading(false); return; }
-      const result = await signup(name, email, password, username || undefined, { cpf, dateOfBirth, phone });
+      const result = await signup(name, email, password, undefined, { cpf, dateOfBirth, phone });
 
       if (result.emailVerificationRequired) {
         setVerificationEmail(email);
@@ -289,31 +249,6 @@ export default function SignupPage() {
                   className="w-full rounded-lg border border-[var(--border-muted)] bg-transparent px-3.5 py-3 text-[15px] text-[var(--text-primary)] placeholder-[var(--text-dim)] outline-none focus:border-[var(--accent-primary)] transition-colors"
                 />
               </div>
-            </div>
-
-            {/* Username */}
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-[var(--text-primary)]">
-                Nome de usuário
-              </label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] text-[var(--text-dim)]">@</span>
-                <input
-                  type="text"
-                  placeholder="john-doe"
-                  value={username}
-                  onChange={(e) => handleUsernameChange(e.target.value)}
-                  maxLength={30}
-                  className="w-full rounded-lg border border-[var(--border-muted)] bg-transparent pl-8 pr-3.5 py-3 text-[15px] text-[var(--text-primary)] placeholder-[var(--text-dim)] outline-none focus:border-[var(--accent-primary)] transition-colors"
-                />
-              </div>
-              {usernameError ? (
-                <span className="text-xs text-[var(--accent-red)]">{usernameError}</span>
-              ) : username.length >= 3 ? (
-                <span className="text-xs text-[var(--accent-green)]">Nome de usuário disponível</span>
-              ) : (
-                <span className="text-xs text-[var(--text-muted)]">De 3 a 30 caracteres: letras, números e hífens</span>
-              )}
             </div>
 
             {/* Email */}
