@@ -877,6 +877,8 @@ class BalanceTransaction(models.Model):
 
     class Meta:
         db_table = "balance_transactions"
+        verbose_name = "Lançamento de extrato"
+        verbose_name_plural = "Extrato"
         ordering = ["-created_at", "-id"]
         indexes = [models.Index(fields=["user", "created_at"])]
 
