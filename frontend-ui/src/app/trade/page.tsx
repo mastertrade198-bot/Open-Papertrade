@@ -19,6 +19,7 @@ import {
   BarChart3,
   RefreshCw,
   ShieldCheck,
+  Star,
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import PageHeader from "@/components/PageHeader";
@@ -134,11 +135,14 @@ function TradePageContent() {
     return Array.from(groups, ([name, assets]) => ({ name, assets }));
   }, [availableAssets]);
 
-  const [marketCategory, setMarketCategory] = useState("Todos");
+  const [marketCategory, setMarketCategory] = useState("Favoritos");
+  const [favoriteSymbols, setFavoriteSymbols] = useState<string[]>(["AAPL","MSFT","NVDA","AMZN","GOOGL","TSLA","BTC-USD","ETH-USD","SPY","QQQ"]);
+  useEffect(() => { try { const saved = localStorage.getItem("trade_favorite_symbols"); if (saved) { const value = JSON.parse(saved); if (Array.isArray(value)) setFavoriteSymbols(value.filter((v): v is string => typeof v === "string")); } } catch {} }, []);
+  const toggleFavorite = (symbol: string) => setFavoriteSymbols(previous => { const next = previous.includes(symbol) ? previous.filter(v => v !== symbol) : [...previous,symbol]; try { localStorage.setItem("trade_favorite_symbols",JSON.stringify(next)); } catch {} return next; });
   const visibleMarketAssets = useMemo(() => availableAssets.filter(asset =>
-    (marketCategory === "Todos" || asset.category === marketCategory) &&
+    (marketCategory === "Todos" || (marketCategory === "Favoritos" ? favoriteSymbols.includes(asset.symbol) : asset.category === marketCategory)) &&
     (!searchQuery.trim() || `${asset.symbol} ${asset.displaySymbol || ""} ${asset.name}`.toLocaleLowerCase("pt-BR").includes(searchQuery.trim().toLocaleLowerCase("pt-BR")))
-  ), [availableAssets, marketCategory, searchQuery]);
+  ), [availableAssets, marketCategory, searchQuery, favoriteSymbols]);
 
   useEffect(() => { void refreshCatalog(); }, [refreshCatalog]);
 
@@ -420,7 +424,7 @@ function TradePageContent() {
         )}
 
         {/* Main Trade Area */}
-        <div className="trade-workspace-grid grid grid-cols-1 lg:grid-cols-[230px_minmax(0,1fr)] xl:grid-cols-[250px_minmax(0,1fr)_300px] gap-0 items-stretch min-w-0 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card-inner)] overflow-hidden">
+        <div className="trade-workspace-grid grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[265px_minmax(0,1fr)_295px] gap-0 items-stretch min-w-0 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card-inner)] overflow-hidden">
           <aside aria-label="Lista de mercados" className="min-w-0 border-b lg:border-b-0 lg:border-r border-[var(--border-primary)] bg-[var(--bg-card-inner)] flex flex-col">
             <div className="p-3 border-b border-[var(--border-primary)]">
               <div className="flex items-center justify-between mb-3">
@@ -434,19 +438,19 @@ function TradePageContent() {
               </label>
             </div>
             <div className="flex gap-1 overflow-x-auto px-2 py-2 border-b border-[var(--border-primary)]" role="tablist" aria-label="Categorias de ativos">
-              {["Todos", ...assetCategories.map(category => category.name)].map(category => (
+              {["Favoritos", "Todos", ...assetCategories.map(category => category.name)].map(category => (
                 <button key={category} type="button" role="tab" aria-selected={marketCategory === category} onClick={() => setMarketCategory(category)} className={`shrink-0 rounded px-2 py-1.5 text-[11px] font-semibold transition-colors ${marketCategory === category ? "bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]" : "text-[var(--text-muted)] hover:bg-[var(--bg-muted)]"}`}>{category}</button>
               ))}
             </div>
-            <div className="flex items-center justify-between px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"><span>Ativo</span><span>Último / 24h</span></div>
+            <div className="flex items-center justify-between px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"><span>Ativo</span><span>Preço / Variação</span></div>
             <div className="max-h-[560px] overflow-y-auto flex-1">
               {visibleMarketAssets.map(asset => {
                 const item = getStockBySymbol(asset.symbol);
                 const change = item?.changePercent;
-                return <button key={asset.symbol} type="button" onClick={() => selectStock({symbol:asset.symbol,name:asset.name,provider:"catalog"})} aria-pressed={selectedSymbol === asset.symbol} className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left border-b border-[var(--border-primary)]/40 hover:bg-[var(--bg-hover)] transition-colors ${selectedSymbol === asset.symbol ? "bg-[var(--accent-primary)]/10 border-l-2 border-l-[var(--accent-primary)]" : ""}`}>
+                return <div key={asset.symbol} className={`flex items-center border-b border-[var(--border-primary)]/40 hover:bg-[var(--bg-hover)] transition-colors ${selectedSymbol === asset.symbol ? "bg-[var(--accent-primary)]/10 border-l-2 border-l-[var(--accent-primary)]" : ""}`}><button type="button" onClick={() => toggleFavorite(asset.symbol)} title={favoriteSymbols.includes(asset.symbol) ? "Remover dos favoritos" : "Adicionar aos favoritos"} aria-label={`Favoritar ${asset.symbol}`} className="shrink-0 pl-2 py-3 text-[var(--accent-primary)]"><Star size={15} fill={favoriteSymbols.includes(asset.symbol) ? "currentColor" : "none"}/></button><button type="button" onClick={() => selectStock({symbol:asset.symbol,name:asset.name,provider:"catalog"})} aria-pressed={selectedSymbol === asset.symbol} className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2 py-2.5 text-left">
                   <span className="min-w-0"><span className="block text-xs font-semibold text-[var(--text-primary)]">{asset.displaySymbol || asset.symbol}</span><span className="block truncate text-[10px] text-[var(--text-muted)]">{asset.name}</span></span>
                   <span className="shrink-0 text-right"><span className="block text-xs font-semibold tabular-nums text-[var(--text-primary)]">{item && Number.isFinite(item.price) ? Number(item.price).toFixed(2) : "—"}</span><span className={`text-[10px] tabular-nums ${typeof change === "number" && change >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{typeof change === "number" && Number.isFinite(change) ? `${change > 0 ? "+" : ""}${change.toFixed(2)}%` : "—"}</span></span>
-                </button>;
+                </button></div>;
               })}
               {visibleMarketAssets.length === 0 && <p className="px-3 py-6 text-center text-xs text-[var(--text-muted)]">{catalogLoading ? "Carregando ativos..." : "Nenhum ativo encontrado nesta categoria."}</p>}
               {catalogError && <p className="p-3 text-xs text-[var(--accent-red)]">{catalogError}</p>}
@@ -454,11 +458,11 @@ function TradePageContent() {
             <div className="border-t border-[var(--border-primary)] px-3 py-2 text-[10px] text-[var(--text-muted)]">{visibleMarketAssets.length} ativos exibidos</div>
           </aside>
           {/* Left Panel - Stock Selection */}
-          <div className="min-w-0 flex flex-col gap-2 p-2.5">
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-2.5 text-xs">
-              <strong className="text-sm text-[var(--text-primary)]">{displaySymbol(selectedSymbol)}</strong>
+          <div className="min-w-0 flex flex-col gap-0 p-2">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-3 text-xs">
+              <strong className="text-lg text-[var(--text-primary)]">{displaySymbol(selectedSymbol)}</strong>
               <span className="max-w-32 truncate text-[var(--text-muted)]">{selectedQuote?.name || selectedSymbol}</span>
-              <strong className="text-sm tabular-nums text-[var(--text-primary)]">{formatCurrency(currentPrice, false, {sourceCurrency})}</strong>
+              <strong className="text-xl tabular-nums text-[var(--text-primary)]">{formatCurrency(currentPrice, false, {sourceCurrency})}</strong>
               {selectedQuote && <>
                 <span className="text-[var(--text-muted)]">Abert. <b className="tabular-nums text-[var(--text-primary)]">{selectedQuote.open.toFixed(2)}</b></span>
                 <span className="text-[var(--text-muted)]">Máx. <b className="tabular-nums text-[var(--accent-green)]">{selectedQuote.high.toFixed(2)}</b></span>
@@ -467,14 +471,14 @@ function TradePageContent() {
               </>}
             </div>
             <section aria-label="Gráfico avançado de negociação" className="min-w-0">
-              {chartLayout !== undefined ? <AdvancedChart key={selectedSymbol} symbol={selectedSymbol} symbolName={selectedQuote?.name || undefined} initialState={chartLayout} onStateChange={saveChartLayout} height={560} /> : <div className="h-[560px] rounded-xl bg-[var(--bg-card)]" />}
+              {chartLayout !== undefined ? <AdvancedChart key={selectedSymbol} symbol={selectedSymbol} symbolName={selectedQuote?.name || undefined} initialState={chartLayout} onStateChange={saveChartLayout} height={480} /> : <div className="h-[480px] rounded bg-[var(--bg-card)]" />}
             </section>
           </div>
 
           {/* Right Panel - Order Form */}
           <aside aria-label="Painel de ordens" className="trade-order-panel w-full min-w-0 flex flex-col gap-2 p-2.5 border-t xl:border-t-0 xl:border-l border-[var(--border-primary)]">
             {/* Order Form */}
-            <div className="trade-ticket bg-[var(--bg-card)] rounded-lg p-3 border border-[var(--border-primary)] flex flex-col gap-2.5">
+            <div className="trade-ticket bg-[var(--bg-card)] rounded-md p-3 border border-[var(--border-primary)] flex flex-col gap-2.5">
               <div className="flex items-center justify-between gap-2 border-b border-[var(--border-primary)] pb-3"><div><p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Enviar ordem</p><h2 className="mt-0.5 text-base font-bold text-[var(--text-primary)]">{displaySymbol(selectedSymbol)} <span className="text-xs font-normal text-[var(--text-muted)]">/ USD</span></h2></div><span className="rounded bg-[var(--bg-muted)] px-2 py-1 text-[10px] font-semibold text-[var(--text-secondary)]">A mercado</span></div>
               {/* Buy/Sell Toggle */}
               <div className="grid grid-cols-2 gap-1 rounded-lg bg-[var(--bg-card-inner)] p-1">
@@ -633,8 +637,8 @@ function TradePageContent() {
 
           </aside>
         </div>
-        <div className="w-full min-w-0 shrink-0 space-y-3">
-          <div className="flex flex-wrap items-end justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[var(--text-muted)]">Acompanhamento</p><h2 className="mt-1 text-base font-semibold text-[var(--text-primary)]">Posições e histórico</h2></div><span className="text-xs text-[var(--text-muted)]">{positions.filter(p => p.status === "OPEN").length} posições abertas</span></div>
+        <div className="w-full min-w-0 shrink-0 space-y-2">
+
             {/* Positions tab: the same positions opened by the Buy/Sell ticket. */}
             <section id="trade-positions" className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] overflow-hidden">
               <div className="flex items-center justify-between gap-3 border-b border-[var(--border-primary)] px-4 py-3">
