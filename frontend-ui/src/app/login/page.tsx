@@ -33,7 +33,7 @@ export default function LoginPage() {
         setTwoFactorRequired(true);
         setTempToken(result.tempToken || "");
       } else {
-        router.push("/");
+        router.push("/dashboard");
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Falha ao entrar";
@@ -53,7 +53,7 @@ export default function LoginPage() {
     setError("");
     try {
       await verify2FALogin(tempToken, twoFactorCode);
-      router.push("/");
+      router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha na verificação");
     } finally {
