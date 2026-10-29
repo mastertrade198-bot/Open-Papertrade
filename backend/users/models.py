@@ -742,6 +742,10 @@ class Backtest(models.Model):
         }
 
 
+class WithdrawalSequence(models.Model):
+    id = models.BigAutoField(primary_key=True)
+
+
 class WithdrawalRequest(models.Model):
     """Administrative tracking for simulated withdrawal requests."""
     class Status(models.TextChoices):
@@ -750,6 +754,7 @@ class WithdrawalRequest(models.Model):
         REJECTED = 'REJECTED', 'Rejeitado'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    number = models.OneToOneField(WithdrawalSequence, on_delete=models.PROTECT, null=True, blank=True, editable=False)
     user = models.ForeignKey(UserProfile, on_delete=models.PROTECT, related_name='withdrawal_requests')
     amount = models.DecimalField(max_digits=20, decimal_places=2)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
@@ -764,4 +769,15 @@ class WithdrawalRequest(models.Model):
         verbose_name_plural = 'Saques'
 
     def __str__(self):
-        return f'{self.user} - {self.amount} - {self.get_status_display()}'
+        return f'{self.transaction_id} - {self.user}'
+
+    @property
+    def transaction_id(self):
+        return str(self.number_id + 100000) if self.number_id else str(self.id)
+
+    def save(self, *args, **kwargs):
+        from django.db import transaction
+        with transaction.atomic():
+            if not self.number_id:
+                self.number = WithdrawalSequence.objects.create()
+            super().save(*args, **kwargs)
