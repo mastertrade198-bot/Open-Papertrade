@@ -294,7 +294,7 @@ export default function WatchlistPage() {
 
         {/* Stats Row */}
         <div className="grid grid-cols-4 gap-4">
-          <div className="group bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(255,92,0,0.12)]">
+          <div className="group bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
             <div className="flex items-center gap-2 mb-2">
               <Eye size={14} className="text-[var(--text-muted)]" />
               <span className="text-xs text-[var(--text-muted)]">Acompanhando</span>
@@ -304,7 +304,7 @@ export default function WatchlistPage() {
             </span>
           </div>
 
-          <div className="group bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(255,92,0,0.12)]">
+          <div className="group bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp size={14} className="text-[var(--accent-green)]" />
               <span className="text-xs text-[var(--text-muted)]">Altas</span>
@@ -314,7 +314,7 @@ export default function WatchlistPage() {
             </span>
           </div>
 
-          <div className="group bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(255,92,0,0.12)]">
+          <div className="group bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
             <div className="flex items-center gap-2 mb-2">
               <TrendingDown size={14} className="text-[var(--accent-red)]" />
               <span className="text-xs text-[var(--text-muted)]">Quedas</span>
@@ -324,7 +324,7 @@ export default function WatchlistPage() {
             </span>
           </div>
 
-          <div className="group bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(255,92,0,0.12)]">
+          <div className="group bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
             <div className="flex items-center gap-2 mb-2">
               <Bell size={14} className="text-[var(--accent-primary)]" />
               <span className="text-xs text-[var(--text-muted)]">Alertas ativos</span>
