@@ -362,10 +362,10 @@ function TradePageContent() {
   return (
     <div className="flex h-full bg-[var(--bg-primary)]">
       <Sidebar />
-      <main className="flex-1 min-w-0 flex flex-col gap-3 py-4 px-3 sm:px-5 xl:px-7 overflow-auto">
+      <main className="trade-workspace flex-1 min-w-0 flex flex-col gap-4 py-4 px-3 sm:px-5 lg:px-6 overflow-auto">
         <PageHeader
           title="Negociar"
-          subtitle="Terminal de negociação simulada · Ações, ETFs, criptomoedas, commodities e índices"
+          subtitle="Acompanhe o mercado, configure sua ordem e gerencie posições em um único lugar"
         />
 
         {/* Success/Error Message */}
@@ -387,7 +387,7 @@ function TradePageContent() {
         )}
 
         {/* Main Trade Area */}
-        <div className="flex flex-col xl:flex-row gap-3 items-start shrink-0 min-w-0">
+        <div className="trade-workspace-grid grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(280px,310px)] gap-4 items-start min-w-0">
           {/* Left Panel - Stock Selection */}
           <div className="flex-1 min-w-0 flex flex-col gap-3">
             {/* Compact trading instrument toolbar */}
@@ -552,7 +552,7 @@ function TradePageContent() {
                   </span>
                 </div>
                 <div className="text-right">
-                  <div className="font-mono text-2xl font-bold text-[var(--text-primary)]">
+                  <div className="font-mono text-xl font-bold text-[var(--text-primary)]">
                     {formatCurrency(currentPrice, false, { sourceCurrency })}
                   </div>
                   {selectedQuote && (
@@ -576,7 +576,7 @@ function TradePageContent() {
 
               {/* Stock Stats */}
               {selectedQuote && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 px-5 py-3 bg-[var(--bg-card-inner)] border-t border-[var(--border-primary)]">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 px-4 py-2.5 bg-[var(--bg-card-inner)] border-t border-[var(--border-primary)]">
                   <div>
                     <span className="text-[11px] text-[var(--text-muted)]">Abertura</span>
                     <div className="font-mono text-sm text-[var(--text-primary)]">
@@ -629,10 +629,11 @@ function TradePageContent() {
           </div>
 
           {/* Right Panel - Order Form */}
-          <div className="w-full xl:w-[300px] shrink-0 flex flex-col gap-2">
+          <aside aria-label="Painel de ordens" className="trade-order-panel w-full min-w-0 flex flex-col gap-3 lg:sticky lg:top-3">
             {/* Order Form */}
-            <div className="bg-[var(--bg-card)] rounded-xl p-3 border border-[var(--border-primary)] flex flex-col gap-3">
-              {/* Prominent available balance above order direction */}
+            <div className="bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] flex flex-col gap-4 shadow-[0_10px_30px_rgba(0,0,0,.045)]">
+              <div className="flex items-center justify-between gap-3"><div><p className="text-[10px] uppercase tracking-[.14em] text-[var(--text-muted)]">Boleta de negociação</p><h2 className="mt-1 text-base font-semibold text-[var(--text-primary)]">Nova ordem · {displaySymbol(selectedSymbol)}</h2></div><span className="rounded-md bg-[var(--bg-muted)] px-2 py-1 text-[10px] font-medium text-[var(--text-secondary)]">Mercado</span></div>
+              {/* Saldo disponível */}
               <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)] p-2.5" aria-live="polite">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-[var(--text-muted)]">Saldo disponível (USD)</span>
@@ -755,7 +756,7 @@ function TradePageContent() {
               </div>
 
               {/* Available Balance */}
-              <div className="flex items-center justify-between text-xs py-1">
+              <div className="hidden items-center justify-between text-xs py-1">
                 <span className="text-[var(--text-muted)]">
                   Margem disponível (USD)
                 </span>
@@ -778,13 +779,14 @@ function TradePageContent() {
               >
                 {getButtonText()}
               </button>
+              <p className="text-[10px] leading-4 text-[var(--text-muted)]">Ambiente de demonstração: as ordens não são encaminhadas a uma bolsa.</p>
             </div>
 
 
-          </div>
+          </aside>
         </div>
         <div className="w-full min-w-0 shrink-0 space-y-3">
-          <h2 className="text-lg font-semibold text-[var(--text-primary)]">Posições e histórico de operações</h2>
+          <div className="flex flex-wrap items-end justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-[.14em] text-[var(--text-muted)]">Acompanhamento</p><h2 className="mt-1 text-base font-semibold text-[var(--text-primary)]">Posições e histórico</h2></div><span className="text-xs text-[var(--text-muted)]">{positions.filter(p => p.status === "OPEN").length} posições abertas</span></div>
             {/* Positions tab: the same positions opened by the Buy/Sell ticket. */}
             <section id="trade-positions" className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] overflow-hidden">
               <div className="flex items-center justify-between gap-3 border-b border-[var(--border-primary)] px-4 py-3">
@@ -793,7 +795,7 @@ function TradePageContent() {
                     Posições ({positions.filter(p => p.status === "OPEN").length})
                   </button>
                   <button type="button" onClick={() => setPositionsTab("CLOSED")} className={`text-sm font-semibold pb-1 ${positionsTab === "CLOSED" ? "text-[var(--accent-primary)] border-b-2 border-[var(--accent-primary)]" : "text-[var(--text-muted)]"}`}>
-                    History
+                    Histórico
                   </button>
                 </div>
                 <button type="button" onClick={() => void refreshPositions()} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]">Atualizar</button>
@@ -835,8 +837,8 @@ function TradePageContent() {
 
       {/* Confirm Trade Dialog */}
       {showConfirmDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[var(--bg-card)] rounded-xl p-6 w-[400px] border border-[var(--border-primary)] shadow-2xl">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[200] p-4">
+          <div className="bg-[var(--bg-card)] rounded-xl p-5 sm:p-6 w-full max-w-[420px] max-h-[90vh] overflow-y-auto border border-[var(--border-primary)] shadow-2xl">
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <AlertTriangle size={18} className="text-[var(--accent-primary)]" />
@@ -896,7 +898,7 @@ function TradePageContent() {
                 onClick={() => setShowConfirmDialog(false)}
                 className="flex-1 py-3 rounded-lg bg-[var(--bg-muted)] text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
               >
-                Cancel
+                Cancelar
               </button>
               <button
                 onClick={executeTradeOrOrder}
