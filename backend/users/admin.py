@@ -380,10 +380,10 @@ from .models import WithdrawalRequest
 
 @admin.register(WithdrawalRequest)
 class WithdrawalRequestAdmin(ModelAdmin):
-    list_display = ('user', 'amount', 'status', 'requested_at', 'reviewed_at')
+    list_display = ('transaction_id', 'user', 'amount', 'status', 'requested_at', 'reviewed_at')
     list_filter = ('status', 'requested_at')
     search_fields = ('user__name', 'user__email')
-    readonly_fields = ('id', 'user', 'amount', 'status', 'requested_at', 'reviewed_at', 'reviewed_by')
-    fields = ('id', 'user', 'amount', 'status', 'requested_at', 'reviewed_at', 'reviewed_by', 'admin_note')
+    readonly_fields = ('transaction_id', 'id', 'user', 'amount', 'status', 'requested_at', 'reviewed_at', 'reviewed_by')
+    fields = ('transaction_id', 'id', 'user', 'amount', 'status', 'requested_at', 'reviewed_at', 'reviewed_by', 'admin_note')
     # Status changes are intentionally disabled until atomic balance accounting
     # and an auditable withdrawal approval/rejection service are integrated.
