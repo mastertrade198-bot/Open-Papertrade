@@ -42,6 +42,6 @@ class WithdrawalRequestsView(APIView):
             if not updated:
                 return Response({'error': 'Saldo insuficiente para a solicitação.'}, status=400)
             locked.refresh_from_db(fields=['buying_power'])
-            withdrawal = WithdrawalRequest.objects.create(user_id=locked.pk, amount=amount, method=method, destination=destination)
+            withdrawal = WithdrawalRequest.objects.create(user_id=locked.pk, amount=amount, method=method, destination=destination, funds_reserved=True)
             BalanceTransaction.objects.create(user=locked, amount=-amount, balance_before=before, balance_after=locked.buying_power, category='WITHDRAWAL_REQUEST', description=f'Saque {method} solicitado · {withdrawal.id}')
         return Response({'id': str(withdrawal.id), 'status': withdrawal.status}, status=status.HTTP_201_CREATED)
