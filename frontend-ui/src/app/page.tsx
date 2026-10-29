@@ -37,9 +37,7 @@ const tools = [
   { icon: ChartCandlestick, title: "Gráficos e análise técnica", description: "Visualize tendências e movimentos de preço em um ambiente projetado para decisões mais informadas." },
   { icon: Target, title: "Gestão de posições", description: "Acompanhe entradas, exposição e resultados de suas operações simuladas em um só lugar." },
   { icon: Wallet, title: "Visão integrada da carteira", description: "Consulte saldo, patrimônio e histórico de atividade em uma interface organizada." },
-  { icon: Zap, title: "Experiência fluida", description: "Navegação intuitiva entre mercados, negociação e acompanhamento de operações." },
-  { icon: ShieldCheck, title: "Ambiente de prática", description: "Experimente estratégias em um ambiente de simulação com informações claramente identificadas." },
-  { icon: MonitorSmartphone, title: "Acesso multiplataforma", description: "Interface responsiva para acompanhar a plataforma no computador, tablet ou celular." },
+
 ];
 
 const faqs = [
@@ -70,7 +68,7 @@ function MarketIllustration() {
 
 function TerminalPreview() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-[#d8e2ee] bg-white shadow-[0_28px_80px_rgba(7,22,41,.16)]">
+    <div className="overflow-hidden rounded-2xl border border-[#d8e2ee] bg-white shadow-[0_18px_48px_rgba(7,22,41,.09)]">
       <div className="flex items-center justify-between border-b border-slate-200 bg-[#f7f9fc] px-4 py-3 sm:px-5">
         <div className="flex items-center gap-3"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#18364A] text-white"><ChartCandlestick size={18}/></span><div><p className="text-xs font-bold tracking-wide text-[#0C1726]">MASTER TRADE</p><p className="text-[10px] text-slate-500">Visão ilustrativa do terminal</p></div></div>
         <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[10px] font-bold text-[#18364A]">MODO DEMONSTRAÇÃO</span>
@@ -122,19 +120,17 @@ export default function Home() {
       <main id="conteudo-principal">
         <section id="inicio" className="relative overflow-hidden bg-[#F5F8FC]">
           <div className="pointer-events-none absolute right-0 top-0 h-full w-[45%] bg-[radial-gradient(ellipse_at_top_right,rgba(52,120,246,.10),transparent_65%)]"/>
-          <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-16 sm:px-8 lg:grid-cols-[.88fr_1.12fr] lg:gap-14 lg:pb-24 lg:pt-24">
+          <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-16 sm:px-8 lg:grid-cols-[.94fr_1.06fr] lg:gap-16 lg:pb-28 lg:pt-28">
             <div className="max-w-xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-white px-4 py-2 text-[11px] font-semibold uppercase tracking-[.13em] text-[#18364A]"><span className="h-2 w-2 rounded-full bg-[#326BFF]"/> Uma nova experiência de mercado</div>
-              <h1 className="mt-7 text-[42px] font-semibold leading-[1.09] tracking-[-.045em] text-[#0C1726] sm:text-[58px] lg:text-[62px]">Uma nova perspectiva sobre os <span className="text-[#326BFF]">mercados financeiros.</span></h1>
+              <p className="text-xs font-semibold uppercase tracking-[.16em] text-[#326BFF]">Master Trade · Trading simulado</p>
+              <h1 className="mt-7 text-[40px] font-semibold leading-[1.13] tracking-[-.04em] text-[#0C1726] sm:text-[54px] lg:text-[58px]">Uma nova perspectiva sobre os <span className="text-[#326BFF]">mercados financeiros.</span></h1>
               <p className="mt-7 max-w-lg text-[16px] leading-8 text-[#607386]">Explore os mercados globais em uma plataforma de trading simulado desenvolvida para oferecer tecnologia, ferramentas de análise e uma experiência intuitiva.</p>
-              <div className="mt-9 flex flex-wrap gap-3"><a href="#plataforma" className="inline-flex items-center gap-2 rounded-lg bg-[#18364A] px-6 py-3.5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-[#20558e]">Explorar plataforma <ArrowRight size={17}/></a><Link href="/signup" className="inline-flex items-center gap-2 rounded-lg border border-[#cdd9e6] bg-white px-6 py-3.5 text-sm font-semibold text-[#18364A] transition hover:border-[#326BFF]">Criar conta <MoveUpRight size={16}/></Link></div>
-              <div className="mt-11 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-slate-200 pt-6 text-xs text-slate-500"><span className="flex items-center gap-2"><Check size={16} className="text-[#326BFF]"/> Plataforma responsiva</span><span className="flex items-center gap-2"><Check size={16} className="text-[#326BFF]"/> Mercados globais</span><span className="flex items-center gap-2"><Check size={16} className="text-[#326BFF]"/> Ambiente simulado</span></div>
+              <div className="mt-9 flex flex-wrap gap-3"><a href="#plataforma" className="inline-flex items-center gap-2 rounded-lg bg-[#326BFF] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#2454D4]">Explorar plataforma <ArrowRight size={17}/></a><Link href="/signup" className="inline-flex items-center gap-2 rounded-lg border border-[#cdd9e6] bg-white px-6 py-3.5 text-sm font-semibold text-[#18364A] transition hover:border-[#326BFF]">Criar conta <MoveUpRight size={16}/></Link></div>
+              <p className="mt-9 border-t border-slate-200 pt-5 text-xs leading-6 text-[#607386]">Ambiente de simulação · Sem execução de ordens em mercados reais</p>
             </div>
             <div className="relative"><TerminalPreview/><p className="mt-3 text-center text-[11px] text-slate-500">Prévia ilustrativa. Valores e gráfico fictícios, sem cotação em tempo real.</p></div>
           </div>
         </section>
-
-        <section className="border-y border-slate-200 bg-white"><div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-5 py-8 sm:px-8 lg:grid-cols-4"><div className="flex items-center gap-3"><Globe2 className="text-[#326BFF]" size={25}/><div><p className="text-sm font-semibold">Mercados globais</p><p className="text-xs text-slate-500">Múltiplas categorias</p></div></div><div className="flex items-center gap-3"><CandlestickChart className="text-[#326BFF]" size={25}/><div><p className="text-sm font-semibold">Análise de gráficos</p><p className="text-xs text-slate-500">Ferramentas visuais</p></div></div><div className="flex items-center gap-3"><Layers3 className="text-[#326BFF]" size={25}/><div><p className="text-sm font-semibold">Carteira integrada</p><p className="text-xs text-slate-500">Visão consolidada</p></div></div><div className="flex items-center gap-3"><MonitorSmartphone className="text-[#326BFF]" size={25}/><div><p className="text-sm font-semibold">Acesso simplificado</p><p className="text-xs text-slate-500">Desktop e mobile</p></div></div></div></section>
 
         <section id="mercados" className="scroll-mt-24 bg-white py-24"><div className="mx-auto max-w-7xl px-5 sm:px-8"><div className="flex flex-col justify-between gap-6 md:flex-row md:items-end"><div><p className="text-xs font-bold uppercase tracking-[.2em] text-[#326BFF]">Mercados financeiros</p><h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight sm:text-[42px]">Diversos mercados.<br/>Uma única plataforma.</h2><p className="mt-4 max-w-2xl leading-7 text-[#607386]">Conheça as classes de ativos que fazem parte do universo de análise e simulação da Master Trade.</p></div><Link href="/login" className="inline-flex shrink-0 items-center gap-2 text-sm font-semibold text-[#18364A] hover:text-[#326BFF]">Acessar mercados <ArrowRight size={16}/></Link></div>
           <div className="mt-11 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">{markets.map(m=><div key={m.name} className="group rounded-xl border border-slate-200 bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:border-blue-300 hover:shadow-[0_14px_35px_rgba(7,22,41,.07)]"><span className={`flex h-12 w-12 items-center justify-center rounded-xl ${m.bg} ${m.accent}`}><m.icon size={24}/></span><h3 className="mt-6 text-lg font-semibold">{m.name}</h3><p className="mt-2 min-h-10 text-sm text-[#607386]">{m.subtitle}</p><p className="mt-5 border-t border-slate-100 pt-4 text-[11px] font-medium text-slate-500">{m.symbols}</p></div>)}</div>
