@@ -226,6 +226,10 @@ function TradePageContent() {
   const selectedHolding = holdings.find((h) => h.symbol === selectedSymbol);
 
 // Use selected quote price or fall back to context
+  const assetNameBySymbol = useMemo(() => new Map(availableAssets.map(asset => [asset.symbol.toUpperCase(), asset.name])), [availableAssets]);
+  const getAssetFullName = (symbol: string) => assetNameBySymbol.get(symbol.toUpperCase()) || getStockBySymbol(symbol)?.name || (selectedQuote?.symbol === symbol ? selectedQuote.name : undefined) || symbol;
+  const selectedAssetName = getAssetFullName(selectedSymbol);
+
   const currentPrice = selectedQuote?.price || getStockBySymbol(selectedSymbol)?.price || 0;
   const effectivePrice = currentPrice;
   const margin = Number(marginInput);
@@ -448,7 +452,7 @@ function TradePageContent() {
                 const item = getStockBySymbol(asset.symbol);
                 const change = item?.changePercent;
                 return <div key={asset.symbol} className={`flex items-center border-b border-[var(--border-primary)]/40 hover:bg-[var(--bg-hover)] transition-colors ${selectedSymbol === asset.symbol ? "bg-[var(--accent-primary)]/10 border-l-2 border-l-[var(--accent-primary)]" : ""}`}><button type="button" onClick={() => toggleFavorite(asset.symbol)} title={favoriteSymbols.includes(asset.symbol) ? "Remover dos favoritos" : "Adicionar aos favoritos"} aria-label={`Favoritar ${asset.symbol}`} className="shrink-0 pl-2 py-3 text-[var(--accent-primary)]"><Star size={15} fill={favoriteSymbols.includes(asset.symbol) ? "currentColor" : "none"}/></button><button type="button" onClick={() => selectStock({symbol:asset.symbol,name:asset.name,provider:"catalog"})} aria-pressed={selectedSymbol === asset.symbol} className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2 py-2.5 text-left">
-                  <span className="min-w-0"><span className="block text-xs font-semibold text-[var(--text-primary)]">{asset.displaySymbol || asset.symbol}</span><span className="block truncate text-[10px] text-[var(--text-muted)]">{asset.name}</span></span>
+                  <span className="min-w-0"><span className="block text-xs font-semibold text-[var(--text-primary)]">{asset.displaySymbol || asset.symbol}</span><span className="block truncate text-[10px] text-[var(--text-muted)]" title={asset.name}>{asset.name}</span></span>
                   <span className="shrink-0 text-right"><span className="block text-xs font-semibold tabular-nums text-[var(--text-primary)]">{item && Number.isFinite(item.price) ? Number(item.price).toFixed(2) : "—"}</span><span className={`text-[10px] tabular-nums ${typeof change === "number" && change >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{typeof change === "number" && Number.isFinite(change) ? `${change > 0 ? "+" : ""}${change.toFixed(2)}%` : "—"}</span></span>
                 </button></div>;
               })}
@@ -461,7 +465,7 @@ function TradePageContent() {
           <div className="min-w-0 flex flex-col gap-0 p-2">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-3 text-xs">
               <strong className="text-lg text-[var(--text-primary)]">{displaySymbol(selectedSymbol)}</strong>
-              <span className="max-w-32 truncate text-[var(--text-muted)]">{selectedQuote?.name || selectedSymbol}</span>
+              <span className="max-w-32 truncate text-[var(--text-muted)]">{selectedAssetName}</span>
               <strong className="text-xl tabular-nums text-[var(--text-primary)]">{formatCurrency(currentPrice, false, {sourceCurrency})}</strong>
               {selectedQuote && <>
                 <span className="text-[var(--text-muted)]">Abert. <b className="tabular-nums text-[var(--text-primary)]">{selectedQuote.open.toFixed(2)}</b></span>
@@ -471,7 +475,7 @@ function TradePageContent() {
               </>}
             </div>
             <section aria-label="Gráfico avançado de negociação" className="min-w-0">
-              {chartLayout !== undefined ? <AdvancedChart key={selectedSymbol} symbol={selectedSymbol} symbolName={selectedQuote?.name || undefined} initialState={chartLayout} onStateChange={saveChartLayout} height={480} /> : <div className="h-[480px] rounded bg-[var(--bg-card)]" />}
+              {chartLayout !== undefined ? <AdvancedChart key={selectedSymbol} symbol={selectedSymbol} symbolName={selectedAssetName} initialState={chartLayout} onStateChange={saveChartLayout} height={480} /> : <div className="h-[480px] rounded bg-[var(--bg-card)]" />}
             </section>
           </div>
 
@@ -479,7 +483,7 @@ function TradePageContent() {
           <aside aria-label="Painel de ordens" className="trade-order-panel w-full min-w-0 flex flex-col gap-2 p-2.5 border-t xl:border-t-0 xl:border-l border-[var(--border-primary)]">
             {/* Order Form */}
             <div className="trade-ticket bg-[var(--bg-card)] rounded-md p-3 border border-[var(--border-primary)] flex flex-col gap-2.5">
-              <div className="flex items-center justify-between gap-2 border-b border-[var(--border-primary)] pb-3"><div><p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Enviar ordem</p><h2 className="mt-0.5 text-base font-bold text-[var(--text-primary)]">{displaySymbol(selectedSymbol)} <span className="text-xs font-normal text-[var(--text-muted)]">/ USD</span></h2></div><span className="rounded bg-[var(--bg-muted)] px-2 py-1 text-[10px] font-semibold text-[var(--text-secondary)]">A mercado</span></div>
+              <div className="flex items-center justify-between gap-2 border-b border-[var(--border-primary)] pb-3"><div><p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">Enviar ordem</p><h2 className="mt-0.5 text-base font-bold text-[var(--text-primary)]">{displaySymbol(selectedSymbol)} <span className="text-xs font-normal text-[var(--text-muted)]">/ USD</span></h2><p className="max-w-[180px] truncate text-[11px] text-[var(--text-muted)]" title={selectedAssetName}>{selectedAssetName}</p></div><span className="rounded bg-[var(--bg-muted)] px-2 py-1 text-[10px] font-semibold text-[var(--text-secondary)]">A mercado</span></div>
               {/* Buy/Sell Toggle */}
               <div className="grid grid-cols-2 gap-1 rounded-lg bg-[var(--bg-card-inner)] p-1">
                 <button
@@ -664,7 +668,7 @@ function TradePageContent() {
                       const pnl = p.status === "OPEN" ? p.unrealizedPnl : p.realizedPnl;
                       return (
                         <tr key={p.id} className="border-t border-[var(--border-primary)] text-[var(--text-primary)]">
-                          <td className="px-3 py-3 font-semibold">{p.symbol}</td>
+                          <td className="px-3 py-3"><span className="block font-semibold">{p.symbol}</span><span className="block max-w-40 truncate text-[10px] font-normal text-[var(--text-muted)]" title={getAssetFullName(p.symbol)}>{getAssetFullName(p.symbol)}</span></td>
                           <td className={`px-3 py-3 font-semibold ${p.side === "LONG" ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{p.side === "LONG" ? "BUY" : "SELL"}</td>
                           <td className="px-3 py-3 font-mono">{p.quantity}</td>
                           <td className="px-3 py-3 font-mono">${p.entryPrice.toFixed(2)}</td>
