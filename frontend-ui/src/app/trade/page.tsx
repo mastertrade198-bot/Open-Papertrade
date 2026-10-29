@@ -513,7 +513,7 @@ function TradePageContent() {
                 </div>
               )}
 
-              <div <div className="trade-form-divider flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--text-muted)]">Configurar posição</span><span className="text-[10px] text-[var(--text-muted)]">Margem × Alavancagem</span></div>
+              <div className="trade-form-divider flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--text-muted)]">Configurar posição</span><span className="text-[10px] text-[var(--text-muted)]">Margem × Alavancagem</span></div>
               {/* Exact margin, leverage and optional exit price levels */}
               <div className="flex flex-col gap-2.5">
                 <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
