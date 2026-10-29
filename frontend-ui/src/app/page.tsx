@@ -1,120 +1,104 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, ChartNoAxesCombined, ChevronDown, Menu, X, ArrowDownRight, ArrowUpRight as TrendUp } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ArrowDownRight, BarChart3, Check, ChevronDown, CircleHelp, Globe2, Layers3, LockKeyhole, Menu, RefreshCw, ShieldCheck, X } from "lucide-react";
 
-const navigation = [
-  { label: "Plataforma", href: "#plataforma" },
-  { label: "Mercados", href: "#mercados" },
-  { label: "Como funciona", href: "#como-funciona" },
-  { label: "Perguntas", href: "#perguntas" },
-];
+type Quote = { symbol: string; price: number; change: number; changePercent: number; timestamp: string | null; name: string | null; provider: string; currency: string };
+type QuoteResult = { data: Quote | null; success: boolean };
+type QuoteResponse = { quotes: Record<string, QuoteResult>; successful: number };
+const assets = [
+  { symbol: "AAPL", name: "Apple", category: "Tecnologia" },
+  { symbol: "MSFT", name: "Microsoft", category: "Tecnologia" },
+  { symbol: "NVDA", name: "NVIDIA", category: "Tecnologia" },
+  { symbol: "AMZN", name: "Amazon", category: "Consumo" },
+  { symbol: "GOOGL", name: "Alphabet", category: "Tecnologia" },
+  { symbol: "META", name: "Meta Platforms", category: "Tecnologia" },
+  { symbol: "TSLA", name: "Tesla", category: "Automotivo" },
+  { symbol: "JPM", name: "JPMorgan Chase", category: "Financeiro" },
+  { symbol: "V", name: "Visa", category: "Financeiro" },
+  { symbol: "SPY", name: "S&P 500 ETF", category: "ETF" },
+  { symbol: "QQQ", name: "Nasdaq 100 ETF", category: "ETF" },
+  { symbol: "GLD", name: "Ouro ETF", category: "ETF" },
+] as const;
+const symbols = assets.map(asset => asset.symbol);
+const money = (price: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(price);
+const percent = (value: number) => (value > 0 ? "+" : "") + value.toFixed(2) + "%";
 
-const markets = [
-  { ticker: "EUR/USD", name: "Câmbio", description: "Pares de moedas internacionais" },
-  { ticker: "BTC/USD", name: "Criptoativos", description: "Principais ativos digitais" },
-  { ticker: "S&P 500", name: "Índices", description: "Referências dos mercados globais" },
-  { ticker: "AAPL", name: "Ações", description: "Empresas de diferentes setores" },
-];
-
-const faqs = [
-  { question: "A Master Trade utiliza dinheiro real?", answer: "Não. A Master Trade é um ambiente de trading simulado. As operações demonstrativas não representam ordens executadas em mercados reais." },
-  { question: "As cotações da página são em tempo real?", answer: "Não. Todos os valores e gráficos apresentados nesta página são ilustrativos. Os dados disponíveis na área autenticada dependem das fontes integradas à plataforma." },
-  { question: "Preciso criar uma conta?", answer: "A apresentação da plataforma é pública. Para acessar a área de negociação simulada e acompanhar sua carteira, é necessário criar uma conta." },
-  { question: "O desempenho simulado garante resultados?", answer: "Não. Resultados em ambiente simulado não garantem desempenho futuro e não constituem recomendação de investimento." },
-];
-
-function Brand({ inverse = false }: { inverse?: boolean }) {
-  return <Link href="/" aria-label="Master Trade, página inicial" className="inline-flex shrink-0 items-center gap-3">
-    <span className={`flex h-9 w-9 items-center justify-center rounded-[10px] ${inverse ? "bg-white text-[#0C1726]" : "bg-[#0C1726] text-white"}`}><ChartNoAxesCombined size={19} strokeWidth={1.8} /></span>
-    <span className={`text-[14px] font-extrabold tracking-[.055em] ${inverse ? "text-white" : "text-[#152538]"}`}>MASTER <span className={inverse ? "text-[#9FB9FF]" : "text-[#326BFF]"}>TRADE</span></span>
+function Logo({ light = false }: { light?: boolean }) {
+  return <Link href="/" aria-label="Master Trade — início" className="inline-flex items-center gap-3">
+    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#326BFF] text-white"><BarChart3 size={21} strokeWidth={2}/></span>
+    <span className={"text-[15px] font-extrabold tracking-[.055em] " + (light ? "text-white" : "text-[#152538]")}>MASTER <span className="text-[#326BFF]">TRADE</span></span>
   </Link>;
 }
 
-function TerminalPreview() {
-  const values = [46, 42, 45, 37, 40, 33, 35, 31, 34, 28, 32, 25, 29, 23, 26, 19, 22, 17, 20, 14, 17, 11, 15, 9, 12, 6, 10, 5, 7, 3];
-  const points = values.map((v, i) => `${(i / (values.length - 1)) * 680},${v * 3.8 + 18}`).join(" ");
-  return <div className="overflow-hidden rounded-2xl border border-[#DCE5EF] bg-white shadow-[0_22px_64px_rgba(12,23,38,.09)]">
-    <div className="flex items-center justify-between gap-3 border-b border-[#E3EAF1] px-5 py-4 sm:px-6">
-      <div className="flex items-center gap-3"><span className="h-2 w-2 rounded-full bg-[#16866A]" /><span className="text-[12px] font-semibold text-[#152538]">Visão do terminal</span><span className="hidden text-[11px] text-[#607386] sm:inline">· Demonstração visual</span></div>
-      <span className="rounded-md bg-[#F0F4F9] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.08em] text-[#607386]">Simulado</span>
-    </div>
-    <div className="grid lg:grid-cols-[minmax(0,1fr)_180px]">
-      <div className="min-w-0 px-5 pb-5 pt-6 sm:px-7 sm:pb-7">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div><p className="text-[11px] font-medium uppercase tracking-[.12em] text-[#607386]">BTC / USD · Ilustrativo</p><p className="mt-2 text-[29px] font-semibold tracking-[-.04em] text-[#152538] sm:text-[34px]">67.842,50 <span className="text-sm font-normal text-[#607386]">USD</span></p></div>
-          <span className="flex items-center gap-1 rounded-md bg-[#E9F5F0] px-2.5 py-1.5 text-xs font-semibold text-[#16866A]"><TrendUp size={13}/> +1,84%</span>
-        </div>
-        <div className="mt-7 overflow-hidden rounded-lg bg-[#F8FAFD] px-3 py-4">
-          <svg viewBox="0 0 680 235" role="img" aria-label="Linha de preço fictícia em tendência de alta, apenas ilustrativa" className="h-auto w-full">
-            {[45,105,165,225].map(y=><line key={y} x1="0" y1={y} x2="680" y2={y} stroke="#E3EAF1" strokeDasharray="4 7"/>)}
-            <defs><linearGradient id="chartFade" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#326BFF" stopOpacity=".12"/><stop offset="1" stopColor="#326BFF" stopOpacity="0"/></linearGradient></defs>
-            <polygon points={`0,235 ${points} 680,235`} fill="url(#chartFade)"/>
-            <polyline points={points} fill="none" stroke="#326BFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <div className="mt-1 flex justify-between text-[10px] text-[#8294A6]"><span>09:00</span><span>10:00</span><span>11:00</span><span>12:00</span><span>13:00</span></div>
-        </div>
-        <p className="mt-4 text-[11px] leading-5 text-[#607386]">Gráfico e valores fictícios, sem cotação em tempo real.</p>
+function MarketBoard({ quotes, loading, lastUpdate, error, onRefresh }: { quotes: Record<string, Quote>; loading: boolean; lastUpdate: Date | null; error: boolean; onRefresh: () => void }) {
+  const [filter, setFilter] = useState("Todos");
+  const categories = ["Todos", "Tecnologia", "Financeiro", "Consumo", "Automotivo", "ETF"];
+  const visible = assets.filter(asset => filter === "Todos" || asset.category === filter);
+  return <section id="mercados" className="scroll-mt-24 bg-[#F5F8FC] py-20 sm:py-28">
+    <div className="mx-auto max-w-7xl px-5 sm:px-8">
+      <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+        <div><p className="mb-4 text-xs font-bold uppercase tracking-[.18em] text-[#326BFF]">Inteligência de mercado</p><h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-[#152538] sm:text-4xl">Os mercados em perspectiva.</h2><p className="mt-4 max-w-xl text-base leading-7 text-[#607386]">Acompanhe preços de mercado provenientes das fontes integradas, com atualização automática a cada 30 segundos.</p></div>
+        <div className="flex items-center gap-3 text-xs text-[#607386]"><span className={"h-2 w-2 rounded-full " + (error ? "bg-amber-500" : loading ? "bg-[#326BFF]" : "bg-[#16866A]")}/><span>{error ? "Fonte temporariamente indisponível" : lastUpdate ? "Consulta: " + lastUpdate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "Aguardando primeira consulta"}</span><button type="button" onClick={onRefresh} aria-label="Atualizar cotações" className="rounded-lg border border-[#E3EAF1] bg-white p-2 text-[#607386] hover:text-[#326BFF]"><RefreshCw size={16} className={loading ? "animate-spin" : ""}/></button></div>
       </div>
-      <div className="border-t border-[#E3EAF1] bg-[#FBFCFE] p-5 lg:border-l lg:border-t-0">
-        <p className="text-xs font-semibold text-[#152538]">Nova operação</p>
-        <p className="mt-1 text-[11px] text-[#607386]">Prévia não interativa</p>
-        <div className="mt-6 grid grid-cols-2 gap-2 text-center text-[11px] font-semibold"><span className="rounded-md bg-[#E6F4EF] py-2 text-[#16866A]">Comprar</span><span className="rounded-md bg-[#FBECEF] py-2 text-[#D34F65]">Vender</span></div>
-        <div className="mt-6 space-y-4">{[["Ativo","BTC/USD"],["Tipo de ordem","Mercado"],["Quantidade","0,10"]].map(([label,value])=><div key={label} className="border-b border-[#E3EAF1] pb-3"><p className="text-[10px] text-[#607386]">{label}</p><p className="mt-1 text-xs font-semibold text-[#152538]">{value}</p></div>)}</div>
-        <Link href="/login" className="mt-6 flex items-center justify-center gap-2 rounded-lg bg-[#326BFF] px-3 py-3 text-xs font-semibold text-white transition hover:bg-[#2454D4]">Abrir plataforma <ArrowRight size={14}/></Link>
+      <div className="mt-10 overflow-hidden rounded-2xl border border-[#E3EAF1] bg-white shadow-[0_12px_40px_rgba(12,23,38,.04)]">
+        <div className="flex flex-wrap gap-2 border-b border-[#E3EAF1] p-4 sm:p-5">{categories.map(category => <button key={category} type="button" onClick={() => setFilter(category)} className={"rounded-lg px-4 py-2 text-xs font-semibold transition-colors " + (filter === category ? "bg-[#0C1726] text-white" : "text-[#607386] hover:bg-[#F5F8FC]")}>{category}</button>)}</div>
+        <div className="overflow-x-auto"><table className="w-full min-w-[650px] border-collapse text-left"><thead><tr className="border-b border-[#E3EAF1] bg-[#FBFCFE] text-[11px] font-bold uppercase tracking-widest text-[#607386]"><th className="px-6 py-4">Ativo</th><th className="px-6 py-4">Setor</th><th className="px-6 py-4 text-right">Último preço</th><th className="px-6 py-4 text-right">Variação</th><th className="px-6 py-4 text-right">Mercado</th></tr></thead><tbody>{visible.map(asset => {const quote = quotes[asset.symbol];const hasPrice = quote && Number.isFinite(quote.price) && quote.price > 0;const change = quote?.changePercent ?? 0;return <tr key={asset.symbol} className="border-b border-[#EFF3F7] last:border-b-0 hover:bg-[#F8FAFD]"><td className="px-6 py-4"><div className="flex items-center gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EDF3FF] text-[11px] font-extrabold text-[#326BFF]">{asset.symbol.slice(0,3)}</span><div><p className="text-sm font-bold text-[#152538]">{asset.symbol}</p><p className="mt-0.5 text-xs text-[#607386]">{asset.name}</p></div></div></td><td className="px-6 py-4 text-sm text-[#607386]">{asset.category}</td><td className="px-6 py-4 text-right text-sm font-semibold tabular-nums text-[#152538]">{hasPrice ? money(quote.price) : "—"}</td><td className="px-6 py-4 text-right">{hasPrice ? <span className={"inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold tabular-nums " + (change >= 0 ? "bg-[#E8F6F0] text-[#16866A]" : "bg-[#FFF0F2] text-[#D34F65]")}>{change >= 0 ? <ArrowUpRight size={13}/> : <ArrowDownRight size={13}/>} {percent(change)}</span> : <span className="text-xs text-[#94A3B8]">Indisponível</span>}</td><td className="px-6 py-4 text-right text-xs text-[#607386]">{hasPrice ? (quote.provider || "Fonte integrada") : "—"}</td></tr>})}</tbody></table></div>
+        <div className="flex flex-col justify-between gap-2 border-t border-[#E3EAF1] bg-[#FBFCFE] px-6 py-4 text-xs leading-5 text-[#607386] sm:flex-row"><span>Valores sujeitos a atraso, horário de negociação e disponibilidade do provedor. Sem estimativas substitutivas.</span><span className="shrink-0">{Object.keys(quotes).length} de {assets.length} ativos disponíveis</span></div>
       </div>
     </div>
-  </div>;
+  </section>;
 }
 
 export default function Home() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [openFaq, setOpenFaq] = useState<number | null>(0);
-  return <div className="min-h-screen bg-white font-primary text-[#152538]">
-    <a href="#conteudo" className="sr-only fixed left-4 top-4 z-[100] rounded-lg bg-[#326BFF] px-4 py-3 font-semibold text-white focus:not-sr-only">Ir para o conteúdo</a>
-    <header className="sticky top-0 z-50 border-b border-[#E3EAF1] bg-white/95 backdrop-blur-xl">
-      <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-6 px-5 sm:px-8">
-        <Brand/>
-        <nav aria-label="Navegação institucional" className="hidden items-center gap-8 lg:flex">{navigation.map(item=><a key={item.href} href={item.href} className="text-[13px] font-medium text-[#607386] transition hover:text-[#152538]">{item.label}</a>)}</nav>
-        <div className="hidden items-center gap-5 lg:flex"><Link href="/login" className="text-[13px] font-semibold text-[#152538] hover:text-[#326BFF]">Entrar</Link><Link href="/signup" className="inline-flex items-center gap-2 rounded-lg bg-[#326BFF] px-4 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#2454D4]">Criar conta <ArrowUpRight size={15}/></Link></div>
-        <button type="button" aria-label={menuOpen?"Fechar menu":"Abrir menu"} aria-expanded={menuOpen} aria-controls="menu-institucional" onClick={()=>setMenuOpen(v=>!v)} className="rounded-lg border border-[#E3EAF1] p-2 lg:hidden">{menuOpen?<X size={21}/>:<Menu size={21}/>}</button>
-      </div>
-      {menuOpen&&<nav id="menu-institucional" aria-label="Navegação móvel" className="border-t border-[#E3EAF1] bg-white px-5 py-4 lg:hidden"><div className="mx-auto flex max-w-6xl flex-col gap-1">{navigation.map(item=><a key={item.href} href={item.href} onClick={()=>setMenuOpen(false)} className="rounded-lg px-3 py-3 text-sm font-medium text-[#152538] hover:bg-[#F5F8FC]">{item.label}</a>)}<div className="mt-3 flex gap-3 border-t border-[#E3EAF1] pt-4"><Link href="/login" className="flex-1 rounded-lg border border-[#E3EAF1] px-3 py-3 text-center text-sm font-semibold">Entrar</Link><Link href="/signup" className="flex-1 rounded-lg bg-[#326BFF] px-3 py-3 text-center text-sm font-semibold text-white">Criar conta</Link></div></div></nav>}
-    </header>
-    <main id="conteudo">
-      <section className="border-b border-[#E3EAF1] bg-[#F8FAFD]">
-        <div className="mx-auto grid max-w-6xl items-center gap-14 px-5 py-20 sm:px-8 lg:grid-cols-[.88fr_1.12fr] lg:gap-16 lg:py-28">
-          <div className="max-w-[490px]">
-            <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[#326BFF]">Trading simulado · Master Trade</p>
-            <h1 className="mt-6 text-[43px] font-semibold leading-[1.13] tracking-[-.045em] sm:text-[55px]">O mercado em perspectiva. Suas decisões em foco.</h1>
-            <p className="mt-7 max-w-[440px] text-[16px] leading-[1.85] text-[#607386]">Explore instrumentos, acompanhe posições e pratique estratégias em um ambiente de negociação simulado, organizado para oferecer clareza em cada etapa.</p>
-            <div className="mt-9 flex flex-wrap items-center gap-4"><Link href="/signup" className="inline-flex items-center gap-2 rounded-lg bg-[#326BFF] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#2454D4]">Começar a simular <ArrowRight size={17}/></Link><a href="#plataforma" className="inline-flex items-center gap-2 px-2 py-3 text-sm font-semibold text-[#152538] hover:text-[#326BFF]">Conhecer a plataforma <ArrowUpRight size={16}/></a></div>
-            <p className="mt-10 border-t border-[#DCE5EF] pt-5 text-xs leading-6 text-[#607386]">Ambiente de prática com operações fictícias. Sem execução de ordens em mercados reais.</p>
-          </div>
-          <TerminalPreview/>
-        </div>
-      </section>
-      <section id="plataforma" className="scroll-mt-24 bg-white py-24 lg:py-32">
-        <div className="mx-auto max-w-6xl px-5 sm:px-8">
-          <div className="grid gap-10 md:grid-cols-[.85fr_1.15fr] md:gap-20">
-            <div><p className="text-[11px] font-bold uppercase tracking-[.18em] text-[#326BFF]">A plataforma</p><h2 className="mt-5 max-w-[440px] text-[34px] font-semibold leading-[1.2] tracking-[-.035em] sm:text-[42px]">Tudo o que importa. Sem distrações.</h2></div>
-            <div className="divide-y divide-[#E3EAF1] border-t border-[#E3EAF1]">
-              {[["01","Análise de mercado","Explore gráficos e instrumentos em uma interface pensada para facilitar a leitura de informações."],["02","Gestão de operações","Acompanhe posições simuladas e informações essenciais em um único ambiente."],["03","Visão da carteira","Consulte seu capital virtual e o histórico de atividades de forma organizada."]].map(([n,title,desc])=><div key={n} className="grid grid-cols-[40px_1fr] gap-4 py-7"><span className="pt-1 text-xs font-semibold text-[#326BFF]">{n}</span><div><h3 className="text-lg font-semibold tracking-tight">{title}</h3><p className="mt-2 max-w-lg text-sm leading-7 text-[#607386]">{desc}</p></div></div>)}
-            </div>
-          </div>
-        </div>
-      </section>
-      <section id="mercados" className="scroll-mt-24 border-y border-[#E3EAF1] bg-[#F8FAFD] py-24 lg:py-28">
-        <div className="mx-auto max-w-6xl px-5 sm:px-8"><div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-[11px] font-bold uppercase tracking-[.18em] text-[#326BFF]">Mercados</p><h2 className="mt-4 text-[34px] font-semibold tracking-[-.035em] sm:text-[42px]">Uma visão mais ampla.</h2></div><p className="max-w-sm text-sm leading-7 text-[#607386]">Explore diferentes categorias de instrumentos no ambiente de simulação.</p></div>
-          <div className="mt-10 overflow-hidden rounded-xl border border-[#E3EAF1] bg-white"><div className="hidden grid-cols-[1fr_1.4fr_auto] gap-4 border-b border-[#E3EAF1] px-6 py-4 text-[11px] font-semibold uppercase tracking-[.1em] text-[#607386] sm:grid"><span>Referência</span><span>Categoria</span><span>Ambiente</span></div>{markets.map((item,i)=><div key={item.ticker} className={`grid gap-2 px-6 py-5 sm:grid-cols-[1fr_1.4fr_auto] sm:items-center sm:gap-4 ${i>0?"border-t border-[#E3EAF1]":""}`}><span className="text-sm font-semibold">{item.ticker}</span><div><p className="text-sm font-medium">{item.name}</p><p className="mt-1 text-xs text-[#607386]">{item.description}</p></div><span className="text-xs text-[#607386]">Simulação</span></div>)}</div>
-          <p className="mt-4 text-xs leading-6 text-[#607386]">Exemplos de instrumentos e categorias; a disponibilidade efetiva depende do catálogo configurado na plataforma.</p>
-        </div>
-      </section>
-      <section id="como-funciona" className="scroll-mt-24 bg-white py-24 lg:py-28"><div className="mx-auto max-w-6xl px-5 sm:px-8"><p className="text-[11px] font-bold uppercase tracking-[.18em] text-[#326BFF]">Como funciona</p><h2 className="mt-4 text-[34px] font-semibold tracking-[-.035em] sm:text-[42px]">Simples desde o primeiro acesso.</h2><div className="mt-12 grid gap-10 border-t border-[#E3EAF1] pt-10 md:grid-cols-3">{[["01","Crie sua conta","Cadastre-se para acessar seu ambiente pessoal."],["02","Explore o terminal","Conheça os instrumentos e as ferramentas de análise."],["03","Pratique e acompanhe","Realize operações simuladas e acompanhe sua carteira virtual."]].map(([n,title,desc])=><div key={n}><p className="text-sm font-semibold text-[#326BFF]">{n}</p><h3 className="mt-5 text-lg font-semibold">{title}</h3><p className="mt-3 max-w-xs text-sm leading-7 text-[#607386]">{desc}</p></div>)}</div></div></section>
-      <section id="perguntas" className="scroll-mt-24 border-t border-[#E3EAF1] bg-[#F8FAFD] py-24 lg:py-28"><div className="mx-auto grid max-w-6xl gap-10 px-5 sm:px-8 md:grid-cols-[.8fr_1.2fr] md:gap-20"><div><p className="text-[11px] font-bold uppercase tracking-[.18em] text-[#326BFF]">Informações essenciais</p><h2 className="mt-4 text-[34px] font-semibold tracking-[-.035em] sm:text-[42px]">Perguntas frequentes.</h2></div><div className="divide-y divide-[#DCE5EF] border-t border-[#DCE5EF]">{faqs.map((item,i)=><div key={item.question}><button type="button" aria-expanded={openFaq===i} aria-controls={`faq-${i}`} onClick={()=>setOpenFaq(openFaq===i?null:i)} className="flex w-full items-center justify-between gap-5 py-6 text-left text-sm font-semibold text-[#152538]"><span>{item.question}</span><ChevronDown size={18} className={`shrink-0 text-[#607386] transition-transform ${openFaq===i?"rotate-180":""}`}/></button>{openFaq===i&&<p id={`faq-${i}`} className="max-w-xl pb-6 text-sm leading-7 text-[#607386]">{item.answer}</p>}</div>)}</div></div></section>
-      <section className="bg-[#0C1726] py-20 text-white"><div className="mx-auto flex max-w-6xl flex-col justify-between gap-8 px-5 sm:px-8 md:flex-row md:items-center"><div><p className="text-[11px] font-semibold uppercase tracking-[.18em] text-[#9FB9FF]">Seu próximo passo</p><h2 className="mt-4 max-w-xl text-[30px] font-semibold leading-tight tracking-[-.03em] sm:text-[38px]">Uma experiência de mercado mais clara começa aqui.</h2></div><Link href="/signup" className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-lg bg-[#326BFF] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#2454D4]">Criar conta <ArrowRight size={17}/></Link></div></section>
+  const [menu, setMenu] = useState(false);
+  const [quotes, setQuotes] = useState<Record<string, Quote>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [refreshId, setRefreshId] = useState(0);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    async function refresh() {
+      if (document.visibilityState === "hidden") return;
+      if (active) setLoading(true);
+      try {
+        const response = await fetch("/api/stocks/quotes/", { method: "POST", credentials: "same-origin", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ symbols, skipCache: false }), signal: controller.signal });
+        if (!response.ok) throw new Error("Cotações indisponíveis");
+        const result: QuoteResponse = await response.json();
+        const next: Record<string, Quote> = {};
+        for (const symbol of symbols) { const item = result.quotes?.[symbol]; if (item?.success && item.data && Number.isFinite(item.data.price) && item.data.price > 0) next[symbol] = item.data; }
+        if (!active) return;
+        setQuotes(next);
+        setError(Object.keys(next).length === 0);
+        setLastUpdate(new Date());
+      } catch {
+        if (active && !controller.signal.aborted) { setError(true); setQuotes({}); }
+      } finally { if (active) setLoading(false); }
+    }
+    void refresh();
+    const timer = window.setInterval(() => { void refresh(); }, 30000);
+    return () => { active = false; controller.abort(); window.clearInterval(timer); };
+  }, [refreshId]);
+  const highlights = useMemo(() => assets.slice(0,4).map(asset => ({ ...asset, quote: quotes[asset.symbol] })), [quotes]);
+  const faqs = [
+    { q: "Como acompanho os preços dos ativos?", a: "As cotações são consultadas nas fontes de mercado integradas à plataforma. A disponibilidade e o atraso dependem do provedor e dos horários de negociação." },
+    { q: "Posso conhecer a plataforma antes de criar uma conta?", a: "Sim. Esta página apresenta os recursos e os mercados. Para acessar o ambiente de negociação e sua carteira, basta criar uma conta." },
+    { q: "Como funciona o ambiente de negociação?", a: "A Master Trade disponibiliza uma experiência de negociação para demonstração e aprendizado. As operações realizadas na plataforma não são enviadas a bolsas de valores." },
+  ];
+  return <div className="min-h-screen bg-white font-[Inter,Arial,sans-serif] text-[#152538]">
+    <header className="sticky top-0 z-50 border-b border-[#E8EDF3] bg-white/95 backdrop-blur-xl"><div className="mx-auto flex h-[78px] max-w-7xl items-center justify-between px-5 sm:px-8"><Logo/><nav className="hidden items-center gap-9 lg:flex" aria-label="Navegação principal"><a href="#plataforma" className="text-sm font-medium text-[#607386] hover:text-[#326BFF]">Plataforma</a><a href="#mercados" className="text-sm font-medium text-[#607386] hover:text-[#326BFF]">Mercados</a><a href="#experiencia" className="text-sm font-medium text-[#607386] hover:text-[#326BFF]">Experiência</a><a href="#perguntas" className="text-sm font-medium text-[#607386] hover:text-[#326BFF]">Perguntas</a></nav><div className="hidden items-center gap-5 lg:flex"><Link href="/login" className="text-sm font-semibold text-[#152538] hover:text-[#326BFF]">Entrar</Link><Link href="/signup" className="inline-flex items-center gap-2 rounded-lg bg-[#326BFF] px-5 py-3 text-sm font-semibold text-white hover:bg-[#2454D4]">Criar conta <ArrowUpRight size={16}/></Link></div><button type="button" className="rounded-lg p-2 lg:hidden" aria-label={menu ? "Fechar menu" : "Abrir menu"} onClick={() => setMenu(!menu)}>{menu ? <X size={23}/> : <Menu size={23}/>}</button></div>{menu && <nav className="flex flex-col gap-4 border-t border-[#E3EAF1] bg-white px-6 py-6 lg:hidden"><a onClick={()=>setMenu(false)} href="#plataforma">Plataforma</a><a onClick={()=>setMenu(false)} href="#mercados">Mercados</a><a onClick={()=>setMenu(false)} href="#experiencia">Experiência</a><a onClick={()=>setMenu(false)} href="#perguntas">Perguntas</a><Link href="/login">Entrar</Link><Link href="/signup" className="font-semibold text-[#326BFF]">Criar conta</Link></nav>}</header>
+    <main>
+      <section className="relative isolate overflow-hidden bg-[#0C1726] text-white"><div className="absolute inset-0 opacity-40" style={{backgroundImage:"linear-gradient(90deg,#0C1726 5%,rgba(12,23,38,.95) 39%,rgba(12,23,38,.42) 100%),url(https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1800&q=85)",backgroundSize:"cover",backgroundPosition:"center"}} aria-hidden="true"/><div className="absolute inset-0 bg-gradient-to-r from-[#0C1726] via-[#0C1726]/70 to-transparent" aria-hidden="true"/><div className="relative mx-auto grid min-h-[620px] max-w-7xl items-center gap-12 px-5 py-20 sm:px-8 lg:grid-cols-[1.1fr_.9fr] lg:py-28"><div><div className="mb-7 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[.16em] text-[#D9E7FF]"><Globe2 size={14}/> Uma nova perspectiva sobre mercados</div><h1 className="max-w-[680px] text-[clamp(2.8rem,5.2vw,5.1rem)] font-semibold leading-[1.09] tracking-[-.055em]">Clareza para cada <span className="text-[#8FAFFF]">decisão.</span></h1><p className="mt-7 max-w-lg text-base leading-8 text-[#C1CFDC] sm:text-lg">Uma experiência de mercado construída com precisão, tecnologia e uma visão mais inteligente dos seus investimentos.</p><div className="mt-10 flex flex-wrap gap-3"><Link href="/signup" className="inline-flex items-center gap-3 rounded-lg bg-[#326BFF] px-7 py-4 text-sm font-semibold text-white hover:bg-[#2454D4]">Explorar plataforma <ArrowRight size={17}/></Link><a href="#mercados" className="inline-flex items-center gap-3 rounded-lg border border-white/25 px-7 py-4 text-sm font-semibold text-white hover:bg-white/10">Ver mercados</a></div><div className="mt-12 flex flex-wrap gap-6 border-t border-white/15 pt-7 text-xs text-[#C1CFDC]"><span className="inline-flex items-center gap-2"><Check size={15} className="text-[#64D9C2]"/> Dados de mercado integrados</span><span className="inline-flex items-center gap-2"><Check size={15} className="text-[#64D9C2]"/> Interface intuitiva</span><span className="inline-flex items-center gap-2"><Check size={15} className="text-[#64D9C2]"/> Visão consolidada</span></div></div><div className="relative"><div className="rounded-2xl border border-white/15 bg-[#102236]/95 p-5 shadow-[0_35px_90px_rgba(0,0,0,.3)] backdrop-blur sm:p-7"><div className="flex items-center justify-between border-b border-white/10 pb-5"><div><p className="text-[11px] uppercase tracking-[.18em] text-[#9BB1C6]">Visão de mercado</p><h2 className="mt-1 text-xl font-semibold">Ativos em destaque</h2></div><span className="rounded-full border border-[#64D9C2]/25 bg-[#64D9C2]/10 px-3 py-1.5 text-[11px] text-[#64D9C2]">Atualização automática</span></div><div className="divide-y divide-white/10">{highlights.map(item => <div key={item.symbol} className="flex items-center justify-between gap-3 py-5"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-[11px] font-bold text-white">{item.symbol.slice(0,3)}</span><div><p className="text-sm font-semibold">{item.symbol}</p><p className="mt-1 text-xs text-[#9BB1C6]">{item.name}</p></div></div><div className="text-right"><p className="text-sm font-semibold tabular-nums">{item.quote ? money(item.quote.price) : "—"}</p><p className={"mt-1 text-xs tabular-nums " + (item.quote && item.quote.changePercent < 0 ? "text-[#F2788B]" : "text-[#64D9C2]")}>{item.quote ? percent(item.quote.changePercent) : "Aguardando cotação"}</p></div></div>)}</div><div className="flex items-center justify-between pt-4 text-[11px] text-[#9BB1C6]"><span>Fontes de mercado integradas</span><span>{lastUpdate ? lastUpdate.toLocaleTimeString("pt-BR") : "Consultando..."}</span></div></div><div className="pointer-events-none absolute -bottom-6 -right-5 -z-10 h-40 w-40 rounded-full bg-[#326BFF]/25 blur-[70px]"/></div></div></section>
+      <section id="plataforma" className="scroll-mt-24 py-20 sm:py-28"><div className="mx-auto max-w-7xl px-5 sm:px-8"><div className="grid gap-12 lg:grid-cols-[.9fr_1.1fr] lg:items-center"><div><p className="mb-4 text-xs font-bold uppercase tracking-[.18em] text-[#326BFF]">A plataforma</p><h2 className="max-w-lg text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">Tecnologia que coloca o essencial em primeiro lugar.</h2><p className="mt-6 max-w-lg text-base leading-8 text-[#607386]">Uma experiência organizada para acompanhar ativos, analisar movimentos e navegar pelo mercado com mais contexto e menos ruído.</p><div className="mt-9 space-y-6">{[{icon:Layers3,title:"Tudo em uma única visão",desc:"Carteira, mercados e ferramentas em um ambiente integrado."},{icon:ShieldCheck,title:"Experiência cuidadosamente projetada",desc:"Hierarquia visual clara e informações acessíveis em cada etapa."},{icon:Globe2,title:"Conexão com os mercados",desc:"Cotações consultadas diretamente nas fontes de dados disponíveis."}].map(item => <div key={item.title} className="flex gap-4"><span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#EDF3FF] text-[#326BFF]"><item.icon size={20}/></span><div><h3 className="text-sm font-semibold">{item.title}</h3><p className="mt-1 text-sm leading-6 text-[#607386]">{item.desc}</p></div></div>)}</div></div><div className="relative overflow-hidden rounded-2xl bg-[#0C1726] shadow-[0_25px_80px_rgba(12,23,38,.13)]"><img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=85" alt="Ambiente de análise financeira com gráficos e informações de mercado" className="h-[440px] w-full object-cover opacity-80" loading="lazy"/><div className="absolute inset-0 bg-gradient-to-t from-[#0C1726]/80 via-transparent to-transparent"/><div className="absolute bottom-7 left-7 right-7 flex items-end justify-between gap-4 text-white"><div><p className="text-[11px] uppercase tracking-widest text-[#CBD7E5]">Master Trade</p><p className="mt-2 text-xl font-semibold">Uma visão mais ampla.</p></div><ArrowUpRight size={25}/></div></div></div></div></section>
+      <MarketBoard quotes={quotes} loading={loading} lastUpdate={lastUpdate} error={error} onRefresh={() => setRefreshId(v=>v+1)}/>
+      <section id="experiencia" className="scroll-mt-24 bg-white py-20 sm:py-28"><div className="mx-auto max-w-7xl px-5 sm:px-8"><div className="grid items-center gap-12 lg:grid-cols-2"><div className="overflow-hidden rounded-2xl bg-[#102236]"><img src="https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=1200&q=85" alt="Ambiente contemporâneo de trabalho e análise" className="h-[430px] w-full object-cover" loading="lazy"/></div><div><p className="mb-4 text-xs font-bold uppercase tracking-[.18em] text-[#326BFF]">Experiência</p><h2 className="max-w-lg text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">O mercado é complexo. Sua experiência não precisa ser.</h2><p className="mt-6 max-w-lg text-base leading-8 text-[#607386]">Design objetivo, navegação consistente e uma estrutura que valoriza o que realmente importa: informação, controle e clareza.</p><Link href="/signup" className="mt-9 inline-flex items-center gap-2 text-sm font-bold text-[#326BFF] hover:underline">Conhecer a experiência <ArrowRight size={17}/></Link></div></div></div></section>
+      <section id="perguntas" className="scroll-mt-24 border-t border-[#E3EAF1] bg-[#F5F8FC] py-20 sm:py-24"><div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="mb-4 text-xs font-bold uppercase tracking-[.18em] text-[#326BFF]">Informações</p><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Perguntas frequentes.</h2><p className="mt-4 text-sm leading-7 text-[#607386]">Respostas objetivas sobre a plataforma e a experiência de mercado.</p></div><div className="divide-y divide-[#E3EAF1] border-t border-[#E3EAF1]">{faqs.map((item,index)=><div key={item.q}><button type="button" aria-expanded={openFaq===index} onClick={()=>setOpenFaq(openFaq===index?null:index)} className="flex w-full items-center justify-between gap-6 py-6 text-left text-sm font-semibold text-[#152538] sm:text-base">{item.q}<ChevronDown size={18} className={"shrink-0 text-[#607386] transition-transform " + (openFaq===index?"rotate-180":"")}/></button>{openFaq===index && <p className="max-w-2xl pb-6 text-sm leading-7 text-[#607386]">{item.a}</p>}</div>)}</div></div></section>
+      <section className="bg-[#102236] py-20 text-white"><div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 px-5 sm:px-8 lg:flex-row lg:items-center"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-[#8FAFFF]">Próximo passo</p><h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">Sua próxima perspectiva começa aqui.</h2><p className="mt-4 text-sm leading-7 text-[#C1CFDC]">Conheça as ferramentas e descubra uma nova maneira de acompanhar o mercado.</p></div><Link href="/signup" className="inline-flex shrink-0 items-center gap-3 rounded-lg bg-[#326BFF] px-7 py-4 text-sm font-semibold text-white hover:bg-[#2454D4]">Começar agora <ArrowRight size={18}/></Link></div></section>
     </main>
-    <footer className="bg-[#0C1726] text-white"><div className="mx-auto max-w-6xl border-t border-white/15 px-5 py-10 sm:px-8"><div className="flex flex-col justify-between gap-7 sm:flex-row sm:items-center"><Brand inverse/><div className="flex flex-wrap gap-x-7 gap-y-3 text-xs text-[#B7C5D5]"><a href="#plataforma" className="hover:text-white">Plataforma</a><a href="#mercados" className="hover:text-white">Mercados</a><Link href="/login" className="hover:text-white">Entrar</Link><Link href="/signup" className="hover:text-white">Criar conta</Link></div></div><p className="mt-10 max-w-4xl text-xs leading-6 text-[#B7C5D5]">A Master Trade é apresentada como plataforma de trading simulado. As cotações, variações e gráficos demonstrativos desta página são fictícios e não representam preços em tempo real. O conteúdo não constitui recomendação de investimento, promessa de rentabilidade ou indicação de autorização regulatória.</p><div className="mt-7 flex flex-col justify-between gap-2 border-t border-white/10 pt-6 text-[11px] text-[#93A6BC] sm:flex-row"><span>© {new Date().getFullYear()} Master Trade. Todos os direitos reservados.</span><span>Trading simulado · Conteúdo informativo</span></div></div></footer>
+    <footer className="bg-[#0C1726] text-[#9BB1C6]"><div className="mx-auto max-w-7xl px-5 py-12 sm:px-8"><div className="flex flex-col justify-between gap-8 border-b border-white/10 pb-10 sm:flex-row sm:items-start"><div><Logo light/><p className="mt-4 max-w-sm text-sm leading-6">Tecnologia, informação e uma experiência de mercado mais clara.</p></div><div className="flex gap-8 text-sm"><Link href="/login" className="hover:text-white">Entrar</Link><Link href="/signup" className="hover:text-white">Criar conta</Link><a href="#mercados" className="hover:text-white">Mercados</a></div></div><div className="flex flex-col justify-between gap-4 pt-7 text-xs sm:flex-row"><p>© {new Date().getFullYear()} Master Trade. Todos os direitos reservados.</p><p className="max-w-xl leading-5">Plataforma de demonstração. As operações não são executadas em mercados financeiros. Cotações podem apresentar atraso.</p></div></div></footer>
   </div>;
 }
