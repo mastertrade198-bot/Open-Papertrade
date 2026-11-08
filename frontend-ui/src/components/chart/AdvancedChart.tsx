@@ -119,6 +119,7 @@ interface AdvancedChartProps {
     showNews: boolean;
   }) => void;
   height?: number;
+  disableDrawings?: boolean;
 }
 
 const COMPARE_COLORS = ["#06B6D4", "#F59E0B", "#A855F7", "#10B981", "#EC4899"];
@@ -130,6 +131,7 @@ export default function AdvancedChart({
   initialState,
   onStateChange,
   height = 640,
+  disableDrawings = false,
 }: AdvancedChartProps) {
   const [timeframe, setTimeframe] = useState<TimeRange>(initialState?.timeframe ?? "1M");
   const [mode, setMode] = useState<ChartMode>(initialState?.mode ?? "candlestick");
@@ -1277,15 +1279,15 @@ export default function AdvancedChart({
         </div>
       )}
 
-      <div className="flex items-center gap-2 border-b border-[var(--border-primary)] bg-[var(--bg-muted)]/30 px-3 py-1.5 text-[10px]">
+      {!disableDrawings && <div className="flex items-center gap-2 border-b border-[var(--border-primary)] bg-[var(--bg-muted)]/30 px-3 py-1.5 text-[10px]">
         <span className="font-semibold text-[var(--text-primary)]">Desenho:</span>
         <span className="text-[var(--text-muted)]">{activeTool === "cursor" ? "Selecione uma ferramenta na barra lateral" : activeTool === "horizontalLine" ? "Clique uma vez no preço para criar a linha horizontal" : activeTool === "trendline" ? "Clique em dois pontos para traçar a tendência" : activeTool === "fibonacci" ? "Marque o início e o fim do movimento" : activeTool === "rectangle" ? "Marque dois cantos da área" : "Clique no local desejado"}</span>
         {activeTool !== "cursor" && <button type="button" onClick={() => setActiveTool("cursor")} className="ml-auto rounded border border-[var(--border-primary)] px-2 py-1 text-[var(--text-primary)]">Cancelar (Esc)</button>}
-      </div>
+      </div>}
       {/* --- Body: left toolbar + chart area --- */}
       <div className="flex flex-1" style={{ minHeight: chartHeight }}>
         {/* Drawing toolbar (vertical) */}
-        <div className="flex flex-col gap-1 p-1 border-r border-[var(--border-primary)] bg-[var(--bg-card)]" aria-label="Ferramentas de desenho">
+        {!disableDrawings && <div className="flex flex-col gap-1 p-1 border-r border-[var(--border-primary)] bg-[var(--bg-card)]" aria-label="Ferramentas de desenho">
           {DRAWING_TOOLS.map(({ id, icon: Icon, label }) => (
             <button
               key={id}
@@ -1316,7 +1318,7 @@ export default function AdvancedChart({
               </div>
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Chart area */}
         <div className="flex-1 relative min-w-0">
@@ -1331,7 +1333,7 @@ export default function AdvancedChart({
               bars={effectiveBars}
             />
           )}
-          {bars.length > 0 && (
+          {!disableDrawings && bars.length > 0 && (
             <DrawingCanvas
               chart={chartRef.current}
               priceSeries={mainSeriesRef.current}
