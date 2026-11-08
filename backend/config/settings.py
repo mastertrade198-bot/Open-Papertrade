@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'stocks',
     'users',
     'withdrawals',
+    'robots',
     'filings',
 ]
 
@@ -235,6 +236,7 @@ UNFOLD = {
                 "title": "Trading",
                 "separator": True,
                 "items": [
+                    {"title": "Robôs", "icon": "smart_toy", "link": reverse_lazy("admin:robots_tradingrobot_changelist")},
                     {"title": "Operações", "icon": "candlestick_chart", "link": reverse_lazy("admin:users_position_changelist")},
                     {"title": "Financeiro", "icon": "account_balance_wallet", "link": reverse_lazy("admin:users_balancetransaction_changelist")},
                     {"title": "Auditoria", "icon": "history", "link": reverse_lazy("admin:users_positionauditlog_changelist")},

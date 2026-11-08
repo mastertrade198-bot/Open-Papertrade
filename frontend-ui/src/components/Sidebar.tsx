@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, TrendingUp, ArrowLeftRight, Wallet, History, Star, Settings, LogOut, CandlestickChart, ChevronDown, UserRound, Eye, EyeOff } from "lucide-react";
+import { LayoutDashboard, TrendingUp, ArrowLeftRight, Wallet, History, Star, Settings, LogOut, CandlestickChart, ChevronDown, UserRound, Eye, EyeOff, Bot } from "lucide-react";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useAuth } from "@/context/AuthContext";
 import { API_HOST } from "@/lib/api";
@@ -14,6 +14,7 @@ const navItems = [
   { icon: LayoutDashboard, label: "Painel", href: "/dashboard" },
   { icon: TrendingUp, label: "Mercados", href: "/markets" },
   { icon: ArrowLeftRight, label: "Negociar", href: "/trade" },
+  { icon: Bot, label: "Robôs", href: "/robots" },
   { icon: Wallet, label: "Carteira", href: "/portfolio" },
   { icon: Star, label: "Favoritos", href: "/watchlist" },
   { icon: History, label: "Extrato", href: "/balance-history" },
