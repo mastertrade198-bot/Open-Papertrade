@@ -31,55 +31,55 @@ def settle(robot, reason):
                               after={"reason": reason, "released": str(amount)})
 
 def run_demo_tick(robot_id):
-    """Uma rodada por robô; deve ser chamada por um único worker a cada ~6 minutos."""
+    """Registra somente operações concluídas; nenhuma nova operação fica aberta."""
     with transaction.atomic():
         robot = TradingRobot.objects.select_for_update().get(pk=robot_id)
         if robot.status != "ACTIVE":
             return False
         rng = random.SystemRandom()
-        op = robot.operations.filter(status="OPEN").order_by("-opened_at").first()
-        if op:
-            # Movimento sintético limitado a +/-0,9% por operação; não representa cotação real.
-            # Resultado sempre >= 0,01% em módulo; nunca gera 0,00%.
-            movement = Decimal(str(round(rng.uniform(0.0001, 0.009), 6)))
-            sign = rng.choice([Decimal("-1"), Decimal("1")])
-            minimum = max(CENT, (op.allocated_capital * Decimal("0.0001")).quantize(CENT, rounding=ROUND_CEILING))
-            magnitude = max(minimum, (op.allocated_capital * movement).quantize(CENT, rounding=ROUND_HALF_UP))
-            profit = magnitude * sign
-            # Não criar perda maior que o saldo disponível.
-            if profit < 0 and -profit > robot.equity:
-                profit = magnitude
-            price_change = profit / op.allocated_capital
-            if op.side == "SHORT":
-                price_change = -price_change
-            exit_price = (op.entry_price * (Decimal("1") + price_change)).quantize(PRICE_UNIT)
-            exit_price = max(PRICE_UNIT, exit_price)
-            op.exit_price = exit_price
-            op.pnl = profit
-            op.status = "CLOSED"
-            op.closed_at = timezone.now()
-            op.save(update_fields=["exit_price", "pnl", "status", "closed_at"])
-            robot.equity = max(Decimal("0"), robot.equity + profit)
-            robot.save(update_fields=["equity"])
-            RobotAudit.objects.create(robot=robot, actor="demo-engine", action="DEMO_EXIT",
-                                      after={"operation": str(op.pk), "pnl": str(profit)})
-        performance = robot.pnl_percent
-        if performance >= robot.take_profit or performance <= -robot.stop_loss or robot.equity <= 0:
+
+        # Liquida registros OPEN criados por versões anteriores, sem apagá-los.
+        legacy = list(robot.operations.filter(status="OPEN").order_by("opened_at"))
+        if legacy:
+            for op in legacy:
+                op.status = "CLOSED"
+                op.exit_price = op.entry_price
+                op.pnl = Decimal("0")
+                op.closed_at = timezone.now()
+                op.save(update_fields=["status", "exit_price", "pnl", "closed_at"])
+                RobotAudit.objects.create(robot=robot, actor="demo-engine",
+                    action="LEGACY_CLOSE", after={"operation": str(op.pk), "reason": "old_open_record"})
+            # Não contar operações legadas sem resultado como novas operações.
+        if robot.pnl_percent >= robot.take_profit or robot.pnl_percent <= -robot.stop_loss or robot.equity <= 0:
             settle(robot, "DEMO_LIMIT")
             return True
-        # Preço-base sintético; jamais rotular como preço de mercado.
-        previous = robot.operations.filter(status="CLOSED").order_by("-closed_at").first()
-        base = previous.exit_price if previous else Decimal("100")
-        entry_price = max(Decimal("0.00000001"), base).quantize(PRICE_UNIT)
+
+        previous = robot.operations.filter(status="CLOSED").exclude(exit_price__isnull=True).order_by("-closed_at").first()
+        entry_price = max(PRICE_UNIT, previous.exit_price if previous else Decimal("100"))
         allocation = min(robot.equity, robot.capital)
         if allocation < CENT:
             settle(robot, "DEMO_EXHAUSTED")
             return True
-        quantity = (allocation / entry_price).quantize(PRICE_UNIT, rounding=ROUND_HALF_UP)
+        side = rng.choice(["LONG", "SHORT"])
+        movement = Decimal(str(round(rng.uniform(0.0001, 0.009), 6)))
+        minimum = max(CENT, (allocation * Decimal("0.0001")).quantize(CENT, rounding=ROUND_CEILING))
+        magnitude = max(minimum, (allocation * movement).quantize(CENT, rounding=ROUND_HALF_UP))
+        profit = magnitude * rng.choice([Decimal("-1"), Decimal("1")])
+        if profit < 0 and -profit > robot.equity:
+            profit = magnitude
+        price_change = profit / allocation * (Decimal("-1") if side == "SHORT" else Decimal("1"))
+        exit_price = max(PRICE_UNIT, (entry_price * (Decimal("1") + price_change)).quantize(PRICE_UNIT))
+        now = timezone.now()
         op = RobotOperation.objects.create(
-            robot=robot, side=rng.choice(["LONG", "SHORT"]), entry_price=entry_price,
-            quantity=quantity, allocated_capital=allocation, status="OPEN"
+            robot=robot, side=side, entry_price=entry_price, exit_price=exit_price,
+            quantity=(allocation / entry_price).quantize(PRICE_UNIT, rounding=ROUND_HALF_UP),
+            allocated_capital=allocation, pnl=profit, status="CLOSED",
+            opened_at=now, closed_at=now,
         )
-        RobotAudit.objects.create(robot=robot, actor="demo-engine", action="DEMO_ENTRY",
-                                  after={"operation": str(op.pk), "syntheticPrice": str(entry_price)})
+        robot.equity = max(Decimal("0"), robot.equity + profit)
+        robot.save(update_fields=["equity"])
+        RobotAudit.objects.create(robot=robot, actor="demo-engine", action="DEMO_COMPLETED",
+            after={"operation": str(op.pk), "pnl": str(profit), "synthetic": True})
+        if robot.pnl_percent >= robot.take_profit or robot.pnl_percent <= -robot.stop_loss or robot.equity <= 0:
+            settle(robot, "DEMO_LIMIT")
         return True
