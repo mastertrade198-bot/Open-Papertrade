@@ -1,6 +1,6 @@
 """Motor DEMONSTRATIVO: preços e resultados sintéticos, sem ordens reais."""
 import random
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP, ROUND_CEILING
 from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
@@ -40,11 +40,20 @@ def run_demo_tick(robot_id):
         op = robot.operations.filter(status="OPEN").order_by("-opened_at").first()
         if op:
             # Movimento sintético limitado a +/-0,9% por operação; não representa cotação real.
-            change = Decimal(str(round(rng.uniform(-0.009, 0.009), 6)))
-            direction = Decimal("1") if op.side == "LONG" else Decimal("-1")
-            exit_price = (op.entry_price * (Decimal("1") + change)).quantize(PRICE_UNIT)
-            profit = (op.allocated_capital * change * direction).quantize(CENT, rounding=ROUND_HALF_UP)
-            profit = max(profit, -robot.equity)
+            # Resultado sempre >= 0,01% em módulo; nunca gera 0,00%.
+            movement = Decimal(str(round(rng.uniform(0.0001, 0.009), 6)))
+            sign = rng.choice([Decimal("-1"), Decimal("1")])
+            minimum = max(CENT, (op.allocated_capital * Decimal("0.0001")).quantize(CENT, rounding=ROUND_CEILING))
+            magnitude = max(minimum, (op.allocated_capital * movement).quantize(CENT, rounding=ROUND_HALF_UP))
+            profit = magnitude * sign
+            # Não criar perda maior que o saldo disponível.
+            if profit < 0 and -profit > robot.equity:
+                profit = magnitude
+            price_change = profit / op.allocated_capital
+            if op.side == "SHORT":
+                price_change = -price_change
+            exit_price = (op.entry_price * (Decimal("1") + price_change)).quantize(PRICE_UNIT)
+            exit_price = max(PRICE_UNIT, exit_price)
             op.exit_price = exit_price
             op.pnl = profit
             op.status = "CLOSED"
