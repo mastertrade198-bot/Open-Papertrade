@@ -38,7 +38,7 @@ def serialize(robot, details=False):
             'pnl': float(op.pnl), 'pnlPercent': float(op.pnl / op.allocated_capital * 100) if op.allocated_capital else 0,
             'status': op.status, 'openedAt': op.opened_at.isoformat(),
             'closedAt': op.closed_at.isoformat() if op.closed_at else None,
-        } for op in robot.operations.all()[:300]]
+        } for op in robot.operations.filter(status="CLOSED", pnl__isnull=False).exclude(pnl=0)[:300]]
     return data
 
 def parse_positive(raw, label, max_value=None):
