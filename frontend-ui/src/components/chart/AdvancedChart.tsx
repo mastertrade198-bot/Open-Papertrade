@@ -120,6 +120,7 @@ interface AdvancedChartProps {
   }) => void;
   height?: number;
   disableDrawings?: boolean;
+  minimalHeader?: boolean;
 }
 
 const COMPARE_COLORS = ["#06B6D4", "#F59E0B", "#A855F7", "#10B981", "#EC4899"];
@@ -132,6 +133,7 @@ export default function AdvancedChart({
   onStateChange,
   height = 640,
   disableDrawings = false,
+  minimalHeader = false,
 }: AdvancedChartProps) {
   const [timeframe, setTimeframe] = useState<TimeRange>(initialState?.timeframe ?? "1M");
   const [mode, setMode] = useState<ChartMode>(initialState?.mode ?? "candlestick");
@@ -1077,6 +1079,7 @@ export default function AdvancedChart({
           )}
         </div>
 
+        {!minimalHeader && <>
         <div className="w-px h-8 bg-[var(--border-primary)]" />
 
         {/* Timeframe */}
@@ -1225,10 +1228,11 @@ export default function AdvancedChart({
             <Camera size={15} />
           </button>
         </div>
+        </>}
       </div>
 
       {/* --- Legend strip: active indicator readouts --- */}
-      {(hoverOHLC || activeIndicators.size > 0) && (
+      {!minimalHeader && (hoverOHLC || activeIndicators.size > 0) && (
         <div className="flex items-center gap-4 px-4 py-2 border-b border-[var(--border-primary)] flex-wrap text-[10px] font-mono">
           {hoverOHLC && (
             <>
