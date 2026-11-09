@@ -471,32 +471,24 @@ function TradePageContent() {
               </div>
               <label className="flex items-center gap-2 rounded-md border border-[var(--border-primary)] bg-[var(--bg-card)] px-2.5 py-2">
                 <Search size={15} className="text-[var(--text-muted)]"/>
-                <input aria-label="Buscar ativo por nome ou código" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar ativo ou símbolo" className="w-full min-w-0 bg-transparent outline-none text-xs text-[var(--text-primary)] placeholder:text-[var(--text-dim)]"/>
+                <input aria-label="Buscar ativo por nome ou código" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar símbolo ou nome" className="w-full min-w-0 bg-transparent outline-none text-xs text-[var(--text-primary)] placeholder:text-[var(--text-dim)]"/>
                 {searchQuery && <button type="button" onClick={() => setSearchQuery("")} aria-label="Limpar busca"><X size={13}/></button>}
               </label>
             </div>
-            <div className="flex items-center gap-2 border-b border-[var(--border-primary)] px-3 py-3">
-              <div className="flex min-w-0 flex-1 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] p-0.5" aria-label="Filtro rápido de mercados">
-                {(["Favoritos","Todos"] as const).map(category=><button key={category} type="button" aria-pressed={marketCategory===category} onClick={()=>setMarketCategory(category)} className={`min-w-0 flex-1 rounded-md px-2 py-2 text-xs font-semibold transition-colors ${marketCategory===category?"bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]":"text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}>{category==="Favoritos"?"★ Favoritos":"Todos"}</button>)}
-              </div>
-              <select aria-label="Filtrar por categoria de ativo" value={marketCategory==="Favoritos"||marketCategory==="Todos"?"":marketCategory} onChange={e=>setMarketCategory(e.target.value||"Todos")} className="w-[112px] min-w-0 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] px-2 py-2.5 text-xs font-medium text-[var(--text-primary)]">
-                <option value="">Categorias</option>
-                {assetCategories.map(category=><option key={category.name} value={category.name}>{category.name}</option>)}
-              </select>
+            <div className="flex gap-1 overflow-x-auto px-2 py-2 border-b border-[var(--border-primary)]" role="tablist" aria-label="Categorias de ativos">
+              {["Favoritos", "Todos", ...assetCategories.map(category => category.name)].map(category => (
+                <button key={category} type="button" role="tab" aria-selected={marketCategory === category} onClick={() => setMarketCategory(category)} className={`shrink-0 rounded px-2 py-1.5 text-[11px] font-semibold transition-colors ${marketCategory === category ? "bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]" : "text-[var(--text-muted)] hover:bg-[var(--bg-muted)]"}`}>{category}</button>
+              ))}
             </div>
-            <div className="flex items-center justify-between px-3 py-2 text-[10px] text-[var(--text-muted)]"><span>{visibleMarketAssets.length} ativos</span><span>Preço em USD · Variação</span></div>
+            <div className="grid grid-cols-[minmax(0,1fr)_68px_82px] gap-2 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"><span>Nome / Símbolo</span><span className="text-right">Preço</span><span className="text-right">Variação</span></div>
             <div className="max-h-[560px] overflow-y-auto flex-1">
               {visibleMarketAssets.map(asset => {
                 const item = marketQuotes[asset.symbol.toUpperCase()] || getStockBySymbol(asset.symbol);
                 const change = item?.changePercent;
-                const active = selectedSymbol === asset.symbol;
-                return <div key={asset.symbol} className={`flex min-w-0 items-center border-b border-[var(--border-primary)]/40 transition-colors hover:bg-[var(--bg-hover)] ${active?"bg-[var(--accent-primary)]/10 border-l-2 border-l-[var(--accent-primary)]":""}`}>
-                  <button type="button" onClick={()=>toggleFavorite(asset.symbol)} title={favoriteSymbols.includes(asset.symbol)?"Remover dos favoritos":"Adicionar aos favoritos"} aria-label={`${favoriteSymbols.includes(asset.symbol)?"Remover":"Adicionar"} ${asset.symbol} ${favoriteSymbols.includes(asset.symbol)?"dos":"aos"} favoritos`} className={`shrink-0 p-2.5 ${favoriteSymbols.includes(asset.symbol)?"text-[var(--accent-primary)]":"text-[var(--text-muted)] hover:text-[var(--accent-primary)]"}`}><Star size={15} fill={favoriteSymbols.includes(asset.symbol)?"currentColor":"none"}/></button>
-                  <button type="button" onClick={()=>selectStock({symbol:asset.symbol,name:asset.name,provider:"catalog"})} aria-pressed={active} title={`Selecionar ${asset.name} (${asset.symbol})`} className="flex min-w-0 flex-1 items-center justify-between gap-2 py-3 pr-3 text-left">
-                    <span className="min-w-0 flex-1"><span className="block truncate text-[12px] font-semibold text-[var(--text-primary)]" title={asset.name}>{asset.name && asset.name!==asset.symbol?asset.name:(item?.name||asset.symbol)}</span><span className="mt-0.5 block truncate text-[11px] text-[var(--text-muted)]">{asset.displaySymbol||asset.symbol}</span></span>
-                    <span className="flex shrink-0 flex-col items-end gap-0.5"><span className="text-xs font-semibold tabular-nums text-[var(--text-primary)]">{item&&Number.isFinite(item.price)?Number(item.price).toFixed(2):"—"}</span><span className={`text-[11px] font-medium tabular-nums ${typeof change==="number"&&Number.isFinite(change)?change>=0?"text-[var(--accent-green)]":"text-[var(--accent-red)]":"text-[var(--text-muted)]"}`}>{typeof change==="number"&&Number.isFinite(change)?`${change>0?"+":""}${change.toFixed(2)}%`:"—"}</span></span>
-                  </button>
-                </div>;
+                return <div key={asset.symbol} className={`flex items-center border-b border-[var(--border-primary)]/40 hover:bg-[var(--bg-hover)] transition-colors ${selectedSymbol === asset.symbol ? "bg-[var(--accent-primary)]/10 border-l-2 border-l-[var(--accent-primary)]" : ""}`}><button type="button" onClick={() => toggleFavorite(asset.symbol)} title={favoriteSymbols.includes(asset.symbol) ? "Remover dos favoritos" : "Adicionar aos favoritos"} aria-label={`Favoritar ${asset.symbol}`} className="shrink-0 pl-2 py-3 text-[var(--accent-primary)]"><Star size={15} fill={favoriteSymbols.includes(asset.symbol) ? "currentColor" : "none"}/></button><button type="button" onClick={() => selectStock({symbol:asset.symbol,name:asset.name,provider:"catalog"})} aria-pressed={selectedSymbol === asset.symbol} className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2 py-2.5 text-left">
+                  <span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold text-[var(--text-primary)]" title={asset.name}>{asset.name && asset.name !== asset.symbol ? asset.name : (item?.name || asset.symbol)}</span><span className="block text-[10px] font-medium text-[var(--text-muted)]">{asset.displaySymbol || asset.symbol}</span></span>
+                  <span className="w-[68px] shrink-0 text-right text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">{item && Number.isFinite(item.price) ? Number(item.price).toFixed(2) : "—"}</span><span className={`w-[82px] shrink-0 text-right text-[11px] tabular-nums ${typeof change === "number" && change >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{typeof change === "number" && Number.isFinite(change) ? `${change > 0 ? "+" : ""}${change.toFixed(2)}%` : "—"}</span>
+                </button></div>;
               })}
               {visibleMarketAssets.length === 0 && <p className="px-3 py-6 text-center text-xs text-[var(--text-muted)]">{catalogLoading ? "Carregando ativos..." : "Nenhum ativo encontrado nesta categoria."}</p>}
               {catalogError && <p className="p-3 text-xs text-[var(--accent-red)]">{catalogError}</p>}
