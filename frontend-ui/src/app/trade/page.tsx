@@ -423,14 +423,7 @@ function TradePageContent() {
     setMarginInput((Math.floor(marginBalance * percent * 100) / 100).toFixed(2));
   };
 
-  const getButtonText = () => {
-    if (!marketStatus.isOpen) return `${marketStatus.marketName} Mercado fechado`;
-    if (sourceCurrency !== "USD") return "Apenas ativos em USD";
-    if (marginBalance === null) return "Carregando saldo disponível";
-    if (!validStopLoss || !validTakeProfit) return "Preço inválido de SL / TP";
-    if (margin > marginBalance) return "Margem insuficiente";
-    return `${orderType === "BUY" ? "Comprar" : "Vender"} ${selectedSymbol} · $${Number.isFinite(margin) ? margin.toFixed(2) : "0.00"} de margem · ${leverage}x`;
-  };
+  const getButtonText = () => orderType === "BUY" ? "Compra" : "Venda";
 
   return (
     <div className="trade-terminal flex h-full bg-[var(--bg-primary)]">
