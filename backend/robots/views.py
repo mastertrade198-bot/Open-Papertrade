@@ -1,7 +1,7 @@
 from decimal import Decimal, InvalidOperation
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.views import APIView
@@ -23,7 +23,7 @@ INDICATOR_DEFAULTS = {
 
 def serialize(robot, details=False, page=1):
     data = {
-        'id': str(robot.pk), 'symbol': robot.symbol, 'assetName': robot.asset_name,
+        'id': str(robot.pk), 'displayNumber': TradingRobot.objects.filter(user_id=robot.user_id).filter(Q(created_at__lt=robot.created_at) | Q(created_at=robot.created_at, pk__lte=robot.pk)).count(), 'symbol': robot.symbol, 'assetName': robot.asset_name,
         'capital': float(robot.capital), 'equity': float(robot.equity),
         'pnl': float(robot.pnl), 'pnlPercent': float(robot.pnl_percent),
         'tp': float(robot.take_profit), 'sl': float(robot.stop_loss),
