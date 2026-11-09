@@ -52,7 +52,13 @@ export default function BalanceHistoryPage() {
       setLoading(false);
     }
   }, []);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+    const timer = window.setInterval(() => { if (document.visibilityState === "visible") void load(); }, 15000);
+    const onFocus = () => void load();
+    window.addEventListener("focus", onFocus);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", onFocus); };
+  }, [load]);
   const shown = useMemo(() => transactions.filter((t) => filter === "ALL" || (filter === "CREDIT" ? t.amount > 0 : t.amount < 0 || t.category === "WITHDRAWAL_APPROVED" || t.category === "WITHDRAWAL_REJECTED_LEGACY")), [transactions, filter]);
   return (
     <div className="flex h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
