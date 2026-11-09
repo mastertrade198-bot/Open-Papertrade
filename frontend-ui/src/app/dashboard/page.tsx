@@ -487,7 +487,10 @@ export default function Dashboard() {
                           onClick={() => router.push(`/trade?symbol=${stock.symbol}`)}
                           className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-[var(--bg-muted)] cursor-pointer transition-colors"
                         >
-                          <span className="font-primary tabular-nums text-sm font-medium text-[var(--text-primary)]">{stock.symbol}</span>
+                          <div className="min-w-0 pr-2">
+                            <div className="font-primary tabular-nums text-sm font-semibold text-[var(--text-primary)]">{stock.symbol}</div>
+                            <div className="truncate text-[11px] text-[var(--text-muted)]" title={stock.name || stock.symbol}>{stock.name || stock.symbol}</div>
+                          </div>
                           <span className="font-primary tabular-nums text-xs font-semibold text-[var(--accent-green)]">{formatPercent(stock.changePercent)}</span>
                         </div>
                       )) : (
@@ -506,7 +509,10 @@ export default function Dashboard() {
                           onClick={() => router.push(`/trade?symbol=${stock.symbol}`)}
                           className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-[var(--bg-muted)] cursor-pointer transition-colors"
                         >
-                          <span className="font-primary tabular-nums text-sm font-medium text-[var(--text-primary)]">{stock.symbol}</span>
+                          <div className="min-w-0 pr-2">
+                            <div className="font-primary tabular-nums text-sm font-semibold text-[var(--text-primary)]">{stock.symbol}</div>
+                            <div className="truncate text-[11px] text-[var(--text-muted)]" title={stock.name || stock.symbol}>{stock.name || stock.symbol}</div>
+                          </div>
                           <span className="font-primary tabular-nums text-xs font-semibold text-[var(--accent-red)]">{formatPercent(stock.changePercent)}</span>
                         </div>
                       )) : (
@@ -517,6 +523,7 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
+            <LeveragedTradeHistory />
           </div>
 
           {/* Right Column - Allocation, Watchlist, Recent */}
@@ -667,7 +674,7 @@ export default function Dashboard() {
             </div>
           </Link>
         </div>
-      <div className="mt-6"><LeveragedTradeHistory /></div>
+
       </main>
     </div>
   );
