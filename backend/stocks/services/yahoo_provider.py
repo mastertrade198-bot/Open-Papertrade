@@ -34,6 +34,18 @@ INDEX_SYMBOLS = {
 }
 
 
+# Bare cryptocurrency symbols used by the simulator must resolve to USD pairs,
+# not to unrelated equity tickers with the same abbreviation.
+CRYPTO_USD_SYMBOLS = {
+    symbol: f"{symbol}-USD"
+    for symbol in (
+        "BTC", "ETH", "SOL", "XRP", "BNB", "ADA", "DOGE", "AVAX",
+        "LINK", "SHIB", "DOT", "LTC", "BCH", "UNI", "ATOM",
+        "XLM", "TRX", "ETC", "NEAR", "APT", "ARB", "OP",
+    )
+}
+
+
 class YahooFinanceProvider(BaseStockProvider):
     """Yahoo Finance provider for stock data."""
 
@@ -177,6 +189,11 @@ class YahooFinanceProvider(BaseStockProvider):
         Automatically tries different exchange suffixes to find the symbol.
         """
         symbol = symbol.upper().strip()
+
+        if symbol in CRYPTO_USD_SYMBOLS:
+            resolved = CRYPTO_USD_SYMBOLS[symbol]
+            self._symbol_cache[symbol] = resolved
+            return self._try_fetch_quote(resolved)
 
         # Check if it's a known index
         if symbol in INDEX_SYMBOLS:
@@ -424,7 +441,10 @@ class YahooFinanceProvider(BaseStockProvider):
 
         # Resolve to yahoo symbol using cache / suffix search
         yahoo_symbol = symbol
-        if symbol in INDEX_SYMBOLS:
+        if symbol in CRYPTO_USD_SYMBOLS:
+            yahoo_symbol = CRYPTO_USD_SYMBOLS[symbol]
+            self._symbol_cache[symbol] = yahoo_symbol
+        elif symbol in INDEX_SYMBOLS:
             yahoo_symbol = INDEX_SYMBOLS[symbol]
         elif symbol in self._symbol_cache:
             yahoo_symbol = self._symbol_cache[symbol]
