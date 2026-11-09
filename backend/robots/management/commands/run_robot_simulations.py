@@ -19,13 +19,22 @@ PRICE = Decimal("100.00000000")
 
 
 def slots(start, end):
-    """Three executions within 10 minutes; thereafter ~7-8 per hour."""
+    """Schedule synthetic operations for any positive duration.
+
+    Short scenarios spread three trades across their available time.
+    Longer scenarios start with three early trades and then run roughly
+    seven to eight per hour. The final trade always falls at the deadline.
+    """
+    duration = end - start
+    if duration.total_seconds() <= 0:
+        return []
+    if duration <= timedelta(minutes=10):
+        return [start + duration * fraction for fraction in (0.25, 0.50, 0.75, 1.0)]
     result = [start + timedelta(minutes=m) for m in (2, 5, 8)]
     minute = 16
     while start + timedelta(minutes=minute) < end:
         result.append(start + timedelta(minutes=minute))
         minute += 8
-    result = [dt for dt in result if dt < end]
     result.append(end)
     return result
 
