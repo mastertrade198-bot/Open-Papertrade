@@ -18,7 +18,7 @@ export default function RobotsPage(){
   const [robots,setRobots]=useState<Robot[]>([]);
   const [assets,setAssets]=useState<Asset[]>([]);
   const [symbol,setSymbol]=useState("BTC");
-  const [value,setValue]=useState("1000");
+  const [value,setValue]=useState("");
   const [tp,setTp]=useState("5");
   const [sl,setSl]=useState("3");
   const [selected,setSelected]=useState<string[]>(["ema","macd","rsi"]);
@@ -28,7 +28,7 @@ export default function RobotsPage(){
   const [loading,setLoading]=useState(true);
   const [showForm,setShowForm]=useState(false);
   const modalRef=useRef<HTMLDivElement>(null);
-  const openForm=()=>{setError("");setShowForm(true)};
+  const openForm=()=>{setError("");setValue("");setShowAdvanced(false);setShowForm(true)};
   const closeForm=()=>{if(!creating){setShowForm(false);setShowAdvanced(false);setError("")}};
   useEffect(()=>{
     if(!showForm)return;
@@ -60,26 +60,49 @@ export default function RobotsPage(){
   const signed=(n:number)=>`${n>0?"+":""}${n.toFixed(2)}%`;
   const reload=()=>api("").then(data=>setRobots(data.robots));
   useEffect(()=>{reload().catch(e=>setError(e.message)).finally(()=>setLoading(false));const timer=setInterval(()=>{reload().catch(()=>{});},5000);fetch(`${API_HOST}/api/stocks/catalog/?page=1`,{credentials:"include"}).then(r=>r.json()).then(d=>{if(Array.isArray(d.assets))setAssets(d.assets)}).catch(()=>{});return()=>clearInterval(timer);},[]);
-  const create=async(e:React.FormEvent)=>{e.preventDefault();setCreating(true);setError("");try{await api("",{method:"POST",body:JSON.stringify({symbol,value,tp,sl,indicators:Object.fromEntries(selected.map(k=>[k,parameters[k]]))})});await reload();setShowForm(false);setShowAdvanced(false);}catch(e){setError(e instanceof Error?e.message:"Falha ao criar robô")}finally{setCreating(false)}};
+  const create=async(e:React.FormEvent)=>{e.preventDefault();if(!value.trim()||!Number.isFinite(Number(value))||Number(value)<=0){setError("Informe o valor em USD que deseja reservar para este robô.");return;}setCreating(true);setError("");try{await api("",{method:"POST",body:JSON.stringify({symbol,value,tp,sl,indicators:Object.fromEntries(selected.map(k=>[k,parameters[k]]))})});await reload();setShowForm(false);setShowAdvanced(false);}catch(e){setError(e instanceof Error?e.message:"Falha ao criar robô")}finally{setCreating(false)}};
   return <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]"><Sidebar/><main className="mx-auto max-w-[1440px] px-4 py-8 lg:px-8">
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs uppercase tracking-widest text-[var(--accent-primary)]">Ambiente de demonstração</p><h1 className="text-2xl font-bold">Meus robôs de investimento</h1><p className="text-sm text-[var(--text-secondary)]">Acompanhe estratégias, indicadores e resultados em um único painel.</p></div><button onClick={openForm} className="rounded-lg bg-[var(--accent-primary)] px-5 py-3 text-sm font-bold text-white">+ Iniciar novo robô</button></div>
     {error&&!showForm&&<p role="alert" className="mb-4 rounded-lg border border-red-500/40 p-3 text-sm text-red-400">{error}</p>}
     {showForm&&<div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6" onMouseDown={e=>{if(e.target===e.currentTarget)closeForm()}}>
       <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-[3px]" aria-hidden="true"/>
-      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="robot-create-title" tabIndex={-1} className="relative z-10 flex max-h-[min(90vh,850px)] w-full max-w-[780px] flex-col overflow-hidden rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] shadow-2xl outline-none">
+      <div ref={modalRef} role="dialog" aria-modal="true" aria-labelledby="robot-create-title" tabIndex={-1} className="relative z-10 flex max-h-[min(90vh,850px)] w-full max-w-[660px] flex-col overflow-hidden rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] shadow-2xl outline-none">
       <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[var(--border-primary)] px-5 py-4 sm:px-7">
-        <div><p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[var(--accent-primary)]">Nova estratégia</p><h2 id="robot-create-title" className="text-xl font-semibold">Iniciar novo robô</h2><p className="mt-1 text-xs text-[var(--text-secondary)]">Defina o investimento e os parâmetros da simulação.</p></div>
+        <div><p className="mb-1 text-xs font-semibold uppercase tracking-widest text-[var(--accent-primary)]">Nova estratégia</p><h2 id="robot-create-title" className="text-xl font-semibold">Iniciar novo robô</h2><p className="mt-1 text-xs text-[var(--text-secondary)]">Escolha o ativo e informe quanto do seu saldo deseja destinar ao robô.</p></div>
         <button type="button" onClick={closeForm} disabled={creating} aria-label="Fechar janela" className="rounded-lg border border-[var(--border-primary)] p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] disabled:opacity-40"><X size={18}/></button>
       </div>
       <form onSubmit={create} className="flex min-h-0 flex-col">
       <div className="overflow-y-auto px-5 py-5 sm:px-7">
       {error&&<p role="alert" className="mb-4 rounded-lg border border-red-500/40 p-3 text-sm text-red-400">{error}</p>}
-      <div className="grid gap-4 sm:grid-cols-2"><label className="text-xs">Ativo<select value={symbol} onChange={e=>setSymbol(e.target.value)} className="mt-2 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] p-3">{[...new Map([{symbol:"BTC",name:"Bitcoin"},{symbol:"ETH",name:"Ethereum"},...assets].map(a=>[a.symbol,a])).values()].map(a=><option key={a.symbol} value={a.symbol}>{a.name} ({a.symbol})</option>)}</select></label>{[["Capital (USD)",value,setValue],["Meta de ganho — TP (%)",tp,setTp],["Limite de perda — SL (%)",sl,setSl]].map(([label,v,set])=><label key={label as string} className="text-xs">{label as string}<input required type="number" min="0.01" step="0.01" value={v as string} onChange={e=>(set as (s:string)=>void)(e.target.value)} className="mt-2 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] p-3"/></label>)}</div>
-      <div className="mt-4 grid gap-2 text-xs text-[var(--text-secondary)] sm:grid-cols-2"><p><strong className="text-[var(--text-primary)]">Meta de ganho (TP):</strong> percentual positivo configurado para encerrar o robô.</p><p><strong className="text-[var(--text-primary)]">Limite de perda (SL):</strong> percentual negativo configurado para encerrar o robô.</p></div>
+      <div className="space-y-5">
+        <section aria-labelledby="robot-asset-heading">
+          <h3 id="robot-asset-heading" className="mb-2 text-sm font-semibold">1. Escolha o ativo</h3>
+          <label htmlFor="robot-asset" className="mb-1 block text-xs text-[var(--text-secondary)]">Mercado que o robô acompanhará</label>
+          <select id="robot-asset" value={symbol} onChange={e=>setSymbol(e.target.value)} className="w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] px-4 py-3 text-sm">{[...new Map([{symbol:"BTC",name:"Bitcoin"},{symbol:"ETH",name:"Ethereum"},...assets].map(a=>[a.symbol,a])).values()].map(a=><option key={a.symbol} value={a.symbol}>{a.name} ({a.symbol})</option>)}</select>
+        </section>
+        <section aria-labelledby="robot-investment-heading" className="rounded-xl border border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/5 p-4 sm:p-5">
+          <h3 id="robot-investment-heading" className="text-sm font-semibold">2. Quanto deseja investir?</h3>
+          <p id="robot-capital-help" className="mt-1 text-xs leading-relaxed text-[var(--text-secondary)]">Digite o valor em dólares (USD) que será retirado do seu saldo disponível e reservado exclusivamente para este robô. Nenhum valor é preenchido automaticamente.</p>
+          <label htmlFor="robot-capital" className="mt-4 block text-xs font-semibold">Valor do investimento (USD) <span className="text-red-400">*</span></label>
+          <div className="mt-2 flex overflow-hidden rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] focus-within:ring-2 focus-within:ring-[var(--accent-primary)]/40">
+            <span className="flex items-center border-r border-[var(--border-primary)] px-4 text-sm font-semibold text-[var(--text-secondary)]">US$</span>
+            <input id="robot-capital" required type="number" min="0.01" step="0.01" inputMode="decimal" placeholder="Digite o valor" aria-describedby="robot-capital-help" value={value} onChange={e=>setValue(e.target.value)} className="min-w-0 w-full bg-transparent px-4 py-3 text-base font-semibold outline-none placeholder:font-normal placeholder:text-[var(--text-secondary)]"/>
+          </div>
+          <p className="mt-2 text-xs text-[var(--text-secondary)]">Esse valor será reservado ao iniciar. O investimento simulado está sujeito a ganhos e perdas.</p>
+        </section>
+        <section aria-labelledby="robot-limits-heading">
+          <h3 id="robot-limits-heading" className="mb-1 text-sm font-semibold">3. Defina os limites</h3>
+          <p className="mb-3 text-xs text-[var(--text-secondary)]">Percentuais utilizados como metas de encerramento da simulação.</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="text-xs font-medium">Meta de ganho (%)<input required type="number" min="0.01" step="0.01" value={tp} onChange={e=>setTp(e.target.value)} className="mt-2 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] px-4 py-3 text-sm"/><span className="mt-1 block font-normal text-[var(--text-secondary)]">Ex.: 5 significa +5%.</span></label>
+            <label className="text-xs font-medium">Limite de perda (%)<input required type="number" min="0.01" step="0.01" value={sl} onChange={e=>setSl(e.target.value)} className="mt-2 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] px-4 py-3 text-sm"/><span className="mt-1 block font-normal text-[var(--text-secondary)]">Ex.: 3 significa -3%.</span></label>
+          </div>
+        </section>
+      </div>
       <button type="button" aria-expanded={showAdvanced} onClick={()=>setShowAdvanced(v=>!v)} className="mt-6 flex w-full items-center justify-between rounded-lg border border-[var(--border-primary)] px-4 py-3 text-left text-sm font-semibold"><span>Configurações avançadas · Indicadores técnicos ({selected.length} selecionados)</span><span aria-hidden="true">{showAdvanced?"−":"+"}</span></button>{showAdvanced&&<><p className="mt-3 text-xs text-[var(--text-secondary)]">Indicadores são parâmetros de configuração; os resultados demonstrativos não são calculados a partir desses sinais.</p><div className="mt-3 grid gap-3 md:grid-cols-2">{Object.keys(presets).map(key=><div key={key} className="rounded-lg border border-[var(--border-primary)] p-4"><label className="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" checked={selected.includes(key)} onChange={e=>setSelected(s=>e.target.checked?[...s,key]:s.filter(x=>x!==key))}/>{names[key]}</label>{selected.includes(key)&&<div className="mt-3 grid grid-cols-3 gap-2">{Object.entries(parameters[key]).map(([param,num])=><label key={param} className="text-[11px] text-[var(--text-secondary)]">{param}<input type="number" min="0.01" max="1000" step="any" value={num} onChange={e=>setParameters(p=>({...p,[key]:{...p[key],[param]:Number(e.target.value)}}))} className="mt-1 w-full rounded border border-[var(--border-primary)] bg-[var(--bg-primary)] p-2 text-[var(--text-primary)]"/></label>)}</div>}</div>)}</div>
       </>}
-      <p className="mt-5 text-xs text-[var(--text-secondary)]">O capital informado será reservado do saldo disponível. O robô começa com resultado de 0%.</p>
-      </div><div className="flex shrink-0 items-center justify-end gap-3 border-t border-[var(--border-primary)] bg-[var(--bg-card)] px-5 py-4 sm:px-7"><button type="button" disabled={creating} onClick={closeForm} className="rounded-lg border border-[var(--border-primary)] px-5 py-3 text-sm font-semibold disabled:opacity-40">Cancelar</button><button disabled={creating||selected.length===0} className="rounded-lg bg-[var(--accent-primary)] px-5 py-3 text-sm font-bold text-white disabled:opacity-50">{creating?"Criando...":"Iniciar robô"}</button></div></form></div></div>}
+      <div className="mt-5 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] p-4"><p className="text-xs font-semibold">Resumo antes de iniciar</p><div className="mt-3 flex items-center justify-between gap-3 text-sm"><span className="text-[var(--text-secondary)]">Valor que será reservado</span><strong className="tabular-nums">{value&&Number(value)>0?money(Number(value)):"Informe um valor"}</strong></div><p className="mt-2 text-xs text-[var(--text-secondary)]">Ao confirmar, esse valor será reservado do seu saldo de demonstração. O robô começa com resultado de 0%.</p></div>
+      </div><div className="flex shrink-0 items-center justify-end gap-3 border-t border-[var(--border-primary)] bg-[var(--bg-card)] px-5 py-4 sm:px-7"><button type="button" disabled={creating} onClick={closeForm} className="rounded-lg border border-[var(--border-primary)] px-5 py-3 text-sm font-semibold disabled:opacity-40">Cancelar</button><button disabled={creating||selected.length===0||!value||Number(value)<=0} className="rounded-lg bg-[var(--accent-primary)] px-5 py-3 text-sm font-bold text-white disabled:opacity-50">{creating?"Criando...":"Iniciar robô"}</button></div></form></div></div>}
     <section aria-label="Resumo dos robôs" className="mb-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {[
         {label:"Total de robôs",value:String(robots.length),hint:"Estratégias cadastradas"},
