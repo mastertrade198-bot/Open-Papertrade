@@ -140,7 +140,7 @@ function TradePageContent() {
     return Array.from(groups, ([name, assets]) => ({ name, assets }));
   }, [availableAssets]);
 
-  const [marketCategory, setMarketCategory] = useState("Favoritos");
+  const [marketCategory, setMarketCategory] = useState("Todos");
   const [showMarketCategories, setShowMarketCategories] = useState(true);
   // Single source of truth: the account watchlist shared with Markets and Favorites.
   const favoriteSymbols = useMemo(() => watchlist.map(item => item.symbol.toUpperCase()), [watchlist]);
@@ -165,11 +165,9 @@ function TradePageContent() {
     const symbols = new Set<string>();
     // Refresh the selected asset and currently displayed market list first.
     symbols.add(selectedSymbol);
-    for (const asset of visibleMarketAssets) {
-      if (marketCategory === "Favoritos" && favoriteSymbols.includes(asset.symbol)) symbols.add(asset.symbol);
-    }
+    for (const symbol of favoriteSymbols) symbols.add(symbol);
     return [...symbols];
-  }, [selectedSymbol, visibleMarketAssets, marketCategory, favoriteSymbols]);
+  }, [selectedSymbol, favoriteSymbols]);
   const marketQuotesInFlight = useRef(false);
   const refreshMarketQuotes = useCallback(async () => {
     if (!marketSymbols.length || marketQuotesInFlight.current) return;
@@ -554,16 +552,41 @@ function TradePageContent() {
                 {searchQuery && <button type="button" onClick={() => setSearchQuery("")} aria-label="Limpar busca"><X size={13}/></button>}
               </label>
             </div>
+            {!searchQuery.trim() && (
+              <section aria-label="Ativos favoritos" className="border-b border-[var(--border-primary)]">
+                <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-[var(--text-primary)]">
+                  <Star size={14} className="text-[var(--accent-primary)]" fill="currentColor"/>
+                  Favoritos
+                  <span className="ml-auto text-[10px] font-normal text-[var(--text-muted)]">{favoriteSymbols.length}</span>
+                </div>
+                <div className="max-h-[240px] overflow-y-auto">
+                  {watchlist.map(favorite => {
+                    const symbol = favorite.symbol.toUpperCase();
+                    const asset = availableAssets.find(item => item.symbol.toUpperCase() === symbol);
+                    const item = marketQuotes[symbol] || getStockBySymbol(symbol) || favorite;
+                    const price = item?.price;
+                    return (
+                      <div key={symbol} className={`flex items-center gap-1 border-t border-[var(--border-primary)]/40 hover:bg-[var(--bg-hover)] ${selectedSymbol === symbol ? "bg-[var(--accent-primary)]/10" : ""}`}>
+                        <button type="button" onClick={() => toggleFavorite(symbol)} aria-label={`Remover ${symbol} dos favoritos`} className="shrink-0 px-2 py-2 text-[var(--accent-primary)]"><Star size={13} fill="currentColor"/></button>
+                        <button type="button" onClick={() => selectStock({symbol,name:asset?.name || favorite.name || symbol,provider:"catalog"})}
+                          className="flex min-w-0 flex-1 items-center justify-between gap-2 py-2 pr-3 text-left">
+                          <span className="min-w-0"><span className="block truncate text-xs font-semibold text-[var(--text-primary)]">{asset?.name || favorite.name || symbol}</span><span className="block text-[10px] text-[var(--text-muted)]">{asset?.displaySymbol || symbol}</span></span>
+                          <span className="shrink-0 text-right text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">{typeof price === "number" && Number.isFinite(price) ? price.toLocaleString("en-US",{maximumFractionDigits:2}) : "—"}</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {watchlist.length === 0 && <p className="px-3 pb-3 text-[11px] text-[var(--text-muted)]">Marque a estrela de um ativo para adicioná-lo aqui.</p>}
+                </div>
+              </section>
+            )}
             {showMarketCategories && !searchQuery.trim() ? (
               <nav aria-label="Categorias de mercados" className="flex flex-col divide-y divide-[var(--border-primary)]/60">
-                {["Favoritos", ...assetCategories.map(category => category.name), "Todos"].map(category => (
+                {assetCategories.map(category => category.name).concat("Todos").map(category => (
                   <button key={category} type="button"
                     onClick={() => { setMarketCategory(category); setShowMarketCategories(false); }}
                     className="group flex w-full items-center justify-between gap-2 px-3 py-3 text-left text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent-primary)]">
-                    <span className="flex min-w-0 items-center gap-2">
-                      {category === "Favoritos" && <Star size={14} className="text-[var(--accent-primary)]" />}
-                      <span className="truncate">{category}</span>
-                    </span>
+                    <span className="min-w-0 truncate">{category}</span>
                     <ChevronRight size={15} className="shrink-0 text-[var(--text-muted)] group-hover:text-[var(--accent-primary)]"/>
                   </button>
                 ))}
