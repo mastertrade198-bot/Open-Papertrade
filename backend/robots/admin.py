@@ -87,8 +87,8 @@ class TradingRobotAdmin(ModelAdmin):
     search_fields = ('symbol', 'asset_name', 'user__email')
     actions = None
     fieldsets = (
-        ('Valor investido', {
-            'fields': ('invested_amount',),
+        ('Informações do robô', {
+            'fields': (('asset_display', 'invested_amount'),),
         }),
         ('Configurar finalização', {
             'description': 'Escolha a data no calendário, digite a hora (HH:MM) e informe o percentual de lucro ou prejuízo. O resultado será aplicado apenas no encerramento programado.',
@@ -103,9 +103,13 @@ class TradingRobotAdmin(ModelAdmin):
             'classes': ('collapse',),
         }),
     )
-    readonly_fields = ('invested_amount', 'robot_number', 'status_summary', 'user', 'symbol', 'asset_name',
+    readonly_fields = ('asset_display', 'invested_amount', 'robot_number', 'status_summary', 'user', 'symbol', 'asset_name',
                        'capital', 'equity', 'take_profit', 'stop_loss', 'indicators',
                        'created_at', 'closed_at', 'closed_reason')
+
+    @admin.display(description='Ativo')
+    def asset_display(self, obj):
+        return f'{obj.asset_name} ({obj.symbol})' if obj and obj.pk else '—'
 
     @admin.display(description='Valor investido')
     def invested_amount(self, obj):
