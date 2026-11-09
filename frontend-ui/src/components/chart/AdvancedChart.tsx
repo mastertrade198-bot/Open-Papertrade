@@ -214,43 +214,42 @@ export default function AdvancedChart({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeframe, mode, activeIndicators, drawings, logScale, compareSymbols, showVolumeProfile, showNews]);
 
-  // Fetch bars
+  // Historical OHLC must come from the candle provider, not from quote ticks.
+  // Refresh in the background without clearing the chart or resetting zoom.
   useEffect(() => {
     let cancelled = false;
+    let inFlight = false;
     setBars([]);
-    fittedHistoryKeyRef.current = '';
+    fittedHistoryKeyRef.current = "";
     setIsLoading(true);
-    stockAPI
-      .getHistory(symbol, timeframe)
-      .then((res) => {
+
+    const loadHistory = async (initial = false) => {
+      if (inFlight || document.hidden) return;
+      inFlight = true;
+      try {
+        const res = await stockAPI.getHistory(symbol, timeframe);
         if (!cancelled && res.success) {
-          const sorted = [...res.bars].filter(b => [b.open, b.high, b.low, b.close].every(Number.isFinite)).sort((a,b) => String(a.time).localeCompare(String(b.time)));
-          setBars(sorted.filter((b,i) => i === 0 || String(b.time) !== String(sorted[i-1].time)));
+          const sorted = [...res.bars]
+            .filter(b => [b.open, b.high, b.low, b.close].every(Number.isFinite))
+            .sort((a, b) => String(a.time).localeCompare(String(b.time)));
+          const unique = sorted.filter((b, i) => i === 0 || String(b.time) !== String(sorted[i - 1].time));
+          setBars(previous => JSON.stringify(previous) === JSON.stringify(unique) ? previous : unique);
         }
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
+      } catch {
+        // Retain the last valid historical candles if the provider is unavailable.
+      } finally {
+        inFlight = false;
+        if (initial && !cancelled) setIsLoading(false);
+      }
+    };
+
+    void loadHistory(true);
+    const timer = window.setInterval(() => { void loadHistory(); }, 60000);
     return () => {
       cancelled = true;
+      window.clearInterval(timer);
     };
   }, [symbol, timeframe]);
-
-  // Update the latest displayed candle from the same quote as the order ticket.
-  // Never append a synthetic historical candle or alter the original open.
-  useEffect(() => {
-    if (replayActive || !Number.isFinite(livePrice) || !livePrice || livePrice <= 0) return;
-    setBars(previous => {
-      if (!previous.length) return previous;
-      const last = previous[previous.length - 1];
-      if (last.close === livePrice) return previous;
-      return [...previous.slice(0, -1), {
-        ...last, close: livePrice, high: Math.max(last.high, livePrice),
-        low: Math.min(last.low, livePrice),
-      }];
-    });
-  }, [livePrice, replayActive]);
 
   // Normalise bars into indicator-ready form
   const normalisedBars: IndicatorBar[] = useMemo(
