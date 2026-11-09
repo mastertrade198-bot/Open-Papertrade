@@ -66,7 +66,7 @@ export default function Sidebar() {
           <div className="flex min-w-0 items-center gap-1 rounded-lg border border-[var(--border-primary)] px-1.5 py-1 lg:gap-1.5 lg:px-2.5 lg:py-1.5" aria-label="Saldo disponível em USD">
             <Wallet size={15} className="hidden shrink-0 text-[var(--text-muted)] lg:block" />
             <span className="hidden text-[10px] text-[var(--text-muted)] xl:inline">Saldo</span>
-            <span className="whitespace-nowrap font-mono text-[10px] sm:text-[12px] font-semibold text-[var(--text-primary)] tabular-nums">
+            <span className="whitespace-nowrap font-sans text-[11px] sm:text-[12px] font-semibold tracking-tight text-[var(--text-primary)] tabular-nums">
               {balanceVisible ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(buyingPower) : "••••••"}
             </span>
             <button type="button" onClick={() => setBalanceVisible(v => !v)}
