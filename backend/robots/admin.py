@@ -1,4 +1,6 @@
 from django import forms
+from django.contrib import messages
+from .settlement import settle_robot
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 from django.db import transaction
@@ -35,6 +37,7 @@ class EasyScheduleWidget(forms.SplitDateTimeWidget):
 
 
 class RobotScheduleForm(forms.ModelForm):
+    close_now = forms.BooleanField(label='Finalizar agora pelo resultado atual (simulação)', required=False, help_text='Ao salvar, encerra com o patrimônio atual e devolve o saldo simulado à carteira.')
     scheduled_end_at = forms.SplitDateTimeField(
         label='Finalização programada',
         required=False,
@@ -69,11 +72,14 @@ class RobotScheduleForm(forms.ModelForm):
             raise forms.ValidationError('Informe a data e o percentual juntos, ou deixe ambos vazios.')
         if percent is not None and percent < -100:
             raise forms.ValidationError('O prejuízo não pode superar 100% do capital.')
-        if when is not None and when <= timezone.now():
+        closing = data.get('close_now', False)
+        if when is not None and when <= timezone.now() and not closing:
             raise forms.ValidationError('A data de finalização deve estar no futuro.')
-        if when is not None and percent is not None:
+        if when is not None and percent is not None and not closing:
             if percent > self.instance.take_profit or percent < -self.instance.stop_loss:
                 raise forms.ValidationError('O resultado final precisa respeitar o take profit e o stop loss do robô.')
+        if self.instance.pk and self.instance.status == 'CLOSED' and closing:
+            raise forms.ValidationError('Este robô já está encerrado.')
         if self.instance.pk and self.instance.status == 'CLOSED' and (when is not None or percent is not None):
             raise forms.ValidationError('Não é possível programar um robô encerrado.')
         return data
@@ -100,7 +106,7 @@ class RobotConfigurationFilter(admin.SimpleListFilter):
 @admin.register(TradingRobot)
 class TradingRobotAdmin(ModelAdmin):
     form = RobotScheduleForm
-    list_display = ('sequential_robot_id', 'user', 'configuration_badge', 'configured_percent', 'status_badge', 'invested_capital', 'created_at')
+    list_display = ('sequential_robot_id', 'user', 'configuration_badge', 'configured_percent', 'current_pnl', 'status_badge', 'invested_capital', 'created_at')
     list_display_links = ('sequential_robot_id', 'user')
     list_filter = (RobotConfigurationFilter, 'status')
     list_per_page = 20
@@ -110,12 +116,13 @@ class TradingRobotAdmin(ModelAdmin):
     actions = None
     fieldsets = (
         ('Informações do robô', {
-            'fields': (('asset_display', 'invested_amount'),),
+            'fields': (('asset_display', 'invested_amount'), ('current_pnl', 'current_equity'), 'status_summary'),
         }),
         ('Configurar finalização', {
             'description': 'Escolha a data no calendário, digite a hora (HH:MM) e informe o percentual de lucro ou prejuízo. O robô executará microoperações sintéticas até o encerramento, respeitando os limites e o resultado programado. Simulação demonstrativa.',
             'fields': ('scheduled_end_at', 'scheduled_pnl_percent'),
         }),
+        ('Encerramento imediato', {'description': 'Encerre com o lucro ou prejuízo atual. O saldo devolvido é simulado.', 'fields': ('close_now',)}),
         ('Parâmetros originais', {
             'fields': ('take_profit', 'stop_loss', 'indicators'),
             'classes': ('collapse',),
@@ -125,7 +132,7 @@ class TradingRobotAdmin(ModelAdmin):
             'classes': ('collapse',),
         }),
     )
-    readonly_fields = ('asset_display', 'invested_amount', 'robot_number', 'status_summary', 'user', 'symbol', 'asset_name',
+    readonly_fields = ('asset_display', 'invested_amount', 'current_pnl', 'current_equity', 'robot_number', 'status_summary', 'user', 'symbol', 'asset_name',
                        'capital', 'equity', 'take_profit', 'stop_loss', 'indicators',
                        'created_at', 'closed_at', 'closed_reason')
 
@@ -164,6 +171,18 @@ class TradingRobotAdmin(ModelAdmin):
         ).count()
         return format_html('<span title="Identificador interno: {}">ID {}</span>', str(obj.pk), number)
 
+    @admin.display(description='Lucro / prejuízo atual')
+    def current_pnl(self, obj):
+        if not obj or not obj.pk:
+            return '—'
+        value = obj.equity - obj.capital
+        color = '#16734a' if value > 0 else '#b42318' if value < 0 else '#667085'
+        return format_html('<span style="font-weight:600;color:{}">{} USD ({}%)</span>', color, value, round(obj.pnl_percent, 2))
+
+    @admin.display(description='Patrimônio atual (simulado)')
+    def current_equity(self, obj):
+        return f'{obj.equity} USD' if obj and obj.pk else '—'
+
     @admin.display(description='Percentual configurado', ordering='scheduled_pnl_percent')
     def configured_percent(self, obj):
         if obj.scheduled_pnl_percent is None or obj.scheduled_end_at is None:
@@ -197,18 +216,36 @@ class TradingRobotAdmin(ModelAdmin):
             return
         with transaction.atomic():
             previous = TradingRobot.objects.select_for_update().get(pk=obj.pk)
+            if form.cleaned_data.get('close_now'):
+                if previous.status == 'CLOSED':
+                    self.message_user(request, 'Este robô já foi encerrado.', level=messages.WARNING)
+                    return
+                before = {'status': previous.status, 'equity': str(previous.equity),
+                          'pnl': str(previous.pnl), 'pnl_percent': str(previous.pnl_percent)}
+                previous.status = 'CLOSED'
+                previous.closed_at = timezone.now()
+                previous.closed_reason = 'Encerramento manual do cenário simulado pelo administrador'
+                previous.save(update_fields=['status', 'closed_at', 'closed_reason'])
+                RobotAudit.objects.create(
+                    robot=previous, actor=request.user.get_username(), action='ADMIN_CLOSE_CURRENT',
+                    before=before, after={'status': 'CLOSED', 'equity': str(previous.equity), 'simulated': True},
+                    reason='Encerrado pelo administrador com o resultado atual, sem alterar operações',
+                )
+                settle_robot(previous)
+                self.message_user(request, 'Robô encerrado com o resultado atual. Patrimônio simulado devolvido à carteira.', level=messages.SUCCESS)
+                return
+            if previous.status == 'CLOSED':
+                return
+            changed_schedule = (previous.scheduled_end_at != obj.scheduled_end_at or
+                                previous.scheduled_pnl_percent != obj.scheduled_pnl_percent)
+            if not changed_schedule:
+                return
             before = {'scheduled_end_at': previous.scheduled_end_at.isoformat() if previous.scheduled_end_at else None,
                       'scheduled_pnl_percent': str(previous.scheduled_pnl_percent) if previous.scheduled_pnl_percent is not None else None,
                       'equity_at_change': str(previous.equity)}
-            # Persist only the two authorized fields, not stale fields from the form.
-            changed_schedule = (previous.scheduled_end_at != obj.scheduled_end_at or
-                                previous.scheduled_pnl_percent != obj.scheduled_pnl_percent)
-            started_at = previous.simulation_started_at
-            if changed_schedule:
-                started_at = timezone.now() if obj.scheduled_end_at is not None else None
+            started_at = timezone.now() if obj.scheduled_end_at is not None else None
             TradingRobot.objects.filter(pk=obj.pk).update(
-                simulation_started_at=started_at,
-                scheduled_end_at=obj.scheduled_end_at,
+                simulation_started_at=started_at, scheduled_end_at=obj.scheduled_end_at,
                 scheduled_pnl_percent=obj.scheduled_pnl_percent)
             after = {'scheduled_end_at': obj.scheduled_end_at.isoformat() if obj.scheduled_end_at else None,
                      'scheduled_pnl_percent': str(obj.scheduled_pnl_percent) if obj.scheduled_pnl_percent is not None else None,
@@ -216,7 +253,7 @@ class TradingRobotAdmin(ModelAdmin):
                      'simulation_started_at': started_at.isoformat() if started_at else None}
             RobotAudit.objects.create(robot=previous, actor=request.user.get_username(),
                                       action='ADMIN_SCHEDULE', before=before, after=after,
-                                      reason='Programação administrativa do resultado demonstrativo')
+                                      reason='Reprogramação administrativa do cenário demonstrativo')
 
 @admin.register(RobotOperation)
 class RobotOperationAdmin(ModelAdmin):
