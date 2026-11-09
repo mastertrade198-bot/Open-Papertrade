@@ -2,8 +2,7 @@ from django import forms
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 from django.db import transaction
-from django.db.models import F, Window
-from django.db.models.functions import RowNumber
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.html import format_html
 from .models import TradingRobot, RobotOperation, RobotAudit
@@ -108,18 +107,14 @@ class TradingRobotAdmin(ModelAdmin):
     readonly_fields = ('user', 'symbol', 'asset_name', 'capital', 'equity', 'status',
                        'take_profit', 'stop_loss', 'indicators', 'created_at', 'closed_at', 'closed_reason')
 
-    def get_queryset(self, request):
-        # Número global de apresentação, ordenado pela criação; UUID permanece interno.
-        return super().get_queryset(request).annotate(
-            admin_sequence=Window(
-                expression=RowNumber(),
-                order_by=[F('created_at').asc(), F('pk').asc()],
-            )
-        )
-
     @admin.display(description='Robô')
     def robot_label(self, obj):
-        return f'Robô #{obj.admin_sequence:04d} · {obj.asset_name}'
+        # Sequência global estável, inclusive quando a lista é filtrada.
+        number = TradingRobot.objects.filter(
+            Q(created_at__lt=obj.created_at) |
+            Q(created_at=obj.created_at, pk__lte=obj.pk)
+        ).count()
+        return f'Robô #{number:04d} · {obj.asset_name}'
 
     @admin.display(description='Situação', ordering='status')
     def status_badge(self, obj):
