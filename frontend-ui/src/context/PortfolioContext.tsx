@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Stock, Holding, Transaction, WatchlistItem, PriceAlert, Order, User } from "@/types";
 import { APP_CONFIG } from "@/config/app";
 import { stockAPI, userAPI, StockQuote } from "@/lib/api";
+import { subscribeCryptoPrices } from "@/lib/cryptoStream";
 import { setCurrentCurrency, CURRENCY_SYMBOLS, EXCHANGE_RATES, convertCurrency } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useAchievementToast } from "@/components/AchievementToast";
@@ -466,6 +467,33 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMaintenance, authLoading, isAuthenticated]); // Run when auth state resolves
 
+  // Shared portfolio state receives supported crypto ticks over one WebSocket.
+  // Other assets continue using the backend's cached quote endpoints.
+  const streamSymbols = [...new Set([...crypto, ...watchlist, ...holdings].map(item => item.symbol.toUpperCase()))].sort().join(",");
+  useEffect(() => {
+    if (isMaintenance || authLoading || !isAuthenticated) return;
+    return subscribeCryptoPrices(streamSymbols.split(",").filter(Boolean), updates => {
+      const bySymbol = new Map(updates.map(q => [q.symbol, q]));
+      setCrypto(prev => prev.map(item => {
+        const q = bySymbol.get(item.symbol.toUpperCase());
+        return q ? { ...item, price: q.price, change: q.change, changePercent: q.changePercent } : item;
+      }));
+      setWatchlist(prev => prev.map(item => {
+        const q = bySymbol.get(item.symbol.toUpperCase());
+        return q ? { ...item, price: q.price, change: q.change, changePercent: q.changePercent } : item;
+      }));
+      setHoldings(prev => prev.map(item => {
+        const q = bySymbol.get(item.symbol.toUpperCase());
+        return q ? { ...item, currentPrice: q.price, change: q.change, changePercent: q.changePercent } : item;
+      }));
+      setAlerts(prev => prev.map(item => {
+        const q = bySymbol.get(item.symbol.toUpperCase());
+        return q ? { ...item, currentPrice: q.price } : item;
+      }));
+      setLastUpdated(new Date());
+    });
+  }, [isMaintenance, authLoading, isAuthenticated, streamSymbols]);
+
   // Auto-refresh prices only when there's data to refresh
   useEffect(() => {
     // Skip auto-refresh during maintenance or if no holdings and no watchlist
@@ -473,7 +501,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const interval = setInterval(refreshPrices, 300000); // 5 minutes (matches backend cache TTL)
+    const interval = setInterval(() => { if (document.visibilityState === "visible" && navigator.onLine) void refreshPrices(); }, 60000); // cached REST fallback
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMaintenance, holdings.length, watchlist.length]); // Re-evaluate when data presence changes
