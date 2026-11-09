@@ -486,7 +486,7 @@ class PositionAdmin(ModelAdmin):
         if change:
             raise PermissionDenied("Posições existentes não podem ser alteradas por este formulário.")
         from decimal import ROUND_HALF_UP
-        from .models import balance_context
+        from .balance_journal import balance_context
         from .position_views import money, QTY_STEP
         with transaction.atomic():
             account = UserProfile.objects.select_for_update().get(pk=obj.user_id)
@@ -523,7 +523,7 @@ class PositionAdmin(ModelAdmin):
 
     @admin.action(description="Encerrar posições simuladas selecionadas (preço de referência)")
     def close_simulated_positions(self, request, queryset):
-        from .models import balance_context
+        from .balance_journal import balance_context
         from .position_views import get_usd_quote, money, PRICE_STEP
         completed = 0
         skipped = 0
