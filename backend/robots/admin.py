@@ -124,7 +124,7 @@ class TradingRobotAdmin(ModelAdmin):
             'fields': (('asset_display', 'invested_amount'),),
         }),
         ('Configurar finalização', {
-            'description': 'Escolha a data no calendário, digite a hora (HH:MM) e informe o percentual de lucro ou prejuízo. O resultado será aplicado apenas no encerramento programado.',
+            'description': 'Escolha a data no calendário, digite a hora (HH:MM) e informe o percentual de lucro ou prejuízo. O robô executará microoperações sintéticas até o encerramento, respeitando os limites e o resultado programado. Simulação demonstrativa.',
             'fields': ('scheduled_end_at', 'scheduled_pnl_percent'),
         }),
         ('Parâmetros originais', {
