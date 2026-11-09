@@ -1,0 +1,72 @@
+/* Master Trade Admin — scoped visual refinement for Django Unfold.
+   No layout-critical JS, remote fonts, or additional dependencies. */
+:root {
+  --mt-navy: #0d1b2b;
+  --mt-ink: #14243b;
+  --mt-muted: #64748b;
+  --mt-line: #dce5ef;
+  --mt-blue: #2563eb;
+  --mt-soft: #f6f9fd;
+}
+body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; font-feature-settings: "tnum" 1; }
+body:not(.dark) { background-color: var(--mt-soft); color: var(--mt-ink); }
+body:not(.dark) #content,
+body:not(.dark) main { --tw-ring-color: rgba(37,99,235,.1); }
+body:not(.dark) fieldset {
+  border: 1px solid var(--mt-line);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(15, 32, 53, .025);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+body:not(.dark) fieldset > h2,
+body:not(.dark) fieldset > legend {
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .025em;
+  color: #243c5c;
+}
+body:not(.dark) input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+body:not(.dark) select,
+body:not(.dark) textarea {
+  border-radius: 9px;
+  border-color: #cfdbe9;
+  min-height: 38px;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+body:not(.dark) input:focus-visible,
+body:not(.dark) select:focus-visible,
+body:not(.dark) textarea:focus-visible {
+  outline: 2px solid rgba(37,99,235,.35);
+  outline-offset: 1px;
+}
+body:not(.dark) .help,
+body:not(.dark) .helptext { color: var(--mt-muted); font-size: 11px; line-height: 1.5; }
+body:not(.dark) .errorlist {
+  border-radius: 9px;
+  font-size: 12px;
+}
+body:not(.dark) table { border-collapse: separate; border-spacing: 0; }
+body:not(.dark) thead th { font-size: 11px; letter-spacing: .02em; font-weight: 700; }
+body:not(.dark) tbody td { font-size: 12px; }
+body:not(.dark) tbody tr:hover { background: #f1f6fd; }
+body:not(.dark) .submit-row { border-top: 1px solid var(--mt-line); }
+body:not(.dark) .button,
+body:not(.dark) button[type="submit"],
+body:not(.dark) input[type="submit"] {
+  border-radius: 9px;
+  font-weight: 650;
+}
+body:not(.dark) .breadcrumbs { font-size: 12px; }
+body:not(.dark) #content h1 { font-size: clamp(21px, 2vw, 28px); font-weight: 750; letter-spacing: -.035em; }
+@media (max-width: 768px) {
+  body:not(.dark) fieldset { border-radius: 10px; margin-bottom: 12px; }
+  body:not(.dark) table thead th, body:not(.dark) table tbody td { font-size: 11px; }
+  body:not(.dark) #content h1 { font-size: 21px; }
+  body:not(.dark) input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+  body:not(.dark) select { max-width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body:not(.dark) input, body:not(.dark) select, body:not(.dark) textarea { transition: none; }
+}
