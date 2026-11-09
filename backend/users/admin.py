@@ -162,7 +162,7 @@ class UserProfileAdmin(ModelAdmin):
     fieldsets = [
         ("Profile", {"fields": ["id", "name", "username", "email", "cpf", "date_of_birth", "phone", "avatar_url"]}),
         ("Email Verification", {"classes": ("collapse",), "fields": ["is_email_verified"]}),
-        ("Account", {"fields": ["buying_power", "initial_balance", "plan"]}),
+        ("Account", {"fields": ["buying_power", "initial_balance"]}),
         ("Admin", {"classes": ("collapse",), "fields": ["is_admin"]}),
         ("Security", {"classes": ("collapse",), "fields": ["password_changed_at", "is_2fa_enabled"]}),
         ("Timestamps", {"classes": ("collapse",), "fields": ["created_at", "updated_at"]}),
@@ -179,7 +179,7 @@ class UserProfileAdmin(ModelAdmin):
             return [
                 ("Novo usuário", {"fields": ("name", "username", "email", "cpf", "date_of_birth", "phone", "password1", "password2")}),
                 ("Saldo simulado", {"fields": ("initial_balance", "buying_power")}),
-                ("Conta", {"fields": ("plan", "is_email_verified")}),
+                ("Conta", {"fields": ("is_email_verified",)}),
             ]
         return super().get_fieldsets(request, obj)
 
