@@ -235,7 +235,16 @@ export default function AdvancedChart({
             .filter(b => [b.open, b.high, b.low, b.close].every(Number.isFinite))
             .sort((a, b) => String(a.time).localeCompare(String(b.time)));
           const unique = sorted.filter((b, i) => i === 0 || String(b.time) !== String(sorted[i - 1].time));
-          setBars(previous => JSON.stringify(previous) === JSON.stringify(unique) ? previous : unique);
+          setBars(previous => {
+            // Preserve older pages loaded by scrolling; update matching recent candles.
+            const merged = new Map(previous.map(bar => [String(bar.time), bar]));
+            for (const bar of unique) merged.set(String(bar.time), bar);
+            const combined = [...merged.values()].sort((a, b) =>
+              Number.isFinite(Number(a.time)) && Number.isFinite(Number(b.time))
+                ? Number(a.time) - Number(b.time)
+                : String(a.time).localeCompare(String(b.time)));
+            return JSON.stringify(previous) === JSON.stringify(combined) ? previous : combined;
+          });
         }
       } catch {
         // Retain the last valid historical candles if the provider is unavailable.
