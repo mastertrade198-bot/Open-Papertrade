@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 import {
   Search,
   ChevronDown,
+  ChevronRight,
+  ArrowLeft,
   Minus,
   Plus,
   TrendingUp,
@@ -140,6 +142,7 @@ function TradePageContent() {
   }, [availableAssets]);
 
   const [marketCategory, setMarketCategory] = useState("Favoritos");
+  const [showMarketCategories, setShowMarketCategories] = useState(true);
   // Single source of truth: the account watchlist shared with Markets and Favorites.
   const favoriteSymbols = useMemo(() => watchlist.map(item => item.symbol.toUpperCase()), [watchlist]);
   const toggleFavorite = useCallback((symbol: string) => {
@@ -548,15 +551,35 @@ function TradePageContent() {
               </div>
               <label className="flex items-center gap-2 rounded-md border border-[var(--border-primary)] bg-[var(--bg-card)] px-2.5 py-2">
                 <Search size={15} className="text-[var(--text-muted)]"/>
-                <input aria-label="Buscar ativo por nome ou código" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Buscar símbolo ou nome" className="w-full min-w-0 bg-transparent outline-none text-xs text-[var(--text-primary)] placeholder:text-[var(--text-dim)]"/>
+                <input aria-label="Buscar ativo por nome ou código" value={searchQuery} onChange={e => { setSearchQuery(e.target.value); if (e.target.value.trim()) setShowMarketCategories(false); }} placeholder="Buscar símbolo ou nome" className="w-full min-w-0 bg-transparent outline-none text-xs text-[var(--text-primary)] placeholder:text-[var(--text-dim)]"/>
                 {searchQuery && <button type="button" onClick={() => setSearchQuery("")} aria-label="Limpar busca"><X size={13}/></button>}
               </label>
             </div>
-            <div className="grid grid-cols-2 gap-1.5 p-2 border-b border-[var(--border-primary)]" role="tablist" aria-label="Categorias de ativos">
-              {["Favoritos", "Todos", ...assetCategories.map(category => category.name)].map(category => (
-                <button key={category} type="button" role="tab" aria-selected={marketCategory === category} onClick={() => setMarketCategory(category)} className={`min-w-0 truncate rounded-md px-2 py-2 text-[11px] font-semibold text-left transition-colors ${marketCategory === category ? "bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]" : "text-[var(--text-muted)] hover:bg-[var(--bg-muted)]"}`}>{category}</button>
-              ))}
-            </div>
+            {showMarketCategories && !searchQuery.trim() ? (
+              <nav aria-label="Categorias de mercados" className="flex flex-col divide-y divide-[var(--border-primary)]/60">
+                {["Favoritos", ...assetCategories.map(category => category.name), "Todos"].map(category => (
+                  <button key={category} type="button"
+                    onClick={() => { setMarketCategory(category); setShowMarketCategories(false); }}
+                    className="group flex w-full items-center justify-between gap-2 px-3 py-3 text-left text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent-primary)]">
+                    <span className="flex min-w-0 items-center gap-2">
+                      {category === "Favoritos" && <Star size={14} className="text-[var(--accent-primary)]" />}
+                      <span className="truncate">{category}</span>
+                    </span>
+                    <ChevronRight size={15} className="shrink-0 text-[var(--text-muted)] group-hover:text-[var(--accent-primary)]"/>
+                  </button>
+                ))}
+              </nav>
+            ) : (
+              <div className="flex items-center gap-2 border-b border-[var(--border-primary)] px-2 py-2">
+                <button type="button" onClick={() => { setShowMarketCategories(true); setSearchQuery(""); }}
+                  aria-label="Voltar às categorias" className="rounded p-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]">
+                  <ArrowLeft size={16}/>
+                </button>
+                <span className="min-w-0 flex-1 truncate text-xs font-semibold text-[var(--text-primary)]">{searchQuery.trim() ? "Resultados da busca" : marketCategory}</span>
+                <span className="text-[10px] tabular-nums text-[var(--text-muted)]">{visibleMarketAssets.length}</span>
+              </div>
+            )}
+            {(!showMarketCategories || Boolean(searchQuery.trim())) && (
             <div className="flex items-center justify-between gap-2 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"><span>Nome / Símbolo</span>{marketCategory === "Favoritos" && <span>Preço / Variação</span>}</div>
             <div className="max-h-[560px] overflow-y-auto flex-1">
               {visibleMarketAssets.map(asset => {
@@ -570,6 +593,7 @@ function TradePageContent() {
               {visibleMarketAssets.length === 0 && <p className="px-3 py-6 text-center text-xs text-[var(--text-muted)]">{catalogLoading ? "Carregando ativos..." : "Nenhum ativo encontrado nesta categoria."}</p>}
               {catalogError && <p className="p-3 text-xs text-[var(--accent-red)]">{catalogError}</p>}
             </div>
+            )}
             <div className="border-t border-[var(--border-primary)] px-3 py-2 text-[10px] text-[var(--text-muted)]">{visibleMarketAssets.length} ativos · {marketQuotesLoading ? "Atualizando cotações..." : marketQuotesUpdatedAt ? `Última consulta ${new Date(marketQuotesUpdatedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"})}` : "Aguardando cotações"}</div>
           </aside>
           {/* Left Panel - Stock Selection */}
