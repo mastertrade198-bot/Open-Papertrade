@@ -137,7 +137,7 @@ class YahooFinanceProvider(BaseStockProvider):
                         provider=self.name,
                         currency=str(fast.currency or currency),
                     )
-            except (AttributeError, TypeError, ValueError, KeyError, ZeroDivisionError) as exc:
+            except Exception as exc:
                 logger.debug("Fast quote unavailable for %s: %s", yahoo_symbol, exc)
 
             info = ticker.info
