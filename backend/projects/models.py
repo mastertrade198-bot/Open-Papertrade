@@ -13,6 +13,7 @@ class Project(models.Model):
     category = models.CharField('Categoria', max_length=20, choices=CATEGORY_CHOICES, default='FIXED_INCOME')
     asset = models.CharField('Ativo / setor', max_length=120)
     description = models.TextField('Descrição', blank=True)
+    image_url = models.URLField('URL da imagem de capa (HTTPS)', max_length=1000, blank=True, help_text='Cole a URL HTTPS de uma imagem pública para a capa do projeto.')
     duration_days = models.PositiveIntegerField('Prazo (dias)', validators=[MinValueValidator(1)])
     expected_return_percent = models.DecimalField('Expectativa de resultado (%)', max_digits=8, decimal_places=2)
     minimum_amount = models.DecimalField('Aplicação mínima (USD fictícios)', max_digits=18, decimal_places=2, default=Decimal('10.00'), validators=[MinValueValidator(Decimal('0.01'))])
