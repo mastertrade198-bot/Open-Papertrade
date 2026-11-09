@@ -151,6 +151,7 @@ export default function AdvancedChart({
   );
   const [drawings, setDrawings] = useState<Drawing[]>(initialState?.drawings ?? []);
   const [activeTool, setActiveTool] = useState<DrawingTool>("cursor");
+  const [showChartTools, setShowChartTools] = useState(true);
   const [bars, setBars] = useState<HistoricalBar[]>([]);
   const fittedHistoryKeyRef = useRef<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -315,7 +316,7 @@ export default function AdvancedChart({
         horzLines: { color: "rgba(255, 255, 255, 0.03)" },
       },
       crosshair: {
-        mode: CrosshairMode.Magnet,
+        mode: CrosshairMode.Normal,
         vertLine: { color: "rgba(255, 92, 0, 0.3)", width: 1, style: LineStyle.Dashed },
         horzLine: { color: "rgba(255, 92, 0, 0.3)", width: 1, style: LineStyle.Dashed },
       },
@@ -1035,6 +1036,25 @@ export default function AdvancedChart({
     setCompareSymbols((prev) => prev.filter((s) => s !== sym));
   };
 
+  // Escape returns to navigation mode, as in professional trading terminals.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveTool("cursor");
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const zoomChart = (direction: 1 | -1) => {
+    const scale = chartRef.current?.timeScale();
+    if (!scale) return;
+    const range = scale.getVisibleLogicalRange();
+    if (!range) return;
+    const midpoint = (range.from + range.to) / 2;
+    const half = Math.max(3, (range.to - range.from) * (direction === 1 ? 0.4 : 0.625));
+    scale.setVisibleLogicalRange({ from: midpoint - half, to: midpoint + half });
+  };
+
   // Drawing handlers
   const handleDrawingComplete = useCallback((d: Drawing) => {
     setDrawings((prev) => [...prev, d]);
@@ -1043,7 +1063,7 @@ export default function AdvancedChart({
 
   const clearAllDrawings = () => {
     if (drawings.length === 0) return;
-    if (!confirm("Clear all drawings?")) return;
+    if (!confirm("Remover todos os desenhos deste gráfico?")) return;
     setDrawings([]);
   };
 
@@ -1094,6 +1114,13 @@ export default function AdvancedChart({
           {!disableDrawings && <button type="button" onClick={() => setMobileDrawingToolsOpen(v => !v)} aria-expanded={mobileDrawingToolsOpen} aria-label="Ferramentas de desenho" className="rounded-lg p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"><PencilRuler size={17}/></button>}
           <button type="button" onClick={() => setMobileFullscreen(v => !v)} aria-label={mobileFullscreen ? "Fechar gráfico ampliado" : "Ampliar gráfico"} className="rounded-lg p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]">{mobileFullscreen ? <Minimize2 size={17}/> : <Maximize2 size={17}/>}</button>
         </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-[var(--border-primary)] px-3 py-2" aria-label="Controles de navegação do gráfico">
+        <button type="button" onClick={() => { setActiveTool("cursor"); chartRef.current?.timeScale().scrollToRealTime(); }} title="Ir para o candle mais recente" className="rounded-md border border-[var(--border-primary)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]"><LocateFixed size={15} /></button>
+        <button type="button" onClick={() => zoomChart(1)} title="Aproximar gráfico" aria-label="Aproximar gráfico" className="rounded-md border border-[var(--border-primary)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]"><Plus size={15} /></button>
+        <button type="button" onClick={() => zoomChart(-1)} title="Afastar gráfico" aria-label="Afastar gráfico" className="rounded-md border border-[var(--border-primary)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]"><Minus size={15} /></button>
+        <button type="button" onClick={() => chartRef.current?.timeScale().fitContent()} title="Ajustar todo o histórico à tela" className="rounded-md border border-[var(--border-primary)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]">Ajustar</button>
+        {!disableDrawings && <button type="button" onClick={() => { setShowChartTools(v => !v); setActiveTool("cursor"); }} aria-pressed={showChartTools} className="ml-auto rounded-md border border-[var(--border-primary)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]">{showChartTools ? "Ocultar desenhos" : "Mostrar desenhos"}</button>}
       </div>
       {/* --- Header: symbol + price + timeframe + chart type + indicators + scale + snapshot --- */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border-primary)] flex-wrap">
@@ -1327,7 +1354,7 @@ export default function AdvancedChart({
         </div>
       )}
 
-      {!disableDrawings && <div className="flex items-center gap-2 border-b border-[var(--border-primary)] bg-[var(--bg-muted)]/30 px-3 py-1.5 text-[10px]">
+      {!disableDrawings && activeTool !== "cursor" && <div className="flex items-center gap-2 border-b border-[var(--border-primary)] bg-[var(--bg-muted)]/30 px-3 py-1.5 text-[10px]">
         <span className="font-semibold text-[var(--text-primary)]">Desenho:</span>
         <span className="text-[var(--text-muted)]">{activeTool === "cursor" ? "Selecione uma ferramenta na barra lateral" : activeTool === "horizontalLine" ? "Clique uma vez no preço para criar a linha horizontal" : activeTool === "trendline" ? "Clique em dois pontos para traçar a tendência" : activeTool === "fibonacci" ? "Marque o início e o fim do movimento" : activeTool === "rectangle" ? "Marque dois cantos da área" : "Clique no local desejado"}</span>
         {activeTool !== "cursor" && <button type="button" onClick={() => setActiveTool("cursor")} className="ml-auto rounded border border-[var(--border-primary)] px-2 py-1 text-[var(--text-primary)]">Cancelar (Esc)</button>}
@@ -1335,7 +1362,7 @@ export default function AdvancedChart({
       {/* --- Body: left toolbar + chart area --- */}
       <div className="flex flex-1" style={{ minHeight: chartHeight }}>
         {/* Drawing toolbar (vertical) */}
-        {!disableDrawings && <div className={`${mobileDrawingToolsOpen ? "flex" : "hidden"} lg:flex flex-col gap-1 p-1 border-r border-[var(--border-primary)] bg-[var(--bg-card)]`} aria-label="Ferramentas de desenho">
+        {!disableDrawings && <div className={`${showChartTools && mobileDrawingToolsOpen ? "flex" : "hidden"} ${showChartTools ? "lg:flex" : "lg:hidden"} flex-col gap-1 p-1 border-r border-[var(--border-primary)] bg-[var(--bg-card)]`} aria-label="Ferramentas de desenho">
           {DRAWING_TOOLS.map(({ id, icon: Icon, label }) => (
             <button
               key={id}
@@ -1353,7 +1380,7 @@ export default function AdvancedChart({
           <div className="h-px bg-[var(--border-primary)] my-1" />
           <button
             onClick={clearAllDrawings}
-            title="Clear all drawings"
+            title="Limpar todos os desenhos"
             disabled={drawings.length === 0}
             className="p-2 rounded-md text-[var(--text-muted)] hover:bg-[var(--bg-muted)] hover:text-[var(--accent-red)] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)] transition-all"
           >
@@ -1398,7 +1425,7 @@ export default function AdvancedChart({
           )}
           {!isLoading && bars.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center text-sm text-[var(--text-muted)] pointer-events-none">
-              No chart data available
+              Dados de gráfico indisponíveis
             </div>
           )}
         </div>
