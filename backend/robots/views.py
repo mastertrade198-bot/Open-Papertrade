@@ -1,7 +1,7 @@
 from decimal import Decimal, InvalidOperation
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import F, Q
+from django.db.models import F, Q, Sum
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework.views import APIView
@@ -22,10 +22,14 @@ INDICATOR_DEFAULTS = {
 }
 
 def serialize(robot, details=False, page=1):
+    manual_pnl = robot.operations.filter(source='MANUAL', status='CLOSED').aggregate(total=Sum('pnl'))['total'] or Decimal('0.00')
+    total_equity = robot.equity + manual_pnl
+    total_pnl = total_equity - robot.capital
     data = {
         'id': str(robot.pk), 'displayNumber': TradingRobot.objects.filter(user_id=robot.user_id).filter(Q(created_at__lt=robot.created_at) | Q(created_at=robot.created_at, pk__lte=robot.pk)).count(), 'symbol': robot.symbol, 'assetName': robot.asset_name,
-        'capital': float(robot.capital), 'equity': float(robot.equity),
-        'pnl': float(robot.pnl), 'pnlPercent': float(robot.pnl_percent),
+        'capital': float(robot.capital), 'equity': float(total_equity),
+        'pnl': float(total_pnl), 'pnlPercent': float(total_pnl / robot.capital * 100) if robot.capital else 0,
+        'automaticPnl': float(robot.pnl), 'manualPnl': float(manual_pnl),
         'tp': float(robot.take_profit), 'sl': float(robot.stop_loss),
         'status': robot.status, 'indicators': robot.indicators,
         'createdAt': robot.created_at.isoformat(), 'closedAt': robot.closed_at.isoformat() if robot.closed_at else None,
@@ -36,7 +40,7 @@ def serialize(robot, details=False, page=1):
         paginator = Paginator(operations, 10)
         current_page = paginator.get_page(page)
         data['operations'] = [{
-            'id': str(op.pk), 'side': op.side, 'source': op.source, 'accounted': op.source != 'MANUAL', 'entryPrice': float(op.entry_price),
+            'id': str(op.pk), 'side': op.side, 'source': op.source, 'accounted': True, 'entryPrice': float(op.entry_price),
             'exitPrice': float(op.exit_price) if op.exit_price is not None else None,
             'quantity': float(op.quantity), 'capital': float(op.allocated_capital),
             'pnl': float(op.pnl), 'pnlPercent': float(op.pnl / op.allocated_capital * 100) if op.allocated_capital else 0,
