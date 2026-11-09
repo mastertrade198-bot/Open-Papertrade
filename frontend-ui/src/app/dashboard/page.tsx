@@ -23,6 +23,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import LeveragedTradeHistory from "@/components/LeveragedTradeHistory";
+import ActiveRobotsCard from "@/components/ActiveRobotsCard";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { stockAPI, userAPI, StockQuote, type SimulatedPosition } from "@/lib/api";
 import { formatCurrency, formatPercent, formatDateTime } from "@/lib/utils";
@@ -674,8 +675,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Recent leveraged operations across full dashboard width */}
-        <LeveragedTradeHistory />
+        {/* Manual operations and running robots */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+          <div className="min-w-0 lg:col-span-3"><LeveragedTradeHistory /></div>
+          <div className="min-w-0 lg:col-span-2"><ActiveRobotsCard /></div>
+        </div>
 
         {/* Quick Actions */}
         <div className="hidden lg:grid grid-cols-4 gap-4">
