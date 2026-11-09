@@ -406,7 +406,7 @@ class AdminPositionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        from stocks.models import StockCache
+        from stocks.models import StockCache, TradableAsset
         crypto = {
             "BTC": "Bitcoin", "ETH": "Ethereum", "SOL": "Solana",
             "XRP": "XRP", "BNB": "BNB", "ADA": "Cardano",
@@ -414,6 +414,8 @@ class AdminPositionForm(forms.ModelForm):
             "LTC": "Litecoin", "BCH": "Bitcoin Cash", "DOT": "Polkadot",
         }
         assets = dict(crypto)
+        for stock in TradableAsset.objects.all()[:1500]:
+            assets[stock.symbol.upper()] = stock.name or stock.symbol
         for stock in StockCache.objects.all()[:1500]:
             assets[stock.symbol.upper()] = getattr(stock, "name", "") or stock.symbol
         for symbol, name in Position.objects.values_list("symbol", "name").distinct()[:500]:
