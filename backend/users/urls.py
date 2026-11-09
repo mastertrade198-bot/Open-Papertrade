@@ -79,7 +79,6 @@ urlpatterns = [
     path('leaderboard/', views.LeaderboardView.as_view(), name='leaderboard'),
 
     # Reset
-    path('reset/', views.ResetAccountView.as_view(), name='reset'),
 
     # Transfers
     path('transfer/', views.TransferFundsView.as_view(), name='transfer-funds'),
