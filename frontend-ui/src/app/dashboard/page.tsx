@@ -79,7 +79,7 @@ export default function Dashboard() {
   const projectsPrincipal = activeProjects.reduce((sum, item) => sum + item.principal, 0);
   const projectsValue = activeProjects.reduce((sum, item) => sum + item.simulatedValue, 0);
   const projectsPnl = projectsValue - projectsPrincipal;
-  const operationsBalance = marginPositions.reduce((sum, item) => sum + (Number(item.margin) || 0) + (Number(item.unrealizedPnl) || 0), 0) + projectsValue;
+  const operationsBalance = marginPositions.reduce((sum, item) => sum + (Number(item.margin) || 0) + (Number(item.unrealizedPnl) || 0), 0);
 
   const [marginLedger, setMarginLedger] = useState<number | null>(null);
   const [marginLoadError, setMarginLoadError] = useState(false);
@@ -110,11 +110,11 @@ export default function Dashboard() {
   const marginPnl = marginPositions.reduce((sum, position) => sum + (Number(position.unrealizedPnl) || 0), 0);
   // The margin ledger already excludes committed margin; restore it only once in equity.
   const dashboardBuyingPower = marginLedger ?? buyingPower;
-  const dashboardEquity = dashboardBuyingPower + marginCommitted + marginPnl + totalPortfolioValue + projectsValue;
-  const dashboardReturns = totalReturns + marginPnl + projectsPnl;
-  const dashboardReturnBase = totalInvested + marginCommitted + projectsPrincipal;
+  const dashboardEquity = dashboardBuyingPower + marginCommitted + marginPnl + totalPortfolioValue;
+  const dashboardReturns = totalReturns + marginPnl;
+  const dashboardReturnBase = totalInvested + marginCommitted;
   const dashboardReturnPercent = dashboardReturnBase > 0 ? dashboardReturns / dashboardReturnBase * 100 : 0;
-  const dashboardPositionCount = holdings.length + marginPositions.length + activeProjects.length;
+  const dashboardPositionCount = holdings.length + marginPositions.length;
 
   const [indices, setIndices] = useState<StockQuote[]>([]);
   const [tickerQuotes, setTickerQuotes] = useState<StockQuote[]>([]);
@@ -427,16 +427,16 @@ export default function Dashboard() {
             {/* Active simulated projects */}
             <section className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] overflow-hidden">
               <div className="flex items-center justify-between border-b border-[var(--border-primary)] px-5 py-4">
-                <div className="flex items-center gap-2"><Target size={16} className="text-[var(--accent-primary)]"/><h2 className="text-sm font-semibold">Minhas participações ativas</h2></div>
+                <div className="flex items-center gap-2"><Target size={16} className="text-[var(--accent-primary)]"/><h2 className="text-sm font-semibold">Projetos · registros anteriores</h2></div>
                 <Link href="/projects" className="text-xs font-semibold text-[var(--accent-primary)]">Ver projetos <ChevronRight size={12} className="inline"/></Link>
               </div>
               {projectLoadError && <p className="px-5 py-3 text-xs text-[var(--accent-red)]">Não foi possível atualizar os projetos.</p>}
               {activeProjects.length === 0 ? (
-                <div className="px-5 py-6 text-center text-sm text-[var(--text-muted)]">Nenhuma participação ativa. <Link href="/projects" className="font-semibold text-[var(--accent-primary)]">Explorar projetos</Link></div>
+                <div className="px-5 py-6 text-center text-sm text-[var(--text-muted)]">Nenhum registro de participação. <Link href="/projects" className="font-semibold text-[var(--accent-primary)]">Explorar projetos</Link></div>
               ) : <div className="divide-y divide-[var(--border-primary)]">
                 {activeProjects.slice(0, 5).map(item => <div key={item.id} className="flex items-center justify-between gap-3 px-5 py-3">
                   <div className="min-w-0"><p className="truncate text-sm font-semibold">{item.projectName}</p><p className="text-xs text-[var(--text-muted)]">{item.categoryLabel} · Aplicado {formatCurrency(item.principal, false, { convertFromUSD: false })}</p></div>
-                  <div className="shrink-0 text-right"><p className="text-sm font-semibold">{formatCurrency(item.simulatedValue, false, { convertFromUSD: false })}</p><p className={`text-xs ${item.percent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{item.percent >= 0 ? "+" : ""}{item.percent.toFixed(2)}% simulado</p></div>
+                  <div className="shrink-0 text-right"><p className="text-sm font-semibold">{formatCurrency(item.simulatedValue, false, { convertFromUSD: false })}</p><p className={`text-xs ${item.percent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{item.percent >= 0 ? "+" : ""}{item.percent.toFixed(2)}% ilustrativo</p></div>
                 </div>)}
               </div>}
             </section>
@@ -614,7 +614,7 @@ export default function Dashboard() {
                 <div className="min-w-0">
                   <p className="text-xs text-[var(--text-muted)]">Composição da carteira</p>
                   <p className="text-lg font-semibold tabular-nums text-[var(--text-primary)] break-words">{formatCurrency(totalValue, false)}</p>
-                  <p className="mt-1 text-[11px] text-[var(--text-dim)]">Saldo, operações e participações simuladas</p>
+                  <p className="mt-1 text-[11px] text-[var(--text-dim)]">Saldo e operações demonstrativas</p>
                 </div>
               </div>
 
