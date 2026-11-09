@@ -211,7 +211,7 @@ export default function Dashboard() {
       }
     };
     void refreshTicker();
-    const interval = window.setInterval(() => void refreshTicker(), 60000);
+    const interval = window.setInterval(() => { if (document.visibilityState === "visible") void refreshTicker(); }, 300000);
     return () => { active = false; window.clearInterval(interval); };
   }, []);
 
