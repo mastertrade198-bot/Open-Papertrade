@@ -33,6 +33,8 @@ class TradingRobot(models.Model):
         return (self.pnl / self.capital * 100) if self.capital else 0
 
 class RobotOperation(models.Model):
+    SOURCE_CHOICES = [('AUTO', 'Automática'), ('MANUAL', 'Manual demonstrativa (não contabilizada)')]
+    source = models.CharField(max_length=10, choices=SOURCE_CHOICES, default='AUTO', db_index=True)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     robot = models.ForeignKey(TradingRobot, on_delete=models.PROTECT, related_name='operations')
     side = models.CharField(max_length=5, choices=[('LONG','Compra'),('SHORT','Venda')])
