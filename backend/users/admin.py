@@ -420,9 +420,10 @@ class AdminPositionForm(forms.ModelForm):
             assets[stock.symbol.upper()] = getattr(stock, "name", "") or stock.symbol
         for symbol, name in Position.objects.values_list("symbol", "name").distinct()[:500]:
             assets.setdefault(symbol.upper(), name or symbol)
-        self.fields["symbol"].choices = [("", "Selecione um ativo")] + [
-            (symbol, f"{name} · {symbol}") for symbol, name in sorted(assets.items())
-        ]
+        if "symbol" in self.fields:
+            self.fields["symbol"].choices = [("", "Selecione um ativo")] + [
+                (symbol, f"{name} · {symbol}") for symbol, name in sorted(assets.items())
+            ]
         # Existing positions are read-only in the admin; Django omits readonly fields
         # from the generated ModelForm, so "user" may not be present.
         if "user" in self.fields:
