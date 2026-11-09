@@ -6,31 +6,40 @@ from django.utils import timezone
 from django.utils.html import format_html
 from .models import TradingRobot, RobotOperation, RobotAudit
 
+class EasyScheduleWidget(forms.SplitDateTimeWidget):
+    """Calendário nativo e seleção direta de horário, sem relógio circular."""
+
+    def __init__(self, attrs=None):
+        super().__init__(
+            attrs=attrs,
+            date_format='%Y-%m-%d',
+            time_format='%H:%M',
+            date_attrs={
+                'type': 'date',
+                'aria-label': 'Data de finalização',
+                'style': 'width:190px;max-width:100%;min-height:44px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:10px;',
+            },
+        )
+        self.widgets[1] = forms.Select(
+            choices=[('', 'Selecione a hora')] + [
+                (f'{hour:02d}:{minute:02d}', f'{hour:02d}:{minute:02d}')
+                for hour in range(24) for minute in (0, 15, 30, 45)
+            ],
+            attrs={
+                'aria-label': 'Hora de finalização',
+                'style': 'width:170px;max-width:100%;min-height:44px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:10px;',
+            },
+        )
+
+
 class RobotScheduleForm(forms.ModelForm):
     scheduled_end_at = forms.SplitDateTimeField(
         label='Finalização programada',
         required=False,
-        input_date_formats=['%d/%m/%Y', '%d-%m-%Y', '%Y-%m-%d'],
-        input_time_formats=['%H:%M', '%H:%M:%S'],
-        widget=forms.SplitDateTimeWidget(
-            date_format='%d/%m/%Y',
-            time_format='%H:%M',
-            date_attrs={
-                'type': 'text',
-                'placeholder': 'DD/MM/AAAA',
-                'autocomplete': 'off',
-                'inputmode': 'numeric',
-                'style': 'width:170px;max-width:100%;min-height:44px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;',
-            },
-            time_attrs={
-                'type': 'text',
-                'placeholder': 'HH:MM',
-                'autocomplete': 'off',
-                'inputmode': 'numeric',
-                'style': 'width:120px;max-width:100%;min-height:44px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;',
-            },
-        ),
-        help_text='Digite a data (ex.: 15/11/2026) e a hora em formato 24h (ex.: 18:30).',
+        input_date_formats=['%Y-%m-%d'],
+        input_time_formats=['%H:%M'],
+        widget=EasyScheduleWidget,
+        help_text='Escolha a data no calendário e o horário na lista (intervalos de 15 minutos).',
     )
     scheduled_pnl_percent = forms.DecimalField(
         label='Lucro ou prejuízo (%)',
