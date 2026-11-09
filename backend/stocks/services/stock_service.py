@@ -8,6 +8,8 @@ import logging
 from typing import Optional
 from datetime import datetime, timedelta
 from dataclasses import dataclass
+from django.core.cache import cache
+from . import stooq_provider
 
 from .base_provider import StockQuote, ProviderError, HistoricalBar
 from .finnhub_provider import FinnhubProvider
@@ -87,125 +89,59 @@ class StockService:
         self._news_cache: dict[str, tuple[list[dict], datetime]] = {}
         self._news_cache_ttl = timedelta(minutes=30)
 
+    # Django cache is shared by workers when configured with a shared backend.
+    # Last known good quotes are retained longer, with explicit source/timestamp.
     def _get_from_cache(self, symbol: str) -> Optional[StockQuote]:
-        """Get quote from cache if still valid."""
-        if symbol in self._cache:
-            quote, cached_at = self._cache[symbol]
-            if datetime.now() - cached_at < self._cache_ttl:
-                return quote
-            else:
-                del self._cache[symbol]
-        return None
+        return cache.get("market:quote:fresh:" + symbol)
 
     def _set_cache(self, symbol: str, quote: StockQuote):
-        """Cache a quote."""
-        self._cache[symbol] = (quote, datetime.now())
+        ttl = 60 if quote.provider != "stooq_daily" else 900
+        cache.set("market:quote:fresh:" + symbol, quote, ttl)
+        cache.set("market:quote:last:" + symbol, quote, 86400)
 
-    def get_quote(self, symbol: str, skip_cache: bool = False) -> StockServiceResult:
-        """
-        Get a stock quote from Yahoo Finance.
-
-        Args:
-            symbol: Stock ticker symbol
-            skip_cache: If True, bypass cache and fetch fresh data
-
-        Returns:
-            StockServiceResult with quote and metadata
-        """
-        symbol = symbol.upper()
-
-        # Check cache first
+    def _resolve_quote(self, symbol: str, skip_cache: bool = False) -> StockServiceResult:
+        symbol = symbol.upper().strip()
         if not skip_cache:
-            cached_quote = self._get_from_cache(symbol)
-            if cached_quote:
-                logger.debug(f"Cache hit for {symbol}")
-                return StockServiceResult(
-                    quote=cached_quote,
-                    success=True,
-                    primary_used=False,
-                    errors=[],
-                    cached=True,
-                )
+            cached = self._get_from_cache(symbol)
+            if cached:
+                return StockServiceResult(cached, True, False, [], cached=True)
 
-        quote = self.provider.get_quote(symbol)
-        if quote:
-            self._set_cache(symbol, quote)
-            return StockServiceResult(
-                quote=quote,
-                success=True,
-                primary_used=False,
-                errors=[],
-            )
-
-        return StockServiceResult(
-            quote=None,
-            success=False,
-            primary_used=False,
-            errors=[ProviderError(
-                provider=self.provider.name,
-                error_type="no_data",
-                message=f"No data returned for {symbol}",
-            )],
-        )
-
-    def get_quotes(self, symbols: list[str], skip_cache: bool = False) -> dict[str, StockServiceResult]:
-        """
-        Get quotes for multiple symbols.
-
-        Args:
-            symbols: List of stock ticker symbols
-            skip_cache: If True, bypass cache and fetch fresh data
-
-        Returns:
-            Dictionary mapping symbols to their results
-        """
-        results = {}
-        symbols_to_fetch = []
-
-        # Check cache first
-        if not skip_cache:
-            for symbol in symbols:
-                symbol = symbol.upper()
-                cached_quote = self._get_from_cache(symbol)
-                if cached_quote:
-                    results[symbol] = StockServiceResult(
-                        quote=cached_quote,
-                        success=True,
-                        primary_used=False,
-                        errors=[],
-                        cached=True,
-                    )
-                else:
-                    symbols_to_fetch.append(symbol)
-        else:
-            symbols_to_fetch = [s.upper() for s in symbols]
-
-        if not symbols_to_fetch:
-            return results
-
-        fetched = self.provider.get_quotes(symbols_to_fetch)
-        for symbol, quote in fetched.items():
+        # Prevent repeated Yahoo attempts after rate limits. Shared across workers.
+        yahoo_cooldown = cache.get("market:yahoo:cooldown", False)
+        quote = None
+        if not yahoo_cooldown:
+            quote = self.provider.get_quote(symbol)
             if quote:
                 self._set_cache(symbol, quote)
-                results[symbol] = StockServiceResult(
-                    quote=quote,
-                    success=True,
-                    primary_used=False,
-                    errors=[],
-                )
-            else:
-                results[symbol] = StockServiceResult(
-                    quote=None,
-                    success=False,
-                    primary_used=False,
-                    errors=[ProviderError(
-                        provider=self.provider.name,
-                        error_type="no_data",
-                        message=f"No data returned for {symbol}",
-                    )],
-                )
+                return StockServiceResult(quote, True, True, [])
 
-        return results
+        # The fallback is daily close data, never a real-time tick.
+        fallback = stooq_provider.get_quote(symbol)
+        if fallback:
+            self._set_cache(symbol, fallback)
+            return StockServiceResult(fallback, True, False, [])
+
+        last = cache.get("market:quote:last:" + symbol)
+        if last:
+            return StockServiceResult(
+                last, True, False,
+                [ProviderError("market", "stale", "Last known quote; market feed unavailable")],
+                cached=True,
+            )
+        return StockServiceResult(
+            None, False, False,
+            [ProviderError("market", "unavailable", "No quote from available providers")],
+        )
+
+    def get_quote(self, symbol: str, skip_cache: bool = False) -> StockServiceResult:
+        return self._resolve_quote(symbol, skip_cache)
+
+    def get_quotes(self, symbols: list[str], skip_cache: bool = False) -> dict[str, StockServiceResult]:
+        # One backend fetch per distinct symbol, regardless of number of clients.
+        return {
+            symbol: self._resolve_quote(symbol, skip_cache)
+            for symbol in dict.fromkeys(s.upper().strip() for s in symbols if s.strip())
+        }
 
     def search(self, query: str) -> list[dict]:
         """
@@ -394,7 +330,11 @@ class StockService:
             else:
                 del self._history_cache[cache_key]
 
-        bars = self.provider.get_historical_data(symbol, period, interval)
+        bars = None
+        if not cache.get("market:yahoo:cooldown", False):
+            bars = self.provider.get_historical_data(symbol, period, interval)
+        if not bars:
+            bars = stooq_provider.get_history(symbol, period, interval)
         if bars:
             self._history_cache[cache_key] = (bars, datetime.now())
             return HistoricalDataResult(
