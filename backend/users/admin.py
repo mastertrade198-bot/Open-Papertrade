@@ -373,10 +373,56 @@ class UserProfileAdmin(ModelAdmin):
 # Administrative paper-trading actions are explicitly audited and bypass market hours.
 # They do not represent exchange executions.
 class AdminPositionForm(forms.ModelForm):
+    """Compact Portuguese order ticket for audited simulated entries."""
+    symbol = forms.ChoiceField(label="Ativo", choices=(), help_text="Selecione o ativo da operação.")
+    side = forms.ChoiceField(
+        label="Direção", choices=(("LONG", "Comprar (Long)"), ("SHORT", "Vender (Short)")),
+        widget=forms.RadioSelect,
+    )
+    leverage = forms.TypedChoiceField(
+        label="Alavancagem", coerce=Decimal,
+        choices=[(str(n), f"{n}x") for n in (1, 2, 5, 10, 20, 25, 50, 100)],
+        initial="1",
+    )
+
     class Meta:
         model = Position
-        fields = ("user", "symbol", "name", "side", "margin", "leverage",
+        fields = ("user", "symbol", "side", "margin", "leverage",
                   "entry_price", "stop_loss", "take_profit")
+        labels = {
+            "user": "Conta do cliente", "margin": "Margem (USD)",
+            "entry_price": "Preço de entrada (USD)",
+            "stop_loss": "Stop Loss (USD)", "take_profit": "Take Profit (USD)",
+        }
+        widgets = {
+            "margin": forms.NumberInput(attrs={"placeholder": "Ex.: 100,00", "step": "0.01", "min": "0.01"}),
+            "entry_price": forms.NumberInput(attrs={"placeholder": "Informe o preço de entrada", "step": "0.000001", "min": "0.000001"}),
+            "stop_loss": forms.NumberInput(attrs={"placeholder": "Opcional", "step": "0.000001"}),
+            "take_profit": forms.NumberInput(attrs={"placeholder": "Opcional", "step": "0.000001"}),
+        }
+
+    class Media:
+        css = {"all": ("admin/position-ticket.css",)}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from stocks.models import StockCache
+        crypto = {
+            "BTC": "Bitcoin", "ETH": "Ethereum", "SOL": "Solana",
+            "XRP": "XRP", "BNB": "BNB", "ADA": "Cardano",
+            "DOGE": "Dogecoin", "AVAX": "Avalanche", "LINK": "Chainlink",
+            "LTC": "Litecoin", "BCH": "Bitcoin Cash", "DOT": "Polkadot",
+        }
+        assets = dict(crypto)
+        for stock in StockCache.objects.all()[:1500]:
+            assets[stock.symbol.upper()] = getattr(stock, "name", "") or stock.symbol
+        for symbol, name in Position.objects.values_list("symbol", "name").distinct()[:500]:
+            assets.setdefault(symbol.upper(), name or symbol)
+        self.fields["symbol"].choices = [("", "Selecione um ativo")] + [
+            (symbol, f"{name} · {symbol}") for symbol, name in sorted(assets.items())
+        ]
+        self.fields["user"].label = "Conta do cliente"
+        self.fields["user"].empty_label = "Selecione uma conta"
 
     def clean(self):
         data = super().clean()
@@ -396,6 +442,8 @@ class AdminPositionForm(forms.ModelForm):
         if account is not None and margin is not None and margin > 0:
             if account.buying_power < margin:
                 self.add_error("margin", "Saldo disponível insuficiente para reservar a margem.")
+        if symbol:
+            data["name"] = dict(self.fields["symbol"].choices).get(symbol, symbol).split(" · ")[0]
         data["symbol"] = symbol
         return data
 
@@ -411,13 +459,13 @@ class PositionAdmin(ModelAdmin):
     readonly_fields = ("id", "quantity", "notional_value", "status", "exit_price",
                        "realized_pnl", "opened_at", "closed_at", "updated_at")
     fieldsets = (
-        ("Posição simulada · registro administrativo", {
-            "fields": ("user", "symbol", "name", "side", "margin", "leverage",
+        ("Nova operação simulada", {
+            "fields": ("user", "symbol", "side", "margin", "leverage",
                        "entry_price", "stop_loss", "take_profit"),
-            "description": "Registro manual de simulação, inclusive fora do pregão. "
-                           "O preço informado é uma referência administrativa, não uma execução em bolsa.",
+            "description": "Selecione a conta, o ativo e os parâmetros da operação. "
+                           "O preço de entrada é definido pelo administrador para fins de simulação.",
         }),
-        ("Resultado e auditoria", {
+        ("Detalhes da posição", {
             "fields": ("id", "quantity", "notional_value", "status", "exit_price",
                        "realized_pnl", "opened_at", "closed_at", "updated_at"),
         }),
@@ -448,6 +496,7 @@ class PositionAdmin(ModelAdmin):
             if obj.quantity <= 0:
                 raise forms.ValidationError("Quantidade calculada inválida.")
             obj.status = Position.Status.OPEN
+            obj.name = form.cleaned_data.get("name", obj.symbol)
             obj.save()
             before = account.buying_power
             account.buying_power = money(before - obj.margin)
