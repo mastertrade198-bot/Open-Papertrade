@@ -27,6 +27,42 @@ import { usePortfolio } from "@/context/PortfolioContext";
 import { stockAPI, userAPI, StockQuote, type SimulatedPosition } from "@/lib/api";
 import { formatCurrency, formatPercent, formatDateTime } from "@/lib/utils";
 
+const ASSET_DISPLAY_NAMES: Record<string, string> = {
+  AMD: "Advanced Micro Devices, Inc.",
+  META: "Meta Platforms, Inc.",
+  TSLA: "Tesla, Inc.",
+  NVDA: "NVIDIA Corporation",
+  NFLX: "Netflix, Inc.",
+  GOOGL: "Alphabet Inc.",
+  GOOG: "Alphabet Inc.",
+  AAPL: "Apple Inc.",
+  MSFT: "Microsoft Corporation",
+  AMZN: "Amazon.com, Inc.",
+  JPM: "JPMorgan Chase & Co.",
+  BRK_B: "Berkshire Hathaway Inc.",
+  V: "Visa Inc.",
+  MA: "Mastercard Incorporated",
+  DIS: "The Walt Disney Company",
+  INTC: "Intel Corporation",
+  CRM: "Salesforce, Inc.",
+  ORCL: "Oracle Corporation",
+  KO: "The Coca-Cola Company",
+  PEP: "PepsiCo, Inc.",
+  BA: "The Boeing Company",
+  PYPL: "PayPal Holdings, Inc.",
+  UBER: "Uber Technologies, Inc.",
+  PLTR: "Palantir Technologies Inc.",
+  SPY: "SPDR S&P 500 ETF Trust",
+  QQQ: "Invesco QQQ Trust",
+};
+
+function marketAssetName(symbol: string, name?: string | null): string {
+  const normalized = symbol.trim().toUpperCase();
+  const provided = name?.trim();
+  if (provided && provided.toUpperCase() !== normalized) return provided;
+  return ASSET_DISPLAY_NAMES[normalized] || provided || normalized;
+}
+
 export default function Dashboard() {
   const router = useRouter();
   const {
@@ -508,7 +544,7 @@ export default function Dashboard() {
                         >
                           <div className="min-w-0 pr-2">
                             <div className="font-primary tabular-nums text-sm font-semibold text-[var(--text-primary)]">{stock.symbol}</div>
-                            <div className="truncate text-[11px] text-[var(--text-muted)]" title={stock.name || stock.symbol}>{stock.name || stock.symbol}</div>
+                            <div className="truncate text-[11px] text-[var(--text-muted)]" title={marketAssetName(stock.symbol, stock.name)}>{marketAssetName(stock.symbol, stock.name)}</div>
                           </div>
                           <span className="font-primary tabular-nums text-xs font-semibold text-[var(--accent-green)]">{formatPercent(stock.changePercent)}</span>
                         </div>
@@ -530,7 +566,7 @@ export default function Dashboard() {
                         >
                           <div className="min-w-0 pr-2">
                             <div className="font-primary tabular-nums text-sm font-semibold text-[var(--text-primary)]">{stock.symbol}</div>
-                            <div className="truncate text-[11px] text-[var(--text-muted)]" title={stock.name || stock.symbol}>{stock.name || stock.symbol}</div>
+                            <div className="truncate text-[11px] text-[var(--text-muted)]" title={marketAssetName(stock.symbol, stock.name)}>{marketAssetName(stock.symbol, stock.name)}</div>
                           </div>
                           <span className="font-primary tabular-nums text-xs font-semibold text-[var(--accent-red)]">{formatPercent(stock.changePercent)}</span>
                         </div>
