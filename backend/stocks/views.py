@@ -363,7 +363,13 @@ class PopularStocksView(APIView):
 
         from django.core.cache import cache
         cache_key = f"market:popular:{market.lower()}:v1"
-        cached = cache.get(cache_key)
+        try:
+            cached = cache.get(cache_key)
+        except Exception:
+            # A cache outage must not prevent market quotes from loading.
+            import logging
+            logging.getLogger(__name__).exception("Market snapshot cache read failed")
+            cached = None
         if cached is not None:
             return Response(cached)
         service = get_stock_service()
@@ -377,7 +383,11 @@ class PopularStocksView(APIView):
 
         payload = {"stocks": quotes, "count": len(quotes), "market": market}
         if quotes:
-            cache.set(cache_key, payload, timeout=300)
+            try:
+                cache.set(cache_key, payload, timeout=300)
+            except Exception:
+                import logging
+                logging.getLogger(__name__).exception("Market snapshot cache write failed")
         return Response(payload)
 
 
@@ -413,7 +423,13 @@ class CryptoQuotesView(APIView):
 
         from django.core.cache import cache
         cache_key = f"market:crypto:{market.lower()}:v1"
-        cached = cache.get(cache_key)
+        try:
+            cached = cache.get(cache_key)
+        except Exception:
+            # A cache outage must not prevent market quotes from loading.
+            import logging
+            logging.getLogger(__name__).exception("Market snapshot cache read failed")
+            cached = None
         if cached is not None:
             return Response(cached)
         service = get_stock_service()
