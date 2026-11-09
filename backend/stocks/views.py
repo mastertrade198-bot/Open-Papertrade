@@ -608,34 +608,79 @@ class StockHistoryView(APIView):
     """
 
     RANGE_MAP = {
-        "1D": ("1d", "5m"),
-        "1W": ("5d", "15m"),
-        "1M": ("1mo", "1d"),
-        "6M": ("6mo", "1d"),
-        "1Y": ("1y", "1wk"),
-        "5Y": ("5y", "1wk"),
+        "1D": ("1d", "5m"), "1W": ("5d", "15m"),
+        "1M": ("1mo", "1d"), "6M": ("6mo", "1d"),
+        "1Y": ("1y", "1wk"), "5Y": ("5y", "1wk"),
+    }
+    INTERVALS = {"1m", "5m", "15m", "1h", "1d"}
+    PERIODS = {"1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y"}
+    CRYPTO_BASES = {
+        "BTC", "ETH", "SOL", "XRP", "BNB", "ADA", "DOGE", "AVAX",
+        "LINK", "SHIB", "DOT", "LTC", "BCH", "UNI", "AAVE", "ATOM",
+        "NEAR", "ICP", "FIL", "ETC", "XLM", "ALGO", "HBAR", "PEPE",
     }
 
     def get(self, request, symbol):
+        import requests
+        from django.core.cache import cache
+        from .services.base_provider import HistoricalBar
+        from .services.stock_service import HistoricalDataResult
+
         time_range = request.query_params.get("range", "1M").upper()
-
         if time_range not in self.RANGE_MAP:
-            return Response(
-                {"error": f"Invalid range '{time_range}'. Valid: {', '.join(self.RANGE_MAP.keys())}"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        period, interval = self.RANGE_MAP[time_range]
-        service = get_stock_service()
-        result = service.get_historical_data(symbol, period, interval)
-
+            return Response({"error": "Período inválido."}, status=status.HTTP_400_BAD_REQUEST)
+        default_period, default_interval = self.RANGE_MAP[time_range]
+        interval = request.query_params.get("interval", default_interval).lower()
+        period = request.query_params.get("period", default_period).lower()
+        if interval not in self.INTERVALS or period not in self.PERIODS:
+            return Response({"error": "Intervalo ou período inválido."}, status=status.HTTP_400_BAD_REQUEST)
+        symbol = symbol.upper().strip()
+        base = symbol.removesuffix("-USDT").removesuffix("-USD")
+        is_crypto = base in self.CRYPTO_BASES and (symbol == base or symbol.endswith(("-USD", "-USDT")))
+        if is_crypto:
+            # Binance spot OHLCV; do not fabricate candles if provider is unavailable.
+            pair = base + "USDT"
+            cache_key = f"chart:binance:{pair}:{interval}:{period}"
+            cached = cache.get(cache_key)
+            if cached is not None:
+                return Response(cached)
+            binance_interval = {"1m": "1m", "5m": "5m", "15m": "15m", "1h": "1h", "1d": "1d"}[interval]
+            try:
+                response = requests.get(
+                    "https://api.binance.com/api/v3/klines",
+                    params={"symbol": pair, "interval": binance_interval, "limit": 1000},
+                    timeout=8,
+                )
+                response.raise_for_status()
+                raw = response.json()
+                if not isinstance(raw, list):
+                    raise ValueError("Invalid Binance candle response")
+                bars = [
+                    HistoricalBar(time=str(int(row[0]) // 1000), open=float(row[1]),
+                                  high=float(row[2]), low=float(row[3]), close=float(row[4]),
+                                  volume=int(float(row[5])))
+                    for row in raw if isinstance(row, list) and len(row) >= 6
+                ]
+                result = HistoricalDataResult(
+                    bars=bars, success=True, symbol=symbol, period=period, interval=interval
+                ).to_dict()
+                cache.set(cache_key, result, 10 if interval in {"1m", "5m"} else 30)
+                return Response(result)
+            except (requests.RequestException, ValueError, TypeError, IndexError):
+                return Response({"success": False, "error": "Candles da Binance indisponíveis."},
+                                status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        yahoo_interval = {"1h": "60m", "1d": "1d"}.get(interval, interval)
+        # Yahoo intraday retention limits: avoid asking for unsupported long ranges.
+        if interval == "1m":
+            period = "5d" if period not in {"1d", "5d"} else period
+        elif interval in {"5m", "15m"} and period in {"1y", "2y", "5y"}:
+            period = "1mo"
+        elif interval == "1h" and period == "5y":
+            period = "2y"
+        result = get_stock_service().get_historical_data(symbol, period, yahoo_interval)
         if result.success:
             return Response(result.to_dict())
-        else:
-            return Response(
-                result.to_dict(),
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        return Response(result.to_dict(), status=status.HTTP_404_NOT_FOUND)
 
 
 class StockNewsView(APIView):
