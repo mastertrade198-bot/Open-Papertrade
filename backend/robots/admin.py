@@ -2,6 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.db import transaction
 from django.utils import timezone
+from django.utils.html import format_html
 from .models import TradingRobot, RobotOperation, RobotAudit
 
 class RobotScheduleForm(forms.ModelForm):
@@ -26,15 +27,44 @@ class RobotScheduleForm(forms.ModelForm):
 @admin.register(TradingRobot)
 class TradingRobotAdmin(admin.ModelAdmin):
     form = RobotScheduleForm
-    list_display = ('id', 'user', 'symbol', 'capital', 'equity', 'status', 'created_at')
-    list_filter = ('status', 'symbol')
+    list_display = ('robot_label', 'user', 'symbol', 'status_badge', 'capital', 'created_at')
+    list_display_links = ('robot_label',)
+    list_filter = ('status',)
+    list_per_page = 20
+    ordering = ('-created_at',)
+    show_full_result_count = False
     search_fields = ('symbol', 'asset_name', 'user__email')
     actions = None
-    fields = ('id', 'user', 'symbol', 'asset_name', 'capital', 'equity', 'status',
-              'take_profit', 'stop_loss', 'indicators', 'created_at', 'closed_at',
-              'closed_reason', 'scheduled_end_at', 'scheduled_pnl_percent')
+    fieldsets = (
+        ('Programação do resultado', {
+            'description': 'Defina quando o robô será finalizado e o resultado percentual demonstrativo. Ambos os campos são opcionais, mas devem ser preenchidos juntos.',
+            'fields': ('scheduled_end_at', 'scheduled_pnl_percent'),
+        }),
+        ('Identificação e situação', {
+            'fields': ('id', 'user', 'asset_name', 'symbol', 'status', 'capital', 'equity'),
+            'classes': ('collapse',),
+        }),
+        ('Configurações originais', {
+            'fields': ('take_profit', 'stop_loss', 'indicators'),
+            'classes': ('collapse',),
+        }),
+        ('Histórico e encerramento', {
+            'fields': ('created_at', 'closed_at', 'closed_reason'),
+            'classes': ('collapse',),
+        }),
+    )
     readonly_fields = ('id', 'user', 'symbol', 'asset_name', 'capital', 'equity', 'status',
                        'take_profit', 'stop_loss', 'indicators', 'created_at', 'closed_at', 'closed_reason')
+
+    @admin.display(description='Robô')
+    def robot_label(self, obj):
+        return f'{obj.asset_name} · {str(obj.pk)[:8]}'
+
+    @admin.display(description='Situação', ordering='status')
+    def status_badge(self, obj):
+        label = dict(TradingRobot.STATUS).get(obj.status, obj.status)
+        color = {'ACTIVE': '#16734a', 'PAUSED': '#9a6700', 'CLOSED': '#667085'}.get(obj.status, '#667085')
+        return format_html('<span style="font-weight:600;color:{}">{}</span>', color, label)
 
     def has_add_permission(self, request):
         return False
@@ -58,8 +88,12 @@ class TradingRobotAdmin(admin.ModelAdmin):
 
 @admin.register(RobotOperation)
 class RobotOperationAdmin(admin.ModelAdmin):
-    list_display = ('id','robot','side','status','pnl','opened_at')
-    list_filter = ('status','side')
+    list_display = ('robot', 'side', 'status', 'pnl', 'opened_at')
+    list_filter = ('status',)
+    list_per_page = 20
+    show_full_result_count = False
+    fieldsets = (('Operação', {'fields': ('robot', 'side', 'status', 'pnl', 'opened_at', 'closed_at')}),
+                 ('Detalhes técnicos', {'fields': ('id', 'entry_price', 'exit_price', 'quantity', 'allocated_capital'), 'classes': ('collapse',)}))
     readonly_fields = [f.name for f in RobotOperation._meta.fields]
     def has_add_permission(self, request):
         return False
@@ -68,7 +102,12 @@ class RobotOperationAdmin(admin.ModelAdmin):
 
 @admin.register(RobotAudit)
 class RobotAuditAdmin(admin.ModelAdmin):
-    list_display = ('robot','actor','action','created_at')
+    list_display = ('robot', 'action', 'actor', 'created_at')
+    list_filter = ('action',)
+    list_per_page = 20
+    show_full_result_count = False
+    fieldsets = (('Registro', {'fields': ('robot', 'action', 'actor', 'created_at')}),
+                 ('Alterações e detalhes', {'fields': ('before', 'after', 'reason'), 'classes': ('collapse',)}))
     readonly_fields = [f.name for f in RobotAudit._meta.fields]
     def has_add_permission(self, request):
         return False
