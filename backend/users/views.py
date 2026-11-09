@@ -509,7 +509,12 @@ class WatchlistView(APIView):
         )
 
         if not created:
-            return Response({'error': 'Already in watchlist'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'symbol': item.symbol,
+                'name': item.name,
+                'starred': item.starred,
+                'alreadyExists': True,
+            }, status=status.HTTP_200_OK)
 
         # Check for newly unlocked achievements
         new_achievements = check_achievements(user)
