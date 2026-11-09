@@ -27,15 +27,15 @@ class SectionAdmin(ModelAdmin):
 
 @admin.register(Chunk)
 class ChunkAdmin(ModelAdmin):
-    list_display = ('id', 'company', 'filing', 'section', 'order', 'token_count', 'embedding_model')
-    list_filter = ('company', 'embedding_model')
+    list_display = ('id', 'company', 'section', 'token_count')
+    list_filter = ('company',)
     search_fields = ('text',)
     readonly_fields = ('embedding', 'embedding_dim', 'created_at')
 
 
 @admin.register(IngestJob)
 class IngestJobAdmin(ModelAdmin):
-    list_display = ('id', 'status', 'url', 'progress', 'chunk_count', 'created_at', 'finished_at')
+    list_display = ('id', 'status', 'progress', 'created_at')
     list_filter = ('status',)
     search_fields = ('url', 'error')
     readonly_fields = ('created_at', 'started_at', 'finished_at', 'filing')
