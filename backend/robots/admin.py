@@ -75,12 +75,31 @@ class RobotScheduleForm(forms.ModelForm):
             raise forms.ValidationError('Não é possível programar um robô encerrado.')
         return data
 
+class RobotConfigurationFilter(admin.SimpleListFilter):
+    title = 'Configuração do cenário'
+    parameter_name = 'configured'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Robôs configurados'),
+            ('no', 'Robôs não configurados'),
+        )
+
+    def queryset(self, request, queryset):
+        configured = Q(scheduled_end_at__isnull=False, scheduled_pnl_percent__isnull=False)
+        if self.value() == 'yes':
+            return queryset.filter(configured)
+        if self.value() == 'no':
+            return queryset.exclude(configured)
+        return queryset
+
+
 @admin.register(TradingRobot)
 class TradingRobotAdmin(ModelAdmin):
     form = RobotScheduleForm
-    list_display = ('robot_label', 'user', 'symbol', 'status_badge', 'capital', 'created_at')
+    list_display = ('robot_label', 'configuration_badge', 'user', 'symbol', 'status_badge', 'capital', 'created_at')
     list_display_links = ('robot_label',)
-    list_filter = ('status',)
+    list_filter = (RobotConfigurationFilter, 'status')
     list_per_page = 20
     ordering = ('-created_at', '-pk')
     show_full_result_count = False
@@ -131,6 +150,13 @@ class TradingRobotAdmin(ModelAdmin):
             Q(created_at=obj.created_at, pk__lte=obj.pk)
         ).count()
         return f'Robô #{number:04d} · {obj.asset_name}'
+
+    @admin.display(description='Configuração')
+    def configuration_badge(self, obj):
+        configured = obj.scheduled_end_at is not None and obj.scheduled_pnl_percent is not None
+        label = 'Configurado' if configured else 'Não configurado'
+        color = '#16734a' if configured else '#9a6700'
+        return format_html('<span style="font-weight:600;color:{}">{}</span>', color, label)
 
     @admin.display(description='Situação', ordering='status')
     def status_badge(self, obj):
