@@ -163,9 +163,14 @@ export default function Home() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-7">
             <h3 className="shrink-0 text-xs font-semibold text-white">Políticas Legais</h3>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-[#9BB1C6]">
-              <a href="/documents/compliance-master-trade.html" target="_blank" rel="noopener noreferrer" title="Abrir minuta do Programa de Compliance da Master Trade" className="font-medium text-[#64D9C2] transition-colors hover:text-white">Compliance</a>{["Privacidade", "Gestão de Risco", "AML", "KYC"].map(policy => <span key={policy} title="Documento em preparação" className="cursor-default transition-colors hover:text-white">{policy}</span>)}
+              <a href="/documents/compliance-master-trade.html" target="_blank" rel="noopener noreferrer" title="Abrir minuta do Programa de Compliance da Master Trade" className="font-medium text-[#64D9C2] transition-colors hover:text-white">Compliance</a>{[
+                { label: "Privacidade", href: "/documents/privacidade-master-trade.html" },
+                { label: "Gestão de Risco", href: "/documents/gestao-de-risco-master-trade.html" },
+                { label: "AML", href: "/documents/aml-master-trade.html" },
+                { label: "KYC", href: "/documents/kyc-master-trade.html" },
+              ].map(policy => <a key={policy.label} href={policy.href} target="_blank" rel="noopener noreferrer" title={`Abrir minuta: ${policy.label}`} className="transition-colors hover:text-white">{policy.label}</a>)}
             </div>
-            <span className="text-[10px] text-[#7890A6] sm:ml-auto sm:whitespace-nowrap">Demais documentos em preparação</span>
+            <span className="text-[10px] text-[#7890A6] sm:ml-auto sm:whitespace-nowrap">Minutas para revisão</span>
           </div>
         </div>
         <div className="grid gap-6 border-b border-white/10 py-9 lg:grid-cols-[190px_1fr]"><h3 className="text-sm font-semibold text-white">Avisos e riscos</h3><div className="space-y-3 text-xs leading-6 text-[#9BB1C6]"><p>A Master Trade disponibiliza um ambiente de demonstração e aprendizado. Saldos, ordens, resultados e operações simuladas não representam recursos financeiros reais, custódia de ativos ou execução de investimentos.</p><p>Dados e preços de mercado podem apresentar atrasos, interrupções ou diferenças em relação às fontes oficiais. Exemplos, resultados históricos e simulações não representam promessa de rentabilidade ou garantia de desempenho futuro.</p><p>Os modelos de cartões exibidos nesta página são conceitos visuais, não cartões de pagamento emitidos ou produtos financeiros disponíveis.</p></div></div>
