@@ -222,14 +222,14 @@ const MARKET_SCHEDULES: Record<string, {
     timezone: 'America/New_York',
     openHour: 9, openMinute: 30,
     closeHour: 16, closeMinute: 0,
-    displayHours: '9:30 AM - 4:00 PM ET',
+    displayHours: '9h30 às 16h (horário de Nova York)',
   },
   IN: {
     name: 'India (NSE)',
     timezone: 'Asia/Kolkata',
     openHour: 9, openMinute: 15,
     closeHour: 15, closeMinute: 30,
-    displayHours: '9:15 AM - 3:30 PM IST',
+    displayHours: '9h15 às 15h30 (horário da Índia)',
   },
 };
 
@@ -244,7 +244,7 @@ export function getMarketStatusLocal(market: string, symbol: string): MarketStat
   if (isCryptoSymbol(symbol)) {
     return {
       isOpen: true,
-      reason: 'Crypto markets are always open',
+      reason: 'Mercado de criptomoedas aberto 24 horas por dia, todos os dias',
       marketName: 'Crypto',
       displayHours: '24/7',
     };
@@ -273,7 +273,7 @@ export function getMarketStatusLocal(market: string, symbol: string): MarketStat
   if (weekday === 'Sat' || weekday === 'Sun') {
     return {
       isOpen: false,
-      reason: `${marketName} is closed on weekends. Trading hours: ${displayHours}, Mon-Fri.`,
+      reason: `${marketName} está fechado aos fins de semana. Horário regular: ${displayHours}, de segunda a sexta-feira.`,
       marketName,
       displayHours,
     };
@@ -287,7 +287,7 @@ export function getMarketStatusLocal(market: string, symbol: string): MarketStat
   if (currentMinutes < openMinutes || currentMinutes >= closeMinutes) {
     return {
       isOpen: false,
-      reason: `${marketName} is closed. Trading hours: ${displayHours}, Mon-Fri.`,
+      reason: `${marketName} está fechado. Horário regular: ${displayHours}, de segunda a sexta-feira.`,
       marketName,
       displayHours,
     };
@@ -295,7 +295,7 @@ export function getMarketStatusLocal(market: string, symbol: string): MarketStat
 
   return {
     isOpen: true,
-    reason: `${marketName} is open`,
+    reason: `${marketName} está aberto`,
     marketName,
     displayHours,
   };
@@ -310,7 +310,7 @@ export async function getMarketStatus(market: string, symbol: string): Promise<M
   if (isCryptoSymbol(symbol)) {
     return {
       isOpen: true,
-      reason: 'Crypto markets are always open',
+      reason: 'Mercado de criptomoedas aberto 24 horas por dia, todos os dias',
       marketName: 'Crypto',
       displayHours: '24/7',
     };
@@ -325,14 +325,14 @@ export async function getMarketStatus(market: string, symbol: string): Promise<M
     const displayHours = schedule.displayHours;
 
     if (data.isOpen) {
-      return { isOpen: true, reason: `${marketName} is open`, marketName, displayHours };
+      return { isOpen: true, reason: `${marketName} está aberto`, marketName, displayHours };
     }
 
     let reason: string;
     if (data.holiday) {
-      reason = `${marketName} is closed for ${data.holiday}. Trading hours: ${displayHours}, Mon-Fri.`;
+      reason = `${marketName} está fechado devido a feriado (${data.holiday}). Horário regular: ${displayHours}, de segunda a sexta-feira.`;
     } else {
-      reason = `${marketName} is closed. Trading hours: ${displayHours}, Mon-Fri.`;
+      reason = `${marketName} está fechado. Horário regular: ${displayHours}, de segunda a sexta-feira.`;
     }
 
     return { isOpen: false, reason, marketName, displayHours };
