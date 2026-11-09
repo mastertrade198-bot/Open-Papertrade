@@ -392,6 +392,10 @@ class AdminPositionForm(forms.ModelForm):
             self.add_error("entry_price", "Informe um preço de referência positivo.")
         if not symbol:
             self.add_error("symbol", "Informe o símbolo.")
+        account = data.get("user")
+        if account is not None and margin is not None and margin > 0:
+            if account.buying_power < margin:
+                self.add_error("margin", "Saldo disponível insuficiente para reservar a margem.")
         data["symbol"] = symbol
         return data
 
