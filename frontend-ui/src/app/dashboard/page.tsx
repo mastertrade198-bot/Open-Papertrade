@@ -110,11 +110,11 @@ export default function Dashboard() {
   const marginPnl = marginPositions.reduce((sum, position) => sum + (Number(position.unrealizedPnl) || 0), 0);
   // The margin ledger already excludes committed margin; restore it only once in equity.
   const dashboardBuyingPower = marginLedger ?? buyingPower;
-  const dashboardEquity = dashboardBuyingPower + marginCommitted + marginPnl + totalPortfolioValue;
+  const dashboardEquity = dashboardBuyingPower + marginCommitted + marginPnl + totalPortfolioValue + projectsPrincipal;
   const dashboardReturns = totalReturns + marginPnl;
   const dashboardReturnBase = totalInvested + marginCommitted;
   const dashboardReturnPercent = dashboardReturnBase > 0 ? dashboardReturns / dashboardReturnBase * 100 : 0;
-  const dashboardPositionCount = holdings.length + marginPositions.length;
+  const dashboardPositionCount = holdings.length + marginPositions.length + activeProjects.length;
 
   const [indices, setIndices] = useState<StockQuote[]>([]);
   const [tickerQuotes, setTickerQuotes] = useState<StockQuote[]>([]);
@@ -191,12 +191,13 @@ export default function Dashboard() {
     .filter((h) => cryptoSymbolSet.has(h.symbol))
     .reduce((sum, h) => sum + h.shares * h.currentPrice, 0);
   const cashValue = dashboardBuyingPower;
-  const totalValue = stockValue + cryptoValue + cashValue + operationsBalance;
+  const totalValue = stockValue + cryptoValue + cashValue + operationsBalance + projectsPrincipal;
 
   const allocation = [
     { label: "Ações", value: stockValue, percent: totalValue > 0 ? stockValue / totalValue * 100 : 0, color: "var(--accent-primary)" },
     { label: "Criptomoedas", value: cryptoValue, percent: totalValue > 0 ? cryptoValue / totalValue * 100 : 0, color: "var(--accent-green)" },
     { label: "Saldo em operações", value: operationsBalance, percent: totalValue > 0 ? operationsBalance / totalValue * 100 : 0, color: "#f59e0b" },
+    { label: "Projetos", value: projectsPrincipal, percent: totalValue > 0 ? projectsPrincipal / totalValue * 100 : 0, color: "#8b5cf6" },
     { label: "Saldo disponível", value: cashValue, percent: totalValue > 0 ? cashValue / totalValue * 100 : 0, color: "var(--text-muted)" },
   ];
 
@@ -427,12 +428,12 @@ export default function Dashboard() {
             {/* Active simulated projects */}
             <section className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] overflow-hidden">
               <div className="flex items-center justify-between border-b border-[var(--border-primary)] px-5 py-4">
-                <div className="flex items-center gap-2"><Target size={16} className="text-[var(--accent-primary)]"/><h2 className="text-sm font-semibold">Projetos · registros anteriores</h2></div>
+                <div className="flex items-center gap-2"><Target size={16} className="text-[var(--accent-primary)]"/><h2 className="text-sm font-semibold">Minhas participações em projetos</h2></div>
                 <Link href="/projects" className="text-xs font-semibold text-[var(--accent-primary)]">Ver projetos <ChevronRight size={12} className="inline"/></Link>
               </div>
               {projectLoadError && <p className="px-5 py-3 text-xs text-[var(--accent-red)]">Não foi possível atualizar os projetos.</p>}
               {activeProjects.length === 0 ? (
-                <div className="px-5 py-6 text-center text-sm text-[var(--text-muted)]">Nenhum registro de participação. <Link href="/projects" className="font-semibold text-[var(--accent-primary)]">Explorar projetos</Link></div>
+                <div className="px-5 py-6 text-center text-sm text-[var(--text-muted)]">Nenhuma participação ativa. <Link href="/projects" className="font-semibold text-[var(--accent-primary)]">Explorar projetos</Link></div>
               ) : <div className="divide-y divide-[var(--border-primary)]">
                 {activeProjects.slice(0, 5).map(item => <div key={item.id} className="flex items-center justify-between gap-3 px-5 py-3">
                   <div className="min-w-0"><p className="truncate text-sm font-semibold">{item.projectName}</p><p className="text-xs text-[var(--text-muted)]">{item.categoryLabel} · Aplicado {formatCurrency(item.principal, false, { convertFromUSD: false })}</p></div>
@@ -614,7 +615,7 @@ export default function Dashboard() {
                 <div className="min-w-0">
                   <p className="text-xs text-[var(--text-muted)]">Composição da carteira</p>
                   <p className="text-lg font-semibold tabular-nums text-[var(--text-primary)] break-words">{formatCurrency(totalValue, false)}</p>
-                  <p className="mt-1 text-[11px] text-[var(--text-dim)]">Saldo e operações demonstrativas</p>
+                  <p className="mt-1 text-[11px] text-[var(--text-dim)]">Saldo total alocado por finalidade</p>
                 </div>
               </div>
 
