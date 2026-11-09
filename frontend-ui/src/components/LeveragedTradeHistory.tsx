@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { ChartNoAxesCombined } from "lucide-react";
 import { userAPI, type SimulatedPosition } from "@/lib/api";
 
 const usd = (n: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "USD" }).format(n);
@@ -25,7 +26,7 @@ export default function LeveragedTradeHistory() {
   const recent = [...positions].sort((a, b) => new Date(b.openedAt).getTime() - new Date(a.openedAt).getTime()).slice(0, 5);
   return <section className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] overflow-hidden">
     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-primary)] px-4 py-3">
-      <h2 className="text-sm font-semibold text-[var(--text-primary)]">Operações manuais</h2>
+      <div className="flex items-center gap-2"><ChartNoAxesCombined size={17} className="text-[var(--accent-primary)]" /><h2 className="text-sm font-semibold text-[var(--text-primary)]">Operações</h2></div>
       <span className="text-xs text-[var(--text-muted)]">{positions.filter(p => p.status === "OPEN").length} abertas · {positions.length} no histórico</span>
     </div>
     {error && <p role="alert" className="px-4 py-2 text-xs text-red-500">{error}</p>}
