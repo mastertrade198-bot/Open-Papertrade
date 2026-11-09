@@ -54,6 +54,33 @@ export default function Dashboard() {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [marginPositions, setMarginPositions] = useState<SimulatedPosition[]>([]);
+  const [projectParticipations, setProjectParticipations] = useState<Array<{ id: string; projectName: string; categoryLabel: string; principal: number; percent: number; simulatedValue: number; status: string }>>([]);
+  const [projectLoadError, setProjectLoadError] = useState(false);
+  const loadProjectParticipations = async () => {
+    try {
+      const response = await fetch((process.env.NEXT_PUBLIC_API_URL || "/api") + "/projects/mine/", { credentials: "include", cache: "no-store" });
+      if (!response.ok) throw new Error("Falha ao consultar projetos");
+      const data = await response.json();
+      setProjectParticipations(data.participations || []);
+      setProjectLoadError(false);
+    } catch (error) {
+      setProjectLoadError(true);
+      console.error("Dashboard projects:", error);
+    }
+  };
+  useEffect(() => {
+    void loadProjectParticipations();
+    const timer = window.setInterval(() => { if (document.visibilityState === "visible") void loadProjectParticipations(); }, 15000);
+    const onFocus = () => void loadProjectParticipations();
+    window.addEventListener("focus", onFocus);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", onFocus); };
+  }, []);
+  const activeProjects = projectParticipations.filter(item => item.status === "ACTIVE");
+  const projectsPrincipal = activeProjects.reduce((sum, item) => sum + item.principal, 0);
+  const projectsValue = activeProjects.reduce((sum, item) => sum + item.simulatedValue, 0);
+  const projectsPnl = projectsValue - projectsPrincipal;
+  const operationsBalance = marginPositions.reduce((sum, item) => sum + (Number(item.margin) || 0) + (Number(item.unrealizedPnl) || 0), 0) + projectsValue;
+
   const [marginLedger, setMarginLedger] = useState<number | null>(null);
   const [marginLoadError, setMarginLoadError] = useState(false);
 
@@ -83,11 +110,11 @@ export default function Dashboard() {
   const marginPnl = marginPositions.reduce((sum, position) => sum + (Number(position.unrealizedPnl) || 0), 0);
   // The margin ledger already excludes committed margin; restore it only once in equity.
   const dashboardBuyingPower = marginLedger ?? buyingPower;
-  const dashboardEquity = dashboardBuyingPower + marginCommitted + marginPnl + totalPortfolioValue;
-  const dashboardReturns = totalReturns + marginPnl;
-  const dashboardReturnBase = totalInvested + marginCommitted;
+  const dashboardEquity = dashboardBuyingPower + marginCommitted + marginPnl + totalPortfolioValue + projectsValue;
+  const dashboardReturns = totalReturns + marginPnl + projectsPnl;
+  const dashboardReturnBase = totalInvested + marginCommitted + projectsPrincipal;
   const dashboardReturnPercent = dashboardReturnBase > 0 ? dashboardReturns / dashboardReturnBase * 100 : 0;
-  const dashboardPositionCount = holdings.length + marginPositions.length;
+  const dashboardPositionCount = holdings.length + marginPositions.length + activeProjects.length;
 
   const [indices, setIndices] = useState<StockQuote[]>([]);
   const [tickerQuotes, setTickerQuotes] = useState<StockQuote[]>([]);
@@ -163,18 +190,19 @@ export default function Dashboard() {
   const cryptoValue = holdings
     .filter((h) => cryptoSymbolSet.has(h.symbol))
     .reduce((sum, h) => sum + h.shares * h.currentPrice, 0);
-  const cashValue = buyingPower;
-  const totalValue = stockValue + cryptoValue + cashValue;
+  const cashValue = dashboardBuyingPower;
+  const totalValue = stockValue + cryptoValue + cashValue + operationsBalance;
 
   const allocation = [
-    { label: "Ações", value: stockValue, percent: totalValue > 0 ? (stockValue / totalValue) * 100 : 0, color: "var(--accent-primary)" },
-    { label: "Criptomoedas", value: cryptoValue, percent: totalValue > 0 ? (cryptoValue / totalValue) * 100 : 0, color: "var(--accent-green)" },
-    { label: "Saldo", value: cashValue, percent: totalValue > 0 ? (cashValue / totalValue) * 100 : 0, color: "var(--text-muted)" },
+    { label: "Ações", value: stockValue, percent: totalValue > 0 ? stockValue / totalValue * 100 : 0, color: "var(--accent-primary)" },
+    { label: "Criptomoedas", value: cryptoValue, percent: totalValue > 0 ? cryptoValue / totalValue * 100 : 0, color: "var(--accent-green)" },
+    { label: "Saldo em operações", value: operationsBalance, percent: totalValue > 0 ? operationsBalance / totalValue * 100 : 0, color: "#f59e0b" },
+    { label: "Saldo disponível", value: cashValue, percent: totalValue > 0 ? cashValue / totalValue * 100 : 0, color: "var(--text-muted)" },
   ];
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await Promise.all([refreshUserData(), refreshPrices(), userAPI.getPositions().then(result => { setMarginPositions(result.positions.filter(position => position.status === "OPEN")); setMarginLedger(result.buyingPower); setMarginLoadError(false); }).catch(() => setMarginLoadError(true))]);
+    await Promise.all([refreshUserData(), refreshPrices(), loadProjectParticipations(), userAPI.getPositions().then(result => { setMarginPositions(result.positions.filter(position => position.status === "OPEN")); setMarginLedger(result.buyingPower); setMarginLoadError(false); }).catch(() => setMarginLoadError(true))]);
     setIsRefreshing(false);
   };
 
@@ -225,7 +253,7 @@ export default function Dashboard() {
                 <ArrowDownRight size={14} className="text-[var(--accent-red)]" />
               )}
               <span className={`text-xs font-medium ${dashboardReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                {dashboardReturns >= 0 ? "+" : ""}{formatCurrency(dashboardReturns, false, { convertFromUSD: false })} ({formatPercent(dayGainPercent)}) hoje
+                {dashboardReturns >= 0 ? "+" : ""}{formatCurrency(dashboardReturns, false, { convertFromUSD: false })} ({formatPercent(dashboardReturnPercent)}) acumulado
               </span>
             </div>
           </div>
@@ -558,7 +586,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-5 mb-5">
                 <div className="relative h-28 w-28 shrink-0 rounded-full" style={{
                   background: totalValue > 0
-                    ? `conic-gradient(var(--accent-primary) 0% ${allocation[0].percent}%, var(--accent-green) ${allocation[0].percent}% ${allocation[0].percent + allocation[1].percent}%, var(--text-muted) ${allocation[0].percent + allocation[1].percent}% 100%)`
+                    ? `conic-gradient(${allocation.map((item, index) => `${item.color} ${allocation.slice(0, index).reduce((sum, part) => sum + part.percent, 0)}% ${allocation.slice(0, index + 1).reduce((sum, part) => sum + part.percent, 0)}%`).join(", ")})`
                     : "var(--bg-muted)"
                 }}>
                   <div className="absolute inset-[15px] rounded-full bg-[var(--bg-card)] flex flex-col items-center justify-center">
@@ -569,7 +597,7 @@ export default function Dashboard() {
                 <div className="min-w-0">
                   <p className="text-xs text-[var(--text-muted)]">Composição da carteira</p>
                   <p className="text-lg font-semibold tabular-nums text-[var(--text-primary)] break-words">{formatCurrency(totalValue, false)}</p>
-                  <p className="mt-1 text-[11px] text-[var(--text-dim)]">Saldo e ativos em carteira</p>
+                  <p className="mt-1 text-[11px] text-[var(--text-dim)]">Saldo, operações e participações simuladas</p>
                 </div>
               </div>
 
