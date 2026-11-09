@@ -15,6 +15,7 @@ import requests
 
 import yfinance as yf
 import pandas as pd
+from django.core.cache import cache
 
 from .base_provider import BaseStockProvider, StockQuote, HistoricalBar
 
@@ -110,6 +111,8 @@ class YahooFinanceProvider(BaseStockProvider):
         Try to fetch quote for a specific Yahoo symbol.
         Returns StockQuote if successful, None otherwise.
         """
+        if cache.get("market:yahoo:cooldown", False):
+            return None
         try:
             ticker = yf.Ticker(yahoo_symbol)
             # Fast quote endpoint first: ticker.info fetches a large company
@@ -138,6 +141,10 @@ class YahooFinanceProvider(BaseStockProvider):
                         currency=str(fast.currency or currency),
                     )
             except Exception as exc:
+                if "rate limit" in str(exc).lower() or "too many requests" in str(exc).lower() or "429" in str(exc):
+                    cache.set("market:yahoo:cooldown", True, 900)
+                    logger.warning("Yahoo Finance rate limited; pausing requests for 15 minutes")
+                    return None
                 logger.debug("Fast quote unavailable for %s: %s", yahoo_symbol, exc)
 
             info = ticker.info
@@ -208,7 +215,11 @@ class YahooFinanceProvider(BaseStockProvider):
             )
 
         except Exception as e:
-            logger.debug(f"Yahoo Finance error for {yahoo_symbol}: {e}")
+            if "rate limit" in str(e).lower() or "too many requests" in str(e).lower() or "429" in str(e):
+                cache.set("market:yahoo:cooldown", True, 900)
+                logger.warning("Yahoo Finance rate limited; pausing requests for 15 minutes")
+            else:
+                logger.debug("Yahoo Finance error for %s: %s", yahoo_symbol, e)
             return None
 
     def get_quote(self, symbol: str) -> Optional[StockQuote]:
@@ -255,8 +266,16 @@ class YahooFinanceProvider(BaseStockProvider):
             self._symbol_cache[symbol] = symbol
             return direct_quote
 
+        # When Yahoo is blocked, do not probe multiple exchange suffixes.
+        if cache.get("market:yahoo:cooldown", False):
+            return None
+
         # Try different exchange suffixes
         for suffix in self.EXCHANGE_SUFFIXES:
+            if cache.get("market:yahoo:cooldown", False):
+                break
+            if not suffix:
+                continue  # Bare symbol was already tried.
             yahoo_symbol = f"{symbol}{suffix}"
             logger.debug(f"Trying symbol: {yahoo_symbol}")
             quote = self._try_fetch_quote(yahoo_symbol)
@@ -473,6 +492,8 @@ class YahooFinanceProvider(BaseStockProvider):
             List of HistoricalBar if successful, None if failed
         """
         symbol = symbol.upper().strip()
+        if cache.get("market:yahoo:cooldown", False):
+            return None
 
         # Resolve to yahoo symbol using cache / suffix search
         yahoo_symbol = symbol
