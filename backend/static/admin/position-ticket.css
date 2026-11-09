@@ -1,0 +1,47 @@
+/* Master Trade — administrative simulated order ticket */
+#content-main .module:has(select[name="symbol"]) {
+  border: 1px solid #dce5ee;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--body-bg, #fff);
+}
+#content-main .module:has(select[name="symbol"]) h2 {
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 700;
+}
+#content-main .module:has(select[name="symbol"]) .form-row {
+  padding: 12px 20px;
+}
+#content-main .module:has(select[name="symbol"]) input:not([type="radio"]),
+#content-main .module:has(select[name="symbol"]) select {
+  max-width: 520px;
+  width: 100%;
+  min-height: 43px;
+  border-radius: 9px;
+}
+#content-main .module:has(select[name="symbol"]) #id_side {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+#content-main .module:has(select[name="symbol"]) #id_side > div label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  cursor: pointer;
+}
+#content-main .module:has(select[name="symbol"]) #id_side input[type="radio"] {
+  accent-color: #2563eb;
+}
+#content-main .submit-row {
+  border-radius: 12px;
+}
+@media (max-width: 640px) {
+  #content-main .module:has(select[name="symbol"]) .form-row { padding: 10px 12px; }
+  #content-main .module:has(select[name="symbol"]) input:not([type="radio"]),
+  #content-main .module:has(select[name="symbol"]) select { max-width: 100%; }
+}
