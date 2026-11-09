@@ -122,19 +122,17 @@ class TradingRobotAdmin(ModelAdmin):
                 ('robot_number', 'user'),
                 ('asset_display', 'status_summary'),
                 ('invested_amount', 'current_equity', 'current_pnl'),
+                ('take_profit', 'stop_loss'),
             ),
         }),
         ('Programação do resultado simulado', {
-            'fields': (
-                ('scheduled_end_at', 'scheduled_pnl_percent'),
-            ),
+            'fields': (('scheduled_end_at', 'scheduled_pnl_percent'),),
         }),
         ('Encerramento independente', {
             'fields': ('close_robot_action',),
         }),
         ('Dados adicionais', {
             'fields': (
-                ('take_profit', 'stop_loss'),
                 'created_at',
                 ('closed_at', 'closed_reason'),
                 'indicators',
