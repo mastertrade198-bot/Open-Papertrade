@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import WalletActions from "@/components/WalletActions";
-import PortfolioOperationsStatement from "@/components/PortfolioOperationsStatement";
+import PortfolioBalanceStatement from "@/components/PortfolioBalanceStatement";
 import PageHeader from "@/components/PageHeader";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { formatCurrency, formatPercent } from "@/lib/utils";
@@ -171,7 +171,7 @@ export default function PortfolioPage() {
             </button>
           </div>
 
-          <PortfolioOperationsStatement />
+          <PortfolioBalanceStatement />
 
           {/* Error Banner */}
           {error && (
@@ -205,7 +205,7 @@ export default function PortfolioPage() {
           </div>
         )}
 
-        <PortfolioOperationsStatement />
+        <PortfolioBalanceStatement />
 
         {/* Summary Cards Row */}
         <div className="grid grid-cols-4 gap-4">
