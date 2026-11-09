@@ -251,6 +251,9 @@ UNFOLD = {
                 "separator": True,
                 "items": [
                     {"title": "Robôs", "icon": "smart_toy", "link": reverse_lazy("admin:robots_tradingrobot_changelist")},
+                    {"title": "Projetos", "icon": "account_tree", "link": reverse_lazy("admin:projects_project_changelist")},
+                    {"title": "Participações em projetos", "icon": "trending_up", "link": reverse_lazy("admin:projects_participation_changelist")},
+                    {"title": "Auditoria de projetos", "icon": "fact_check", "link": reverse_lazy("admin:projects_participationaudit_changelist")},
                     {"title": "Operações", "icon": "candlestick_chart", "link": reverse_lazy("admin:users_position_changelist")},
                     {"title": "Financeiro", "icon": "account_balance_wallet", "link": reverse_lazy("admin:users_balancetransaction_changelist")},
                     {"title": "Auditoria", "icon": "history", "link": reverse_lazy("admin:users_positionauditlog_changelist")},
