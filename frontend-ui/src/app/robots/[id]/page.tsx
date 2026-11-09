@@ -3,7 +3,7 @@ import {use, useCallback, useEffect, useState} from "react";
 import Sidebar from "@/components/Sidebar";
 import AdvancedChart from "@/components/chart/AdvancedChart";
 import Link from "next/link";
-import {Activity, ArrowLeft, Clock3, TrendingUp} from "lucide-react";
+import {Activity, ArrowLeft, Clock3, TrendingUp, Radio, Cpu} from "lucide-react";
 import {API_HOST} from "@/lib/api";
 type Op={id:string;side:string;status:string;pnl:number;pnlPercent:number;openedAt:string;closedAt:string|null;entryPrice:number;exitPrice:number|null};
 type Pagination={page:number;pageSize:number;totalPages:number;totalOperations:number;hasPrevious:boolean;hasNext:boolean};
@@ -39,6 +39,26 @@ export default function RobotDetail({params}:{params:Promise<{id:string}>}){
  <div className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-4"><p className="flex items-center gap-1 text-xs text-[var(--text-secondary)]"><TrendingUp size={13}/> Lucro / prejuízo</p><p className={`mt-2 text-lg font-semibold tabular-nums ${positive?"text-emerald-500":"text-red-500"}`}>{money(robot.pnl)} <span className="text-sm">({robot.pnlPercent.toFixed(2)}%)</span></p><p className="mt-1 text-xs text-[var(--text-secondary)]">Patrimônio: {money(robot.equity)}</p></div>
  <div className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-4"><p className="text-xs text-[var(--text-secondary)]">Limites definidos</p><p className="mt-2 text-lg font-semibold tabular-nums">+{robot.tp}% / -{robot.sl}%</p><p className="mt-1 text-xs text-[var(--text-secondary)]">Take profit / Stop loss</p></div>
  </section>
+ <section aria-label="Atividade da simulação" className="mb-5 overflow-hidden rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-3 sm:px-5">
+ <div className="flex flex-wrap items-center justify-between gap-3">
+ <div className="flex min-w-0 items-center gap-3">
+ <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)]">
+ <Cpu size={17} className="text-[var(--accent-primary)]"/>
+ {robot.status==="ACTIVE"&&<span className="robot-status-pulse absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-emerald-400"/>}
+ </div>
+ <div><div className="flex items-center gap-2 text-sm font-semibold"><span>{robot.status==="ACTIVE"?"Monitoramento da simulação":robot.status==="CLOSED"?"Simulação encerrada":"Simulação pausada"}</span>{robot.status==="ACTIVE"&&<Radio size={14} className="text-emerald-400"/>}</div>
+ <p className="text-xs text-[var(--text-secondary)]">Atividade visual demonstrativa · operações registradas separadamente</p></div>
+ </div>
+ <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+ <span className="text-[var(--text-secondary)]">Ativo <strong className="ml-1 text-[var(--text-primary)]">{robot.symbol}</strong></span>
+ <span className="text-[var(--text-secondary)]">Operações <strong className="ml-1 tabular-nums text-[var(--text-primary)]">{robot.pagination?.totalOperations??robot.operations.length}</strong></span>
+ <span className="text-[var(--text-secondary)]">Resultado <strong className={`ml-1 tabular-nums ${positive?"text-emerald-400":"text-red-400"}`}>{robot.pnlPercent>=0?"+":""}{robot.pnlPercent.toFixed(2)}%</strong></span>
+ </div>
+ </div>
+ <div aria-hidden="true" className="robot-activity-track relative mt-3 h-1 overflow-hidden rounded-full bg-[var(--bg-primary)]">
+ {robot.status==="ACTIVE"&&<div className="robot-activity-scan absolute inset-y-0 left-0 w-1/4 rounded-full bg-emerald-400/70"/>}
+ </div>
+ </section>
  <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_350px]">
  <div className="min-w-0 overflow-hidden rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] shadow-sm">
  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-primary)] px-5 py-4"><h2 className="flex items-center gap-2 text-sm font-semibold"><Activity size={16}/> Histórico de preços</h2><span className="flex items-center gap-1 text-xs text-[var(--text-secondary)]"><Clock3 size={13}/> Mais antigo → mais recente</span></div>
@@ -52,6 +72,11 @@ export default function RobotDetail({params}:{params:Promise<{id:string}>}){
  {robot.pagination&&robot.pagination.totalPages>1&&<div className="flex items-center justify-between gap-2 border-t border-[var(--border-primary)] px-4 py-3 text-xs"><span className="text-[var(--text-secondary)]">{robot.pagination.page} / {robot.pagination.totalPages}</span><div className="flex gap-2"><button type="button" disabled={!robot.pagination.hasPrevious} onClick={()=>setPage(p=>Math.max(1,p-1))} className="rounded-md border border-[var(--border-primary)] px-3 py-2 disabled:opacity-40">Anterior</button><button type="button" disabled={!robot.pagination.hasNext} onClick={()=>setPage(p=>p+1)} className="rounded-md border border-[var(--border-primary)] px-3 py-2 disabled:opacity-40">Próxima</button></div></div>}
  </aside></section>
   <style jsx global>{`
+  @keyframes robot-activity-scan { from { transform: translateX(-100%); } to { transform: translateX(400%); } }
+  @keyframes robot-status-pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52,211,153,.3); } 50% { opacity: .65; box-shadow: 0 0 0 5px rgba(52,211,153,0); } }
+  .robot-activity-scan { animation: robot-activity-scan 4s ease-in-out infinite; }
+  .robot-status-pulse { animation: robot-status-pulse 2.5s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .robot-activity-scan, .robot-status-pulse { animation: none; } }
   /* Defense in depth: hide all drawing controls in robot detail only. */
   .robot-chart-no-drawings [aria-label="Ferramentas de desenho"],
   .robot-chart-no-drawings [data-drawing-toolbar],
