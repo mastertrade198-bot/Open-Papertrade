@@ -37,7 +37,7 @@ export default function MarketNews({ compact = false }: { compact?: boolean }) {
   }, [category, reload]);
   return <section className="overflow-hidden rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)]">
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-primary)] px-4 py-4 sm:px-5">
-      <div className="flex items-center gap-2"><Newspaper size={18} className="text-[var(--accent-primary)]"/><div><h2 className="text-sm font-bold">Notícias do mercado</h2><p className="text-xs text-[var(--text-muted)]">Manchetes via RSS público · sem chave de API</p></div></div>
+      <div className="flex items-center gap-2"><Newspaper size={18} className="text-[var(--accent-primary)]"/><div><h2 className="text-sm font-bold">Notícias do mercado</h2></div></div>
       <button type="button" onClick={() => setReload(v => v + 1)} disabled={loading} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-primary)] px-3 py-2 text-xs font-semibold disabled:opacity-50"><RefreshCw size={13} className={loading ? "animate-spin" : ""}/> Atualizar</button>
     </div>
     <div className="flex flex-wrap gap-2 border-b border-[var(--border-primary)] px-4 py-3 sm:px-5" aria-label="Categorias de notícias">
