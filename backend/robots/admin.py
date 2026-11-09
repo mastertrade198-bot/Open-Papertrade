@@ -327,20 +327,28 @@ class TradingRobotAdmin(ModelAdmin):
                                       reason='Reprogramação administrativa do cenário demonstrativo')
 
 class ManualRobotOperationForm(forms.ModelForm):
+    manual_percent = forms.DecimalField(
+        label='Resultado da operação (%)',
+        max_digits=9, decimal_places=4,
+        widget=forms.NumberInput(attrs={'step': '0.01', 'placeholder': 'Ex.: 0.50 ou -0.30'}),
+        help_text='Percentual sobre o capital inicial investido no robô. Positivo = lucro; negativo = prejuízo.',
+    )
+
     class Meta:
         model = RobotOperation
-        fields = ('robot', 'side', 'allocated_capital', 'pnl')
+        fields = ('robot', 'side')
 
     def clean(self):
         data = super().clean()
         robot = data.get('robot')
         if robot and robot.status != 'ACTIVE':
             raise forms.ValidationError('Só é possível adicionar operações a robôs ativos.')
-        amount = data.get('allocated_capital')
-        if amount is not None and amount <= 0:
-            raise forms.ValidationError('O valor utilizado deve ser positivo.')
-        if data.get('pnl') is None:
-            raise forms.ValidationError('Informe o lucro ou prejuízo simulado.')
+        if robot and data.get('manual_percent') is not None:
+            pnl = (robot.capital * data['manual_percent'] / Decimal('100')).quantize(Decimal('0.01'))
+            existing = robot.operations.filter(source='MANUAL', status='CLOSED').aggregate(
+                total=Sum('pnl'))['total'] or Decimal('0.00')
+            if robot.equity + existing + pnl < 0:
+                raise forms.ValidationError('O resultado manual não pode deixar o patrimônio simulado negativo.')
         return data
 
 
@@ -361,7 +369,7 @@ class RobotOperationAdmin(ModelAdmin):
     fieldsets = (
         ('Adicionar operação manual simulada', {
             'description': 'O resultado é somado ao lucro/prejuízo exibido e à devolução final. Não modifica o patrimônio usado pelo motor automático nem sua meta programada.',
-            'fields': ('robot', 'side', 'allocated_capital', 'pnl'),
+            'fields': ('robot', 'manual_percent', 'side'),
         }),
     )
     readonly_fields = [f.name for f in RobotOperation._meta.fields]
@@ -391,6 +399,12 @@ class RobotOperationAdmin(ModelAdmin):
             obj.status = 'CLOSED'
             obj.opened_at = now
             obj.closed_at = now
+            percent = form.cleaned_data['manual_percent']
+            obj.allocated_capital = robot.capital
+            obj.pnl = (robot.capital * percent / Decimal('100')).quantize(Decimal('0.01'))
+            existing = robot.operations.filter(source='MANUAL', status='CLOSED').aggregate(total=Sum('pnl'))['total'] or Decimal('0.00')
+            if robot.equity + existing + obj.pnl < 0:
+                raise forms.ValidationError('O resultado manual não pode deixar o patrimônio simulado negativo.')
             obj.entry_price = Decimal('100.00000000')
             obj.quantity = (obj.allocated_capital / obj.entry_price).quantize(Decimal('0.00000001'))
             if obj.quantity <= 0:
@@ -404,7 +418,7 @@ class RobotOperationAdmin(ModelAdmin):
             RobotAudit.objects.create(
                 robot=robot, actor=request.user.get_username(), action='ADMIN_MANUAL_OPERATION',
                 before={'automatic_equity': str(robot.equity)},
-                after={'operation_id': str(obj.pk), 'manual_pnl': str(obj.pnl),
+                after={'operation_id': str(obj.pk), 'manual_pnl': str(obj.pnl), 'manual_percent': str(percent), 'percent_base_capital': str(robot.capital),
                        'automatic_equity': str(robot.equity), 'simulated': True},
                 reason='Operação demonstrativa adicionada sem alterar a meta do motor automático',
             )
