@@ -1,54 +1,60 @@
-from django.contrib import admin, messages
+from django import forms
+from django.contrib import admin
 from django.db import transaction
 from django.utils import timezone
 from .models import TradingRobot, RobotOperation, RobotAudit
-from .demo_engine import settle
+
+class RobotScheduleForm(forms.ModelForm):
+    class Meta:
+        model = TradingRobot
+        fields = ('scheduled_end_at', 'scheduled_pnl_percent')
+
+    def clean(self):
+        data = super().clean()
+        when = data.get('scheduled_end_at')
+        percent = data.get('scheduled_pnl_percent')
+        if (when is None) != (percent is None):
+            raise forms.ValidationError('Informe a data e o percentual juntos, ou deixe ambos vazios.')
+        if percent is not None and percent < -100:
+            raise forms.ValidationError('O prejuízo não pode superar 100% do capital.')
+        if when is not None and when <= timezone.now():
+            raise forms.ValidationError('A data de finalização deve estar no futuro.')
+        if self.instance.pk and self.instance.status == 'CLOSED' and (when is not None or percent is not None):
+            raise forms.ValidationError('Não é possível programar um robô encerrado.')
+        return data
 
 @admin.register(TradingRobot)
 class TradingRobotAdmin(admin.ModelAdmin):
-    list_display = ('id','user','symbol','capital','equity','status','created_at')
-    actions = ('close_selected_robots',)
-    list_filter = ('status','symbol')
-    search_fields = ('symbol','asset_name','user__email')
-    readonly_fields = ('id','user','capital','equity','created_at','closed_at','closed_reason')
-    fields = ('id','user','symbol','asset_name','capital','equity','take_profit','stop_loss','indicators','status','closed_reason','created_at','closed_at')
-    @admin.action(description='Encerrar robôs selecionados e devolver saldo restante')
-    def close_selected_robots(self, request, queryset):
-        closed = 0
-        skipped = 0
-        for robot_id in queryset.values_list('pk', flat=True):
-            with transaction.atomic():
-                robot = TradingRobot.objects.select_for_update().get(pk=robot_id)
-                if robot.status == 'CLOSED' or robot.operations.filter(status='OPEN').exists():
-                    skipped += 1
-                    continue
-                settle(robot, 'ADMIN')
-                RobotAudit.objects.create(
-                    robot=robot, actor=request.user.get_username(), action='ADMIN_CLOSE',
-                    after={'status': 'CLOSED', 'released': str(max(robot.equity, 0))},
-                    reason='Encerramento manual pelo Django Admin'
-                )
-                closed += 1
-        if closed:
-            self.message_user(request, f'{closed} robô(s) encerrado(s) com saldo devolvido.', level=messages.SUCCESS)
-        if skipped:
-            self.message_user(request, f'{skipped} robô(s) ignorado(s): já encerrados ou com operações abertas.', level=messages.WARNING)
+    form = RobotScheduleForm
+    list_display = ('id', 'user', 'symbol', 'capital', 'equity', 'status', 'created_at')
+    list_filter = ('status', 'symbol')
+    search_fields = ('symbol', 'asset_name', 'user__email')
+    actions = None
+    fields = ('id', 'user', 'symbol', 'asset_name', 'capital', 'equity', 'status',
+              'take_profit', 'stop_loss', 'indicators', 'created_at', 'closed_at',
+              'closed_reason', 'scheduled_end_at', 'scheduled_pnl_percent')
+    readonly_fields = ('id', 'user', 'symbol', 'asset_name', 'capital', 'equity', 'status',
+                       'take_profit', 'stop_loss', 'indicators', 'created_at', 'closed_at', 'closed_reason')
+
+    def has_add_permission(self, request):
+        return False
 
     def save_model(self, request, obj, form, change):
-        before = {}
-        if change:
-            old = TradingRobot.objects.get(pk=obj.pk)
-            before = {'tp':str(old.take_profit),'sl':str(old.stop_loss),'indicators':old.indicators,'status':old.status}
-            # Financial settlement must use the user endpoint, not a raw admin status edit.
-            if obj.status == 'CLOSED' and old.status != 'CLOSED':
-                obj.status = old.status
-                self.message_user(request, 'Encerramento financeiro deve ocorrer pelo fluxo de liquidação.', level='warning')
+        if not change:
+            return
         with transaction.atomic():
-            super().save_model(request, obj, form, change)
-            if change:
-                RobotAudit.objects.create(robot=obj, actor=request.user.get_username(), action='ADMIN_EDIT',
-                    before=before, after={'tp':str(obj.take_profit),'sl':str(obj.stop_loss),'indicators':obj.indicators,'status':obj.status},
-                    reason='Edição pelo Django Admin')
+            previous = TradingRobot.objects.select_for_update().get(pk=obj.pk)
+            before = {'scheduled_end_at': previous.scheduled_end_at.isoformat() if previous.scheduled_end_at else None,
+                      'scheduled_pnl_percent': str(previous.scheduled_pnl_percent) if previous.scheduled_pnl_percent is not None else None}
+            # Persist only the two authorized fields, not stale fields from the form.
+            TradingRobot.objects.filter(pk=obj.pk).update(
+                scheduled_end_at=obj.scheduled_end_at,
+                scheduled_pnl_percent=obj.scheduled_pnl_percent)
+            after = {'scheduled_end_at': obj.scheduled_end_at.isoformat() if obj.scheduled_end_at else None,
+                     'scheduled_pnl_percent': str(obj.scheduled_pnl_percent) if obj.scheduled_pnl_percent is not None else None}
+            RobotAudit.objects.create(robot=previous, actor=request.user.get_username(),
+                                      action='ADMIN_SCHEDULE', before=before, after=after,
+                                      reason='Programação administrativa do resultado demonstrativo')
 
 @admin.register(RobotOperation)
 class RobotOperationAdmin(admin.ModelAdmin):
