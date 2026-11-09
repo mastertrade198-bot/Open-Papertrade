@@ -18,12 +18,16 @@ export default function RobotsPage(){
   const [assets,setAssets]=useState<Asset[]>([]);
   const [symbol,setSymbol]=useState("BTC");
   const [value,setValue]=useState("");
+  const [showAdvanced,setShowAdvanced]=useState(false);
+  const [tp,setTp]=useState("5");
+  const [sl,setSl]=useState("3");
+  const [selected,setSelected]=useState<string[]>(["ema","macd","rsi"]);
   const [creating,setCreating]=useState(false);
   const [error,setError]=useState("");
   const [loading,setLoading]=useState(true);
   const [showForm,setShowForm]=useState(false);
   const modalRef=useRef<HTMLDivElement>(null);
-  const openForm=()=>{setError("");setValue("");setShowForm(true)};
+  const openForm=()=>{setError("");setValue("");setShowAdvanced(false);setShowForm(true)};
   const closeForm=()=>{if(!creating){setShowForm(false);setShowAdvanced(false);setError("")}};
   useEffect(()=>{
     if(!showForm)return;
@@ -54,7 +58,7 @@ export default function RobotsPage(){
   const signed=(n:number)=>`${n>0?"+":""}${n.toFixed(2)}%`;
   const reload=()=>api("").then(data=>setRobots(data.robots));
   useEffect(()=>{reload().catch(e=>setError(e.message)).finally(()=>setLoading(false));const timer=setInterval(()=>{reload().catch(()=>{});},5000);fetch(`${API_HOST}/api/stocks/catalog/?page=1`,{credentials:"include"}).then(r=>r.json()).then(d=>{if(Array.isArray(d.assets))setAssets(d.assets)}).catch(()=>{});return()=>clearInterval(timer);},[]);
-  const create=async(e:React.FormEvent)=>{e.preventDefault();if(!value.trim()||!Number.isFinite(Number(value))||Number(value)<=0){setError("Informe o valor em USD que deseja reservar para este robô.");return;}setCreating(true);setError("");try{await api("",{method:"POST",body:JSON.stringify({symbol,value,tp:"5",sl:"3",indicators:{ema:presets.ema,macd:presets.macd,rsi:presets.rsi}})});await reload();setShowForm(false);setShowAdvanced(false);}catch(e){setError(e instanceof Error?e.message:"Falha ao criar robô")}finally{setCreating(false)}};
+  const create=async(e:React.FormEvent)=>{e.preventDefault();if(!value.trim()||!Number.isFinite(Number(value))||Number(value)<=0){setError("Informe o valor em USD que deseja reservar para este robô.");return;}if(Number(tp)<=0||Number(sl)<=0||selected.length===0){setError("Confira os limites e selecione pelo menos um indicador.");return;}setCreating(true);setError("");try{await api("",{method:"POST",body:JSON.stringify({symbol,value,tp,sl,indicators:Object.fromEntries(selected.map(key=>[key,presets[key]]))})});await reload();setShowForm(false);setShowAdvanced(false);}catch(e){setError(e instanceof Error?e.message:"Falha ao criar robô")}finally{setCreating(false)}};
   return <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]"><Sidebar/><main className="mx-auto max-w-[1440px] px-4 py-8 lg:px-8">
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs uppercase tracking-widest text-[var(--accent-primary)]">Ambiente de demonstração</p><h1 className="text-2xl font-bold">Meus robôs de investimento</h1><p className="text-sm text-[var(--text-secondary)]">Acompanhe estratégias, indicadores e resultados em um único painel.</p></div><button onClick={openForm} className="rounded-lg bg-[var(--accent-primary)] px-5 py-3 text-sm font-bold text-white">+ Iniciar novo robô</button></div>
     {error&&!showForm&&<p role="alert" className="mb-4 rounded-lg border border-red-500/40 p-3 text-sm text-red-400">{error}</p>}
@@ -84,13 +88,25 @@ export default function RobotsPage(){
           </div>
           <p className="mt-2 text-xs text-[var(--text-secondary)]">O valor será reservado ao iniciar e poderá variar com os resultados simulados.</p>
         </section>
-        <div className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] px-4 py-3 text-xs leading-relaxed text-[var(--text-secondary)]">
-          <p className="font-semibold text-[var(--text-primary)]">Configuração automática</p>
-          <p className="mt-1">O robô será iniciado com parâmetros padrão: meta de ganho de 5% e limite de perda de 3%. Esses limites fazem parte da simulação e não garantem resultados.</p>
-        </div>
+        <section className="overflow-hidden rounded-lg border border-[var(--border-primary)]">
+          <button type="button" aria-expanded={showAdvanced} aria-controls="robot-advanced-options" onClick={()=>setShowAdvanced(v=>!v)} className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left">
+            <span><span className="block text-sm font-semibold">Configurações avançadas</span><span className="mt-0.5 block text-xs text-[var(--text-secondary)]">Opcional · Ajuste metas e escolha indicadores</span></span>
+            <span className="text-lg text-[var(--text-secondary)]" aria-hidden="true">{showAdvanced?"−":"+"}</span>
+          </button>
+          {showAdvanced&&<div id="robot-advanced-options" className="space-y-4 border-t border-[var(--border-primary)] px-4 py-4">
+            <div className="grid grid-cols-2 gap-3">
+              <label className="text-xs font-medium">Meta de ganho (%)<input required type="number" min="0.01" step="0.01" value={tp} onChange={e=>setTp(e.target.value)} className="mt-2 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2.5 text-sm"/></label>
+              <label className="text-xs font-medium">Limite de perda (%)<input required type="number" min="0.01" step="0.01" value={sl} onChange={e=>setSl(e.target.value)} className="mt-2 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2.5 text-sm"/></label>
+            </div>
+            <div><p className="mb-2 text-xs font-semibold">Indicadores utilizados</p>
+              <div className="grid gap-2 sm:grid-cols-2">{([["ema","Médias móveis"],["macd","MACD"],["rsi","Força relativa (IFR)"],["bollinger","Bandas de Bollinger"],["stochastic","Estocástico"],["adx","Força da tendência (ADX)"]] as const).map(([key,label])=><label key={key} className="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--border-primary)] px-3 py-2 text-xs"><input type="checkbox" checked={selected.includes(key)} onChange={e=>setSelected(current=>e.target.checked?[...current,key]:current.filter(item=>item!==key))}/>{label}</label>)}</div>
+            </div>
+            <p className="text-xs leading-relaxed text-[var(--text-secondary)]">Os indicadores são parâmetros da simulação; não determinam os resultados demonstrativos.</p>
+          </div>}
+        </section>
       </div>
       <div className="mt-5 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] p-4"><p className="text-xs font-semibold">Resumo antes de iniciar</p><div className="mt-3 flex items-center justify-between gap-3 text-sm"><span className="text-[var(--text-secondary)]">Valor que será reservado</span><strong className="tabular-nums">{value&&Number(value)>0?money(Number(value)):"Informe um valor"}</strong></div><p className="mt-2 text-xs text-[var(--text-secondary)]">Ao confirmar, esse valor será reservado do seu saldo de demonstração. O robô começa com resultado de 0%.</p></div>
-      </div><div className="flex shrink-0 items-center justify-end gap-3 border-t border-[var(--border-primary)] bg-[var(--bg-card)] px-5 py-4 sm:px-7"><button type="button" disabled={creating} onClick={closeForm} className="rounded-lg border border-[var(--border-primary)] px-5 py-3 text-sm font-semibold disabled:opacity-40">Cancelar</button><button disabled={creating||!value||Number(value)<=0} className="rounded-lg bg-[var(--accent-primary)] px-5 py-3 text-sm font-bold text-white disabled:opacity-50">{creating?"Criando...":"Iniciar robô"}</button></div></form></div></div>}
+      </div><div className="flex shrink-0 items-center justify-end gap-3 border-t border-[var(--border-primary)] bg-[var(--bg-card)] px-5 py-4 sm:px-7"><button type="button" disabled={creating} onClick={closeForm} className="rounded-lg border border-[var(--border-primary)] px-5 py-3 text-sm font-semibold disabled:opacity-40">Cancelar</button><button disabled={creating||!value||Number(value)<=0||selected.length===0} className="rounded-lg bg-[var(--accent-primary)] px-5 py-3 text-sm font-bold text-white disabled:opacity-50">{creating?"Criando...":"Iniciar robô"}</button></div></form></div></div>}
     <section aria-label="Resumo dos robôs" className="mb-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {[
         {label:"Total de robôs",value:String(robots.length),hint:"Estratégias cadastradas"},
