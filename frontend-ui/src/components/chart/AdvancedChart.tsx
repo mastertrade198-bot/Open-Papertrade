@@ -98,6 +98,7 @@ const DRAWING_TOOLS: { id: DrawingTool; icon: typeof MousePointer2; label: strin
 interface AdvancedChartProps {
   symbol: string;
   symbolName?: string;
+  livePrice?: number;
   initialState?: Partial<{
     timeframe: TimeRange;
     mode: ChartMode;
@@ -130,6 +131,7 @@ const REPLAY_BAR_HEIGHT = 56;
 export default function AdvancedChart({
   symbol,
   symbolName,
+  livePrice,
   initialState,
   onStateChange,
   height = 640,
@@ -227,6 +229,21 @@ export default function AdvancedChart({
       cancelled = true;
     };
   }, [symbol, timeframe]);
+
+  // Update the latest displayed candle from the same quote as the order ticket.
+  // Never append a synthetic historical candle or alter the original open.
+  useEffect(() => {
+    if (replayActive || !Number.isFinite(livePrice) || !livePrice || livePrice <= 0) return;
+    setBars(previous => {
+      if (!previous.length) return previous;
+      const last = previous[previous.length - 1];
+      if (last.close === livePrice) return previous;
+      return [...previous.slice(0, -1), {
+        ...last, close: livePrice, high: Math.max(last.high, livePrice),
+        low: Math.min(last.low, livePrice),
+      }];
+    });
+  }, [livePrice, replayActive]);
 
   // Normalise bars into indicator-ready form
   const normalisedBars: IndicatorBar[] = useMemo(
