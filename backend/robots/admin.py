@@ -100,8 +100,8 @@ class RobotConfigurationFilter(admin.SimpleListFilter):
 @admin.register(TradingRobot)
 class TradingRobotAdmin(ModelAdmin):
     form = RobotScheduleForm
-    list_display = ('user', 'unique_robot_id', 'configuration_badge', 'configured_percent', 'status_badge', 'invested_capital', 'created_at')
-    list_display_links = ('user',)
+    list_display = ('sequential_robot_id', 'user', 'configuration_badge', 'configured_percent', 'status_badge', 'invested_capital', 'created_at')
+    list_display_links = ('sequential_robot_id', 'user')
     list_filter = (RobotConfigurationFilter, 'status')
     list_per_page = 20
     ordering = ('-created_at', '-pk')
@@ -154,10 +154,15 @@ class TradingRobotAdmin(ModelAdmin):
         ).count()
         return f'Robô #{number:04d} · {obj.asset_name}'
 
-    @admin.display(description='ID único do robô', ordering='id')
-    def unique_robot_id(self, obj):
-        # UUID is the database primary key: immutable and unique, unlike row numbering.
-        return format_html('<code style="font-size:11px;white-space:nowrap" title="ID único e permanente">{}</code>', str(obj.pk))
+    @admin.display(description='ID do robô')
+    def sequential_robot_id(self, obj):
+        # Stable chronological display number, independent of list sorting/filtering.
+        # UUID remains the unique, immutable database identifier.
+        number = TradingRobot.objects.filter(
+            Q(created_at__lt=obj.created_at) |
+            Q(created_at=obj.created_at, pk__lte=obj.pk)
+        ).count()
+        return format_html('<span title="Identificador interno: {}">ID {}</span>', str(obj.pk), number)
 
     @admin.display(description='Percentual configurado', ordering='scheduled_pnl_percent')
     def configured_percent(self, obj):
