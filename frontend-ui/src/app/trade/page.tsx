@@ -51,6 +51,9 @@ function TradePageContent() {
     settings,
     getStockBySymbol,
     market,
+    watchlist,
+    addToWatchlist,
+    removeFromWatchlist,
   } = usePortfolio();
 
   // Search state
@@ -136,9 +139,17 @@ function TradePageContent() {
   }, [availableAssets]);
 
   const [marketCategory, setMarketCategory] = useState("Favoritos");
-  const [favoriteSymbols, setFavoriteSymbols] = useState<string[]>(["AAPL","MSFT","NVDA","AMZN","GOOGL","TSLA","BTC-USD","ETH-USD","SPY","QQQ"]);
-  useEffect(() => { try { const saved = localStorage.getItem("trade_favorite_symbols"); if (saved) { const value = JSON.parse(saved); if (Array.isArray(value)) setFavoriteSymbols(value.filter((v): v is string => typeof v === "string")); } } catch {} }, []);
-  const toggleFavorite = (symbol: string) => setFavoriteSymbols(previous => { const next = previous.includes(symbol) ? previous.filter(v => v !== symbol) : [...previous,symbol]; try { localStorage.setItem("trade_favorite_symbols",JSON.stringify(next)); } catch {} return next; });
+  // Single source of truth: the account watchlist shared with Markets and Favorites.
+  const favoriteSymbols = useMemo(() => watchlist.map(item => item.symbol.toUpperCase()), [watchlist]);
+  const toggleFavorite = useCallback((symbol: string) => {
+    const normalized = symbol.toUpperCase();
+    if (favoriteSymbols.includes(normalized)) {
+      void removeFromWatchlist(normalized);
+    } else {
+      const asset = availableAssets.find(item => item.symbol.toUpperCase() === normalized);
+      void addToWatchlist(normalized, asset?.name || normalized);
+    }
+  }, [favoriteSymbols, removeFromWatchlist, addToWatchlist, availableAssets]);
   const visibleMarketAssets = useMemo(() => availableAssets.filter(asset =>
     (marketCategory === "Todos" || (marketCategory === "Favoritos" ? favoriteSymbols.includes(asset.symbol) : asset.category === marketCategory)) &&
     (!searchQuery.trim() || `${asset.symbol} ${asset.displaySymbol || ""} ${asset.name}`.toLocaleLowerCase("pt-BR").includes(searchQuery.trim().toLocaleLowerCase("pt-BR")))
