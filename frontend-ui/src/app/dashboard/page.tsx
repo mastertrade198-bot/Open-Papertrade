@@ -54,7 +54,7 @@ export default function Dashboard() {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [marginPositions, setMarginPositions] = useState<SimulatedPosition[]>([]);
-  const [projectParticipations, setProjectParticipations] = useState<Array<{ id: string; projectName: string; categoryLabel: string; principal: number; percent: number; simulatedValue: number; status: string }>>([]);
+  const [projectParticipations, setProjectParticipations] = useState<Array<{ id: string; projectName: string; category: string; categoryLabel: string; principal: number; percent: number; simulatedValue: number; status: string }>>([]);
   const [projectLoadError, setProjectLoadError] = useState(false);
   const loadProjectParticipations = async () => {
     try {
@@ -182,13 +182,32 @@ export default function Dashboard() {
   const cashValue = dashboardBuyingPower;
   const totalValue = stockValue + cryptoValue + cashValue + operationsBalance + projectsPrincipal;
 
-  const allocation = [
-    { label: "Ações", value: stockValue, percent: totalValue > 0 ? stockValue / totalValue * 100 : 0, color: "var(--accent-primary)" },
-    { label: "Criptomoedas", value: cryptoValue, percent: totalValue > 0 ? cryptoValue / totalValue * 100 : 0, color: "var(--accent-green)" },
-    { label: "Saldo em operações", value: operationsBalance, percent: totalValue > 0 ? operationsBalance / totalValue * 100 : 0, color: "#f59e0b" },
-    { label: "Projetos", value: projectsPrincipal, percent: totalValue > 0 ? projectsPrincipal / totalValue * 100 : 0, color: "#8b5cf6" },
-    { label: "Saldo disponível", value: cashValue, percent: totalValue > 0 ? cashValue / totalValue * 100 : 0, color: "var(--text-muted)" },
+  const projectCategories = [
+    { key: "REAL_ESTATE", label: "Fundos Imobiliários", color: "#8b5cf6" },
+    { key: "FIXED_INCOME", label: "Renda Fixa", color: "#06b6d4" },
+    { key: "STOCKS", label: "Ações", color: "#6366f1" },
+    { key: "ETF", label: "ETF", color: "#ec4899" },
   ];
+  const categoryAllocations = projectCategories.map(category => ({
+    label: category.label,
+    value: activeProjects
+      .filter(item => item.category === category.key)
+      .reduce((sum, item) => sum + item.principal, 0),
+    color: category.color,
+  })).filter(category => category.value > 0);
+  const uncategorizedProjects = activeProjects
+    .filter(item => !projectCategories.some(category => category.key === item.category))
+    .reduce((sum, item) => sum + item.principal, 0);
+  const allocationValues = [
+    { label: "Saldo em operações", value: operationsBalance + stockValue + cryptoValue, color: "#f59e0b" },
+    ...categoryAllocations,
+    ...(uncategorizedProjects > 0 ? [{ label: "Projetos sem categoria", value: uncategorizedProjects, color: "#a78bfa" }] : []),
+    { label: "Saldo disponível", value: cashValue, color: "var(--text-muted)" },
+  ];
+  const allocation = allocationValues.map(item => ({
+    ...item,
+    percent: totalValue > 0 ? (item.value / totalValue) * 100 : 0,
+  }));
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
