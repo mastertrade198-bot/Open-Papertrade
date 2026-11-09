@@ -672,9 +672,53 @@ class StockHistoryView(APIView):
                 ).to_dict()
                 cache.set(cache_key, result, 10 if interval in {"1m", "5m"} else 30)
                 return Response(result)
-            except (requests.RequestException, ValueError, TypeError, IndexError):
-                return Response({"success": False, "error": "Candles da Binance indisponíveis."},
-                                status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            except (requests.RequestException, ValueError, TypeError, IndexError) as exc:
+                # Some hosting regions cannot access Binance Spot. Use public
+                # Coinbase Exchange candles as a real-data fallback for BTC/ETH.
+                # Never invent OHLC data or silently return stale synthetic bars.
+                import logging
+                logging.getLogger(__name__).warning(
+                    "Binance candles unavailable for %s: %s", pair, exc
+                )
+                if base in {"BTC", "ETH", "SOL", "LTC", "BCH", "DOGE", "ADA", "LINK", "AVAX"}:
+                    granularity = {"1m": 60, "5m": 300, "15m": 900, "1h": 3600, "1d": 86400}[interval]
+                    try:
+                        from datetime import datetime, timezone, timedelta
+                        end = datetime.fromtimestamp(int(before), tz=timezone.utc) if before else datetime.now(timezone.utc)
+                        start = end - timedelta(seconds=granularity * 299)
+                        coinbase = requests.get(
+                            f"https://api.exchange.coinbase.com/products/{base}-USD/candles",
+                            params={"granularity": granularity,
+                                    "start": start.isoformat(),
+                                    "end": end.isoformat()},
+                            headers={"User-Agent": "MasterTrade-Simulator/1.0"},
+                            timeout=8,
+                        )
+                        coinbase.raise_for_status()
+                        rows = coinbase.json()
+                        if not isinstance(rows, list) or not rows:
+                            raise ValueError("Coinbase returned no candles")
+                        bars = [
+                            HistoricalBar(time=str(int(row[0])), low=float(row[1]),
+                                          high=float(row[2]), open=float(row[3]),
+                                          close=float(row[4]), volume=int(float(row[5])))
+                            for row in rows if isinstance(row, list) and len(row) >= 6
+                        ]
+                        bars.sort(key=lambda bar: int(bar.time))
+                        result = HistoricalDataResult(
+                            bars=bars, success=True, symbol=symbol, period=period, interval=interval
+                        ).to_dict()
+                        result["provider"] = "coinbase"
+                        cache.set(cache_key, result, 10 if interval == "1m" else 30)
+                        return Response(result)
+                    except (requests.RequestException, ValueError, TypeError, IndexError) as fallback_exc:
+                        logging.getLogger(__name__).warning(
+                            "Coinbase candle fallback unavailable for %s: %s", base, fallback_exc
+                        )
+                return Response(
+                    {"success": False, "error": "Provedores de candles indisponíveis temporariamente."},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
         yahoo_interval = {"1h": "60m", "1d": "1d"}.get(interval, interval)
         # Yahoo intraday retention limits: avoid asking for unsupported long ranges.
         if interval == "1m":
