@@ -31,7 +31,8 @@ def serialize(robot, details=False, page=1):
         'pnl': float(total_pnl), 'pnlPercent': float(total_pnl / robot.capital * 100) if robot.capital else 0,
         'automaticPnl': float(robot.pnl), 'manualPnl': float(manual_pnl),
         'tp': float(robot.take_profit), 'sl': float(robot.stop_loss),
-        'status': robot.status, 'indicators': robot.indicators,
+        'status': robot.status, 'configured': robot.scheduled_end_at is not None and robot.scheduled_pnl_percent is not None,
+        'indicators': robot.indicators,
         'createdAt': robot.created_at.isoformat(), 'closedAt': robot.closed_at.isoformat() if robot.closed_at else None,
         'closedReason': robot.closed_reason, 'simulation': True,
     }
