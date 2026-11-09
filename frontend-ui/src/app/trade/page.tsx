@@ -580,6 +580,7 @@ function TradePageContent() {
               </div>
             )}
             {(!showMarketCategories || Boolean(searchQuery.trim())) && (
+            <>
             <div className="flex items-center justify-between gap-2 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"><span>Nome / Símbolo</span>{marketCategory === "Favoritos" && <span>Preço / Variação</span>}</div>
             <div className="max-h-[560px] overflow-y-auto flex-1">
               {visibleMarketAssets.map(asset => {
@@ -593,6 +594,7 @@ function TradePageContent() {
               {visibleMarketAssets.length === 0 && <p className="px-3 py-6 text-center text-xs text-[var(--text-muted)]">{catalogLoading ? "Carregando ativos..." : "Nenhum ativo encontrado nesta categoria."}</p>}
               {catalogError && <p className="p-3 text-xs text-[var(--accent-red)]">{catalogError}</p>}
             </div>
+            </>
             )}
             <div className="border-t border-[var(--border-primary)] px-3 py-2 text-[10px] text-[var(--text-muted)]">{visibleMarketAssets.length} ativos · {marketQuotesLoading ? "Atualizando cotações..." : marketQuotesUpdatedAt ? `Última consulta ${new Date(marketQuotesUpdatedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"})}` : "Aguardando cotações"}</div>
           </aside>
