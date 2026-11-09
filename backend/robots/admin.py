@@ -72,10 +72,9 @@ class RobotScheduleForm(forms.ModelForm):
             raise forms.ValidationError('O prejuízo não pode superar 100% do capital.')
         if when is not None and when <= timezone.now():
             raise forms.ValidationError('A data de finalização deve estar no futuro.')
-        if self.instance.pk and self.instance.operations.exists() and (when != self.instance.scheduled_end_at or percent != self.instance.scheduled_pnl_percent):
-            raise forms.ValidationError('Não é possível modificar um cenário que já possui operações registradas.')
         if when is not None and percent is not None:
-            start = self.instance.simulation_started_at if self.instance.pk and self.instance.simulation_started_at else timezone.now()
+            changed = self.instance.pk and (when != self.instance.scheduled_end_at or percent != self.instance.scheduled_pnl_percent)
+            start = timezone.now() if changed else (self.instance.simulation_started_at if self.instance.pk and self.instance.simulation_started_at else timezone.now())
             if when < start + timedelta(minutes=10):
                 raise forms.ValidationError('A simulação deve durar pelo menos 10 minutos para executar as três primeiras operações.')
             if percent > self.instance.take_profit or percent < -self.instance.stop_loss:
@@ -182,19 +181,22 @@ class TradingRobotAdmin(ModelAdmin):
         with transaction.atomic():
             previous = TradingRobot.objects.select_for_update().get(pk=obj.pk)
             before = {'scheduled_end_at': previous.scheduled_end_at.isoformat() if previous.scheduled_end_at else None,
-                      'scheduled_pnl_percent': str(previous.scheduled_pnl_percent) if previous.scheduled_pnl_percent is not None else None}
+                      'scheduled_pnl_percent': str(previous.scheduled_pnl_percent) if previous.scheduled_pnl_percent is not None else None,
+                      'equity_at_change': str(previous.equity)}
             # Persist only the two authorized fields, not stale fields from the form.
+            changed_schedule = (previous.scheduled_end_at != obj.scheduled_end_at or
+                                previous.scheduled_pnl_percent != obj.scheduled_pnl_percent)
             started_at = previous.simulation_started_at
-            if obj.scheduled_end_at is not None and obj.scheduled_pnl_percent is not None and started_at is None:
-                started_at = timezone.now()
-            if obj.scheduled_end_at is None:
-                started_at = None
+            if changed_schedule:
+                started_at = timezone.now() if obj.scheduled_end_at is not None else None
             TradingRobot.objects.filter(pk=obj.pk).update(
                 simulation_started_at=started_at,
                 scheduled_end_at=obj.scheduled_end_at,
                 scheduled_pnl_percent=obj.scheduled_pnl_percent)
             after = {'scheduled_end_at': obj.scheduled_end_at.isoformat() if obj.scheduled_end_at else None,
-                     'scheduled_pnl_percent': str(obj.scheduled_pnl_percent) if obj.scheduled_pnl_percent is not None else None}
+                     'scheduled_pnl_percent': str(obj.scheduled_pnl_percent) if obj.scheduled_pnl_percent is not None else None,
+                     'equity_at_change': str(previous.equity),
+                     'simulation_started_at': started_at.isoformat() if started_at else None}
             RobotAudit.objects.create(robot=previous, actor=request.user.get_username(),
                                       action='ADMIN_SCHEDULE', before=before, after=after,
                                       reason='Programação administrativa do resultado demonstrativo')
