@@ -1,4 +1,5 @@
 from decimal import Decimal, InvalidOperation
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import F
 from django.shortcuts import get_object_or_404
@@ -20,7 +21,7 @@ INDICATOR_DEFAULTS = {
     'adx': {'period': 14, 'threshold': 25},
 }
 
-def serialize(robot, details=False):
+def serialize(robot, details=False, page=1):
     data = {
         'id': str(robot.pk), 'symbol': robot.symbol, 'assetName': robot.asset_name,
         'capital': float(robot.capital), 'equity': float(robot.equity),
@@ -31,6 +32,9 @@ def serialize(robot, details=False):
         'closedReason': robot.closed_reason, 'simulation': True,
     }
     if details:
+        operations = robot.operations.filter(status="CLOSED", pnl__isnull=False).exclude(pnl=0).order_by("-closed_at", "-pk")
+        paginator = Paginator(operations, 10)
+        current_page = paginator.get_page(page)
         data['operations'] = [{
             'id': str(op.pk), 'side': op.side, 'entryPrice': float(op.entry_price),
             'exitPrice': float(op.exit_price) if op.exit_price is not None else None,
@@ -38,7 +42,12 @@ def serialize(robot, details=False):
             'pnl': float(op.pnl), 'pnlPercent': float(op.pnl / op.allocated_capital * 100) if op.allocated_capital else 0,
             'status': op.status, 'openedAt': op.opened_at.isoformat(),
             'closedAt': op.closed_at.isoformat() if op.closed_at else None,
-        } for op in robot.operations.filter(status="CLOSED", pnl__isnull=False).exclude(pnl=0)[:300]]
+        } for op in current_page.object_list]
+        data['pagination'] = {
+            'page': current_page.number, 'pageSize': 10,
+            'totalPages': paginator.num_pages, 'totalOperations': paginator.count,
+            'hasPrevious': current_page.has_previous(), 'hasNext': current_page.has_next(),
+        }
     return data
 
 def parse_positive(raw, label, max_value=None):
@@ -114,7 +123,7 @@ class RobotListView(APIView):
 class RobotDetailView(APIView):
     def get(self, request, robot_id):
         robot = get_object_or_404(TradingRobot, pk=robot_id, user=get_user(request))
-        return Response(serialize(robot, details=True))
+        return Response(serialize(robot, details=True, page=request.query_params.get('page', '1')))
 
 class RobotCloseView(APIView):
     def post(self, request, robot_id):
