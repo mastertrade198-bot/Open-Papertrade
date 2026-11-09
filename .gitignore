@@ -86,3 +86,6 @@ landing-page/
 .vercel
 .pnp
 .pnp.*
+
+# Local shared market quote cache
+backend/.market-cache/
