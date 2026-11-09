@@ -429,6 +429,14 @@ export default function AdvancedChart({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, chartHeight]);
 
+  // Fit freshly loaded history on timeframe changes (including zoom-out expansion).
+  useEffect(() => {
+    if (!bars.length || !chartRef.current) return;
+    if (fittedHistoryKeyRef.current === `${symbol}:${timeframe}`) return;
+    chartRef.current.timeScale().fitContent();
+    fittedHistoryKeyRef.current = `${symbol}:${timeframe}`;
+  }, [bars, symbol, timeframe]);
+
   // --- Data update: push new bars to the existing main series ---
   useEffect(() => {
     const main = mainSeriesRef.current;
@@ -1078,9 +1086,17 @@ export default function AdvancedChart({
     if (!scale) return;
     const range = scale.getVisibleLogicalRange();
     if (!range) return;
+    const nextSpan = Math.max(6, (range.to - range.from) * (direction === 1 ? 0.8 : 1.25));
+    // A zoom-out beyond the loaded history must fetch a longer period;
+    // otherwise the library only renders empty space around the same candles.
+    const ranges: TimeRange[] = ["1D", "1W", "1M", "6M", "1Y", "5Y"];
+    const nextRange = ranges[ranges.indexOf(timeframe) + 1];
+    if (direction === -1 && nextRange && nextSpan >= Math.max(1, bars.length) * 0.95) {
+      setTimeframe(nextRange);
+      return;
+    }
     const midpoint = (range.from + range.to) / 2;
-    const half = Math.max(3, (range.to - range.from) * (direction === 1 ? 0.4 : 0.625));
-    scale.setVisibleLogicalRange({ from: midpoint - half, to: midpoint + half });
+    scale.setVisibleLogicalRange({ from: midpoint - nextSpan / 2, to: midpoint + nextSpan / 2 });
   };
 
   // Drawing handlers
