@@ -194,6 +194,7 @@ export default function AdvancedChart({
   const mainSeriesRef = useRef<ISeriesApi<SeriesType> | null>(null);
   const indicatorSeriesRef = useRef<Map<string, ISeriesApi<SeriesType>>>(new Map());
   const horizontalLineRefs = useRef<Map<string, IPriceLine>>(new Map());
+  const liveQuoteLineRef = useRef<IPriceLine | null>(null);
   const compareSeriesRef = useRef<Map<string, ISeriesApi<SeriesType>>>(new Map());
   const alertLineRefs = useRef<Map<string, IPriceLine>>(new Map());
   const patternSeriesRef = useRef<ISeriesApi<SeriesType> | null>(null);
@@ -417,6 +418,7 @@ export default function AdvancedChart({
       mainSeriesRef.current = null;
       indicatorSeriesRef.current.clear();
       horizontalLineRefs.current.clear();
+      liveQuoteLineRef.current = null;
       compareSeriesRef.current.clear();
       alertLineRefs.current.clear();
       markersPluginRef.current = null;
@@ -473,6 +475,31 @@ export default function AdvancedChart({
       fittedHistoryKeyRef.current = `${symbol}:${timeframe}`;
     }
   }, [displayBars, mode, formatTime, isIntraday, fitHistoryOnLoad, replayActive, symbol, timeframe]);
+
+  // A separate live-quote marker avoids presenting a ticker price as a candle close.
+  useEffect(() => {
+    const series = mainSeriesRef.current;
+    if (!series) return;
+    if (liveQuoteLineRef.current) {
+      try { series.removePriceLine(liveQuoteLineRef.current); } catch {}
+      liveQuoteLineRef.current = null;
+    }
+    if (replayActive || !livePrice || !Number.isFinite(livePrice) || livePrice <= 0) return;
+    liveQuoteLineRef.current = series.createPriceLine({
+      price: livePrice,
+      color: "#16a6b6",
+      lineWidth: 1,
+      lineStyle: LineStyle.Dashed,
+      axisLabelVisible: true,
+      title: "Cotação",
+    });
+    return () => {
+      if (liveQuoteLineRef.current) {
+        try { series.removePriceLine(liveQuoteLineRef.current); } catch {}
+        liveQuoteLineRef.current = null;
+      }
+    };
+  }, [livePrice, replayActive, mode]);
 
   // Apply log/linear scale change without full re-init
   useEffect(() => {
