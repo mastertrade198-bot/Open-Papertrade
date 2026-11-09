@@ -255,7 +255,7 @@ export default function AdvancedChart({
     };
 
     void loadHistory(true);
-    const timer = window.setInterval(() => { void loadHistory(); }, 60000);
+    const timer = window.setInterval(() => { void loadHistory(); }, candleInterval === "1m" ? 10000 : 30000);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
@@ -273,6 +273,8 @@ export default function AdvancedChart({
     const handleRange = (range: { from: number; to: number } | null) => {
       if (!range || range.from > 30 || historyLoadingRef.current || historyExhaustedRef.current) return;
       const first = bars[0];
+      const base = symbol.toUpperCase().replace(/-(USDT|USD)$/, "");
+      if (!/^(BTC|ETH|SOL|XRP|BNB|ADA|DOGE|AVAX|LINK|SHIB|DOT|LTC|BCH|UNI|AAVE|ATOM|NEAR|ICP|FIL|ETC|XLM|ALGO|HBAR|PEPE)$/.test(base)) return;
       if (!first || !/^\\d+$/.test(String(first.time))) return;
       historyLoadingRef.current = true;
       const earliest = Number(first.time);
