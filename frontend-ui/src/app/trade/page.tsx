@@ -184,6 +184,10 @@ function TradePageContent() {
     for (const symbol of favoriteSymbols) symbols.add(symbol);
     return [...symbols];
   }, [selectedSymbol, favoriteSymbols]);
+  // Streamed crypto quotes take precedence over slower REST responses.
+  const cryptoStreamLastTick = useRef<Record<string, number>>({});
+  const isRecentCryptoTick = (symbol: string) =>
+    Date.now() - (cryptoStreamLastTick.current[symbol.toUpperCase()] ?? 0) < 30000;
   const marketQuotesInFlight = useRef(false);
   const refreshMarketQuotes = useCallback(async () => {
     if (!marketSymbols.length || marketQuotesInFlight.current) return;
@@ -200,13 +204,16 @@ function TradePageContent() {
             const response = await stockAPI.getQuotes(batch, true);
             const next: Record<string, StockQuote> = {};
             for (const [symbol, result] of Object.entries(response.quotes || {})) {
-              if (result.success && result.data && Number.isFinite(result.data.price) && result.data.price > 0) {
+              if (result.success && result.data && Number.isFinite(result.data.price) && result.data.price > 0 && !isRecentCryptoTick(symbol)) {
                 next[symbol.toUpperCase()] = result.data;
               }
             }
             if (Object.keys(next).length) {
               received = true;
-              setMarketQuotes(previous => ({ ...previous, ...next }));
+              setMarketQuotes(previous => {
+                const filtered = Object.fromEntries(Object.entries(next).filter(([symbol]) => !isRecentCryptoTick(symbol)));
+                return Object.keys(filtered).length ? { ...previous, ...filtered } : previous;
+              });
             }
           } catch (error) { console.warn("Market quote batch failed", error); }
         }));
@@ -234,6 +241,7 @@ function TradePageContent() {
       setMarketQuotes(prev => {
         const next = { ...prev };
         for (const tick of ticks) {
+          cryptoStreamLastTick.current[tick.symbol] = Date.now();
           const old = next[tick.symbol];
           next[tick.symbol] = {
             symbol: tick.symbol, price: tick.price, change: tick.change,
@@ -573,7 +581,7 @@ function TradePageContent() {
             <div className="p-3 border-b border-[var(--border-primary)]">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-[var(--text-primary)]">Mercados</h2>
-                <button type="button" onClick={() => { void refreshCatalog(); void refreshMarketQuotes(); }} disabled={catalogLoading || marketQuotesLoading} title="Atualizar ativos e cotações" aria-label="Atualizar mercados" className="p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-50"><RefreshCw size={14} className={catalogLoading || marketQuotesLoading ? "animate-spin" : ""}/></button>
+
               </div>
               <label className="flex items-center gap-2 rounded-md border border-[var(--border-primary)] bg-[var(--bg-card)] px-2.5 py-2">
                 <Search size={15} className="text-[var(--text-muted)]"/>
@@ -647,7 +655,7 @@ function TradePageContent() {
             </div>
             </>
             )}
-            <div className="border-t border-[var(--border-primary)] px-3 py-2 text-[10px] text-[var(--text-muted)]">{visibleMarketAssets.length} ativos · {marketQuotesLoading ? "Atualizando cotações..." : marketQuotesUpdatedAt ? `Última consulta ${new Date(marketQuotesUpdatedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"})}` : "Aguardando cotações"}</div>
+            <div className="border-t border-[var(--border-primary)] px-3 py-2 text-[10px] text-[var(--text-muted)]">{visibleMarketAssets.length} ativos</div>
           </aside>
           {/* Left Panel - Stock Selection */}
           <div className="min-w-0 flex flex-col gap-0 p-2">
@@ -811,7 +819,7 @@ function TradePageContent() {
                     Histórico
                   </button>
                 </div>
-                <button type="button" onClick={() => void refreshPositions()} className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]">Atualizar</button>
+
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[740px] text-xs text-left">
