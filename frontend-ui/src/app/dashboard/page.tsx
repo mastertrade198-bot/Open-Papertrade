@@ -25,7 +25,7 @@ import Sidebar from "@/components/Sidebar";
 import LeveragedTradeHistory from "@/components/LeveragedTradeHistory";
 import ActiveRobotsCard from "@/components/ActiveRobotsCard";
 import { usePortfolio } from "@/context/PortfolioContext";
-import { stockAPI, userAPI, StockQuote, type SimulatedPosition } from "@/lib/api";
+import { API_HOST, stockAPI, userAPI, StockQuote, type SimulatedPosition } from "@/lib/api";
 import { formatCurrency, formatPercent, formatDateTime } from "@/lib/utils";
 
 const ASSET_DISPLAY_NAMES: Record<string, string> = {
@@ -93,6 +93,31 @@ export default function Dashboard() {
   const [marginPositions, setMarginPositions] = useState<SimulatedPosition[]>([]);
   const [projectParticipations, setProjectParticipations] = useState<Array<{ id: string; projectName: string; category: string; categoryLabel: string; principal: number; percent: number; simulatedValue: number; status: string }>>([]);
   const [projectLoadError, setProjectLoadError] = useState(false);
+  const [activeRobotEquity, setActiveRobotEquity] = useState(0);
+  const [robotsLoadError, setRobotsLoadError] = useState(false);
+  const loadRobotAllocation = async () => {
+    try {
+      const response = await fetch(`${API_HOST}/api/robots/`, { credentials: "include", cache: "no-store" });
+      if (!response.ok) throw new Error("Falha ao consultar robôs");
+      const data = await response.json();
+      if (!Array.isArray(data.robots)) throw new Error("Resposta inválida dos robôs");
+      setActiveRobotEquity(data.robots
+        .filter((robot: { status: string }) => robot.status === "ACTIVE")
+        .reduce((sum: number, robot: { equity: number | string }) => sum + (Number(robot.equity) || 0), 0));
+      setRobotsLoadError(false);
+    } catch (error) {
+      setRobotsLoadError(true);
+      console.error("Dashboard robots allocation:", error);
+    }
+  };
+  useEffect(() => {
+    void loadRobotAllocation();
+    const timer = window.setInterval(() => { if (document.visibilityState === "visible") void loadRobotAllocation(); }, 15000);
+    const onFocus = () => void loadRobotAllocation();
+    window.addEventListener("focus", onFocus);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", onFocus); };
+  }, []);
+
   const loadProjectParticipations = async () => {
     try {
       const response = await fetch((process.env.NEXT_PUBLIC_API_URL || "/api") + "/projects/mine/", { credentials: "include", cache: "no-store" });
@@ -217,7 +242,7 @@ export default function Dashboard() {
     .filter((h) => cryptoSymbolSet.has(h.symbol))
     .reduce((sum, h) => sum + h.shares * h.currentPrice, 0);
   const cashValue = dashboardBuyingPower;
-  const totalValue = stockValue + cryptoValue + cashValue + operationsBalance + projectsPrincipal;
+  const totalValue = stockValue + cryptoValue + cashValue + operationsBalance + projectsPrincipal + activeRobotEquity;
 
   const projectCategories = [
     { key: "REAL_ESTATE", label: "Fundos Imobiliários", color: "#8b5cf6" },
@@ -237,6 +262,7 @@ export default function Dashboard() {
     .reduce((sum, item) => sum + item.principal, 0);
   const allocationValues = [
     { label: "Saldo em operações", value: operationsBalance + stockValue + cryptoValue, color: "#f59e0b" },
+    { label: "Saldo em robôs", value: activeRobotEquity, color: "#22c55e" },
     ...categoryAllocations,
     ...(uncategorizedProjects > 0 ? [{ label: "Projetos sem categoria", value: uncategorizedProjects, color: "#a78bfa" }] : []),
     { label: "Saldo disponível", value: cashValue, color: "var(--text-muted)" },
@@ -248,7 +274,7 @@ export default function Dashboard() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await Promise.all([refreshUserData(), refreshPrices(), loadProjectParticipations(), userAPI.getPositions().then(result => { setMarginPositions(result.positions.filter(position => position.status === "OPEN")); setMarginLedger(result.buyingPower); setMarginLoadError(false); }).catch(() => setMarginLoadError(true))]);
+    await Promise.all([refreshUserData(), refreshPrices(), loadProjectParticipations(), loadRobotAllocation(), userAPI.getPositions().then(result => { setMarginPositions(result.positions.filter(position => position.status === "OPEN")); setMarginLedger(result.buyingPower); setMarginLoadError(false); }).catch(() => setMarginLoadError(true))]);
     setIsRefreshing(false);
   };
 
@@ -608,6 +634,7 @@ export default function Dashboard() {
                 </div>
               </div>
 
+              {robotsLoadError && <p className="mb-3 text-xs text-[var(--text-muted)]">Saldo dos robôs temporariamente indisponível.</p>}
               {/* Legend */}
               <div className="flex flex-col gap-3">
                 {allocation.map((item) => (
