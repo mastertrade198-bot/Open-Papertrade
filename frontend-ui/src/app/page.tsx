@@ -32,6 +32,14 @@ function DemoBadge() {
   </span>;
 }
 
+// Configure o número com DDI e DDD quando o canal oficial estiver disponível.
+// Exemplo: "5511999999999". Deixe vazio para exibir o atalho desativado.
+const WHATSAPP_ATENDIMENTO: string = "";
+
+function WhatsAppIcon() {
+  return <svg viewBox="0 0 32 32" width="29" height="29" fill="none" aria-hidden="true"><path d="M16 3.5a12.5 12.5 0 0 0-10.7 19L3.8 28l5.7-1.5A12.5 12.5 0 1 0 16 3.5Z" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round"/><path d="M11 10.5c-.6-.1-1.1.2-1.5.8-.6 1-.7 2.1-.2 3.2 1.4 3.3 4.1 5.9 7.4 7.3 1.1.5 2.3.4 3.3-.2.6-.4.9-.9.8-1.5l-.3-1.4c-.1-.4-.5-.6-.9-.5l-1.9.6c-.4.1-.8 0-1.1-.2-1.4-.9-2.5-2-3.4-3.4-.2-.3-.3-.7-.2-1.1l.6-1.9c.1-.4-.1-.8-.5-.9l-1.4-.3Z" fill="currentColor"/></svg>;
+}
+
 function Logo({ light = false }: { light?: boolean }) {
   return <Link href="/" aria-label="Master Trade — início" className="inline-flex items-center gap-3">
     <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#326BFF] text-white"><BarChart3 size={21} strokeWidth={2}/></span>
@@ -140,6 +148,9 @@ export default function Home() {
       <section id="perguntas" className="scroll-mt-24 border-t border-[#E3EAF1] bg-[#F5F8FC] py-20 sm:py-24"><div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[.7fr_1.3fr]"><div><p className="mb-4 text-xs font-bold uppercase tracking-[.18em] text-[#326BFF]">Informações</p><h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">Perguntas frequentes.</h2><p className="mt-4 text-sm leading-7 text-[#607386]">Respostas objetivas sobre a plataforma e a experiência de mercado.</p></div><div className="divide-y divide-[#E3EAF1] border-t border-[#E3EAF1]">{faqs.map((item,index)=><div key={item.q}><button type="button" aria-expanded={openFaq===index} onClick={()=>setOpenFaq(openFaq===index?null:index)} className="flex w-full items-center justify-between gap-6 py-6 text-left text-sm font-semibold text-[#152538] sm:text-base">{item.q}<ChevronDown size={18} className={"shrink-0 text-[#607386] transition-transform " + (openFaq===index?"rotate-180":"")}/></button>{openFaq===index && <p className="max-w-2xl pb-6 text-sm leading-7 text-[#607386]">{item.a}</p>}</div>)}</div></div></section>
       <section className="bg-[#102236] py-20 text-white"><div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 px-5 sm:px-8 lg:flex-row lg:items-center"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-[#8FAFFF]">Próximo passo</p><h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">Comece a explorar os mercados hoje.</h2><p className="mt-4 text-sm leading-7 text-[#C1CFDC]">Conheça as ferramentas e descubra uma nova maneira de acompanhar o mercado.</p></div><Link href="/signup" className="inline-flex shrink-0 items-center gap-3 rounded-lg bg-[#326BFF] px-7 py-4 text-sm font-semibold text-white hover:bg-[#2454D4]">Começar agora <ArrowRight size={18}/></Link></div></section>
     </main>
+    <div className="fixed bottom-5 right-5 z-[60] sm:bottom-7 sm:right-7">
+      {WHATSAPP_ATENDIMENTO ? <a href={`https://wa.me/${WHATSAPP_ATENDIMENTO}`} target="_blank" rel="noopener noreferrer" aria-label="Conversar com o atendimento pelo WhatsApp" title="Atendimento pelo WhatsApp" className="flex h-14 w-14 items-center justify-center rounded-full bg-[#16866A] text-white shadow-[0_8px_30px_rgba(22,134,106,.32)] transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#326BFF]"><WhatsAppIcon/></a> : <span aria-label="WhatsApp: canal de atendimento em configuração" title="Canal de atendimento em configuração" className="flex h-14 w-14 cursor-not-allowed items-center justify-center rounded-full bg-[#16866A]/70 text-white shadow-[0_8px_30px_rgba(22,134,106,.18)]"><WhatsAppIcon/></span>}
+    </div>
     <footer className="bg-[#0C1726] text-[#9BB1C6]"><div className="mx-auto max-w-7xl px-5 py-12 sm:px-8"><div className="flex flex-col justify-between gap-8 border-b border-white/10 pb-10 sm:flex-row sm:items-start"><div><Logo light/><p className="mt-4 max-w-sm text-sm leading-6">Tecnologia, informação e uma experiência de mercado mais clara.</p></div><div className="flex gap-8 text-sm"><Link href="/login" className="hover:text-white">Entrar</Link><Link href="/signup" className="hover:text-white">Criar conta</Link><a href="#mercados" className="hover:text-white">Mercados</a></div></div><div className="flex flex-col justify-between gap-4 pt-7 text-xs sm:flex-row"><p>© {new Date().getFullYear()} Master Trade. Todos os direitos reservados.</p><p className="max-w-xl leading-5">Plataforma de demonstração. As operações não são executadas em mercados financeiros. Cotações podem apresentar atraso.</p></div></div></footer>
   </div>;
 }
