@@ -1,730 +1,102 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import {
-  Search,
-  Plus,
-  Star,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpRight,
-  ArrowDownRight,
-  X,
-  Bell,
-  BellOff,
-  TrendingUp,
-  TrendingDown,
-  Eye,
-  Filter,
-  Loader2,
-  AlertCircle,
-  Trash2,
-  ShoppingCart,
-} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { Search, Star, Bell, Trash2, ArrowUpRight, Plus, X, Loader2 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import PageHeader from "@/components/PageHeader";
 import { usePortfolio } from "@/context/PortfolioContext";
+import { stockAPI, SearchResult } from "@/lib/api";
 import { formatCurrency, formatPercent } from "@/lib/utils";
-import { stockAPI } from "@/lib/api";
 
-type SortOption = "name" | "price" | "change" | "changePercent";
-type FilterOption = "all" | "starred" | "gainers" | "losers";
+type Filter = "all" | "starred" | "gainers" | "losers";
 
 export default function WatchlistPage() {
-  const router = useRouter();
-  const {
-    watchlist,
-    alerts,
-    stocks,
-    crypto,
-    market,
-    settings,
-    notifications,
-    toggleWatchlistStar,
-    removeFromWatchlist,
-    addToWatchlist,
-    toggleAlert,
-    addAlert,
-    removeAlert,
-    getStockBySymbol,
-    error,
-  } = usePortfolio();
+  const { watchlist, alerts, stocks, crypto, market, addToWatchlist, removeFromWatchlist, toggleWatchlistStar, addAlert, removeAlert } = usePortfolio();
+  const [search, setSearch] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [sort, setSort] = useState<"name" | "price" | "change">("name");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [alertSymbol, setAlertSymbol] = useState<string | null>(null);
+  const [alertCondition, setAlertCondition] = useState<"above" | "below">("above");
+  const [alertPrice, setAlertPrice] = useState("");
+  const searchId = useRef(0);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Array<{ symbol: string; name: string }>>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showAddAlert, setShowAddAlert] = useState(false);
-  const [selectedSymbolForAlert, setSelectedSymbolForAlert] = useState<string | null>(null);
-  const [newAlertCondition, setNewAlertCondition] = useState<"above" | "below">("above");
-  const [newAlertPrice, setNewAlertPrice] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("name");
-  const [filterBy, setFilterBy] = useState<FilterOption>("all");
-  const [showFilters, setShowFilters] = useState(false);
-
-  // Debounce timer ref
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Stats
-  const upToday = watchlist.filter((w) => w.changePercent > 0).length;
-  const downToday = watchlist.filter((w) => w.changePercent < 0).length;
-  const starredCount = watchlist.filter((w) => w.starred).length;
-
-  // Filter and sort watchlist
-  const filteredWatchlist = useMemo(() => {
-    let filtered = [...watchlist];
-
-    // Apply filter
-    switch (filterBy) {
-      case "starred":
-        filtered = filtered.filter((w) => w.starred);
-        break;
-      case "gainers":
-        filtered = filtered.filter((w) => w.changePercent > 0);
-        break;
-      case "losers":
-        filtered = filtered.filter((w) => w.changePercent < 0);
-        break;
-    }
-
-    // Apply search
-    if (searchQuery && !isSearching) {
-      filtered = filtered.filter(
-        (w) =>
-          w.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          w.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Apply sort
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "price":
-          return b.price - a.price;
-        case "change":
-          return b.change - a.change;
-        case "changePercent":
-          return b.changePercent - a.changePercent;
-        default:
-          return a.symbol.localeCompare(b.symbol);
-      }
-    });
-
-    return filtered;
-  }, [watchlist, searchQuery, isSearching, sortBy, filterBy]);
-
-  // Search for stocks to add - with debouncing
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
-
-    // Clear any pending search
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-
-    if (query.length < 2) {
-      setSearchResults([]);
-      setIsSearching(false);
-      return;
-    }
-
-    // Show searching state immediately
-    setIsSearching(true);
-
-    // Debounce the API call by 300ms
-    searchTimeoutRef.current = setTimeout(async () => {
-      try {
-        const results = await stockAPI.search(query, market);
-        // Filter out stocks already in watchlist
-        const filtered = results.results.filter(
-          (r) => !watchlist.find((w) => w.symbol === r.symbol)
-        );
-        setSearchResults(filtered.slice(0, 8));
-      } catch (err) {
-        console.error("Search failed:", err);
-        setSearchResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 300);
-  }, [watchlist, market]);
-
-  // Cleanup debounce timer on unmount
   useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
+    const id = ++searchId.current;
+    const query = search.trim();
+    if (query.length < 2) { setResults([]); setSearching(false); return; }
+    setSearching(true);
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await stockAPI.search(query, market);
+        if (id === searchId.current) setResults(response.results.filter(item => !watchlist.some(w => w.symbol.toUpperCase() === item.symbol.toUpperCase())).slice(0, 7));
+      } catch {
+        if (id === searchId.current) setResults([]);
+      } finally {
+        if (id === searchId.current) setSearching(false);
       }
-    };
-  }, []);
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [search, market, watchlist]);
 
-  const handleAddToWatchlist = async (symbol: string, name: string) => {
-    await addToWatchlist(symbol, name);
-    setSearchQuery("");
-    setSearchResults([]);
+  const prices = useMemo(() => new Map([...stocks, ...crypto].map(item => [item.symbol.toUpperCase(), item])), [stocks, crypto]);
+  const rows = useMemo(() => watchlist.map(item => {
+    const live = prices.get(item.symbol.toUpperCase());
+    return { ...item, price: live?.price && live.price > 0 ? live.price : item.price, change: live?.change ?? item.change, changePercent: live?.changePercent ?? item.changePercent, currency: live?.currency || item.currency || "USD" };
+  }).filter(item =>
+    (filter === "all" || (filter === "starred" && item.starred) || (filter === "gainers" && item.changePercent > 0) || (filter === "losers" && item.changePercent < 0)) &&
+    (item.name + " " + item.symbol).toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR"))
+  ).sort((a, b) => sort === "price" ? b.price - a.price : sort === "change" ? b.changePercent - a.changePercent : a.name.localeCompare(b.name)), [watchlist, prices, filter, search, sort]);
+
+  const add = async (symbol: string, name: string) => {
+    setBusy(symbol);
+    try { await addToWatchlist(symbol, name); setSearch(""); setResults([]); }
+    finally { setBusy(null); }
   };
-
-  const handleAddAlert = () => {
-    if (selectedSymbolForAlert && newAlertPrice) {
-      addAlert(selectedSymbolForAlert, newAlertCondition, parseFloat(newAlertPrice));
-      setShowAddAlert(false);
-      setSelectedSymbolForAlert(null);
-      setNewAlertPrice("");
-    }
+  const submitAlert = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const price = Number(alertPrice);
+    if (!alertSymbol || !Number.isFinite(price) || price <= 0) return;
+    setBusy(alertSymbol);
+    try { await addAlert(alertSymbol, alertCondition, price); setAlertSymbol(null); setAlertPrice(""); }
+    finally { setBusy(null); }
   };
-
-  const openAlertModal = (symbol: string) => {
-    const stock = watchlist.find((w) => w.symbol === symbol);
-    setSelectedSymbolForAlert(symbol);
-    setNewAlertPrice(stock ? stock.price.toString() : "");
-    setShowAddAlert(true);
-  };
-
-  const navigateToTrade = (symbol: string) => {
-    router.push(`/trade?symbol=${symbol}`);
-  };
-
-  // Get alerts for a symbol
-  const getAlertsForSymbol = (symbol: string) => {
-    return alerts.filter((a) => a.symbol === symbol);
-  };
-
-  // Empty state - show regardless of loading when watchlist is empty
-  if (watchlist.length === 0) {
-    return (
-      <div className="flex h-full bg-[var(--bg-primary)]">
-        <Sidebar />
-        <main className="flex-1 flex flex-col gap-7 py-8 px-10 overflow-auto">
-          <PageHeader
-            title="Lista de acompanhamento"
-            subtitle="Acompanhe seus ativos favoritos e configure alertas de preço"
-          />
-
-          <div className="flex-1 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-6 text-center max-w-md">
-              <div className="w-20 h-20 rounded-full bg-[var(--bg-card)] border border-[var(--border-primary)] flex items-center justify-center">
-                <Eye size={32} className="text-[var(--text-muted)]" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">
-                  Sua lista está vazia
-                </h2>
-                <p className="text-sm text-[var(--text-muted)]">
-                  Start tracking stocks by searching and adding them to your watchlist.
-                  You'll be able to monitor prices and set alerts.
-                </p>
-              </div>
-
-              {/* Quick search to add */}
-              <div className="w-full max-w-sm">
-                <div className="relative">
-                  <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)]">
-                    <Search size={18} className="text-[var(--text-muted)]" />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => handleSearch(e.target.value)}
-                      placeholder="Pesquise um ativo para adicionar..."
-                      className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
-                    />
-                    {isSearching && <Loader2 size={16} className="text-[var(--text-muted)] animate-spin" />}
-                  </div>
-
-                  {/* Search results dropdown */}
-                  {searchResults.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full mt-2 bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] shadow-lg z-10 overflow-hidden">
-                      {searchResults.map((result) => (
-                        <button
-                          key={result.symbol}
-                          onClick={() => handleAddToWatchlist(result.symbol, result.name)}
-                          className="w-full px-4 py-3 text-left hover:bg-[var(--bg-muted)] transition-colors flex items-center justify-between"
-                        >
-                          <div>
-                            <span className="font-mono text-sm font-semibold text-[var(--text-primary)]">
-                              {result.symbol}
-                            </span>
-                            <span className="text-xs text-[var(--text-muted)] ml-2">
-                              {result.name}
-                            </span>
-                          </div>
-                          <Plus size={16} className="text-[var(--accent-primary)]" />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Quick picks */}
-              <div className="flex flex-wrap gap-2 justify-center">
-                {stocks.slice(0, 5).map((stock) => (
-                  <button
-                    key={stock.symbol}
-                    onClick={() => addToWatchlist(stock.symbol, stock.name)}
-                    className="px-3 py-1.5 rounded-lg bg-[var(--bg-card)] border border-[var(--border-primary)] text-xs font-mono font-semibold text-[var(--text-secondary)] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] transition-all"
-                  >
-                    + {stock.symbol}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   return (
-    <div className="flex h-full bg-[var(--bg-primary)]">
+    <div className="flex min-h-full flex-col bg-[var(--bg-primary)]">
       <Sidebar />
-      <main className="flex-1 flex flex-col gap-6 py-8 px-10 overflow-auto">
-        <PageHeader
-          title="Lista de acompanhamento"
-          subtitle="Acompanhe seus ativos favoritos e configure alertas de preço"
-          onPrimaryClick={() => router.push("/trade")}
-        />
-
-        {/* Error Banner */}
-        {error && (
-          <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-[var(--accent-red)]/10 border border-[var(--accent-red)]/20">
-            <AlertCircle size={16} className="text-[var(--accent-red)]" />
-            <span className="text-sm text-[var(--accent-red)]">{error}</span>
-          </div>
-        )}
-
-        {/* Stats Row */}
-        <div className="grid grid-cols-4 gap-4">
-          <div className="group bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
-            <div className="flex items-center gap-2 mb-2">
-              <Eye size={14} className="text-[var(--text-muted)]" />
-              <span className="text-xs text-[var(--text-muted)]">Acompanhando</span>
-            </div>
-            <span className="font-mono text-2xl font-semibold text-[var(--text-primary)]">
-              {watchlist.length}
-            </span>
-          </div>
-
-          <div className="group bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp size={14} className="text-[var(--accent-green)]" />
-              <span className="text-xs text-[var(--text-muted)]">Altas</span>
-            </div>
-            <span className="font-mono text-2xl font-semibold text-[var(--accent-green)]">
-              {upToday}
-            </span>
-          </div>
-
-          <div className="group bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingDown size={14} className="text-[var(--accent-red)]" />
-              <span className="text-xs text-[var(--text-muted)]">Quedas</span>
-            </div>
-            <span className="font-mono text-2xl font-semibold text-[var(--accent-red)]">
-              {downToday}
-            </span>
-          </div>
-
-          <div className="group bg-[var(--bg-card)] rounded-xl p-4 border border-[var(--border-primary)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
-            <div className="flex items-center gap-2 mb-2">
-              <Bell size={14} className="text-[var(--accent-primary)]" />
-              <span className="text-xs text-[var(--text-muted)]">Alertas ativos</span>
-            </div>
-            <span className="font-mono text-2xl font-semibold text-[var(--accent-primary)]">
-              {alerts.filter((a) => a.enabled).length}
-            </span>
-          </div>
+      <main className="mx-auto w-full max-w-[1440px] space-y-5 px-4 py-6 lg:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <PageHeader title="Favoritos" subtitle="Sua lista de ativos, sincronizada com Mercados e Negociar." />
+          <Link href="/markets" className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-2 text-xs font-semibold text-[var(--text-primary)]">Explorar mercados</Link>
         </div>
-
-        {/* Main Content */}
-        <div className="flex gap-5 flex-1 min-h-0">
-          {/* Watchlist */}
-          <div className="flex-1 bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] flex flex-col overflow-hidden">
-            {/* Toolbar */}
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border-primary)]">
-              {/* Search */}
-              <div className="relative flex-1">
-                <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border border-[var(--border-muted)] bg-[var(--bg-card-inner)]">
-                  <Search size={16} className="text-[var(--text-muted)]" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    placeholder="Pesquise ou adicione ativos..."
-                    className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
-                  />
-                  {isSearching && <Loader2 size={14} className="text-[var(--text-muted)] animate-spin" />}
-                  {searchQuery && !isSearching && (
-                    <button onClick={() => { setSearchQuery(""); setSearchResults([]); }}>
-                      <X size={14} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Search results */}
-                {searchResults.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full mt-2 bg-[var(--bg-card)] rounded-lg border border-[var(--border-primary)] shadow-lg z-20 overflow-hidden">
-                    <div className="px-3 py-2 text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border-primary)]">
-                      Adicionar à lista
-                    </div>
-                    {searchResults.map((result) => (
-                      <button
-                        key={result.symbol}
-                        onClick={() => handleAddToWatchlist(result.symbol, result.name)}
-                        className="w-full px-4 py-2.5 text-left hover:bg-[var(--bg-muted)] transition-colors flex items-center justify-between"
-                      >
-                        <div>
-                          <span className="font-mono text-sm font-semibold text-[var(--text-primary)]">
-                            {result.symbol}
-                          </span>
-                          <span className="text-xs text-[var(--text-muted)] ml-2 truncate">
-                            {result.name}
-                          </span>
-                        </div>
-                        <Plus size={14} className="text-[var(--accent-primary)]" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Filter */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-medium transition-all ${
-                    filterBy !== "all"
-                      ? "border-[var(--accent-primary)] text-[var(--accent-primary)]"
-                      : "border-[var(--border-muted)] text-[var(--text-secondary)] hover:border-[var(--text-muted)]"
-                  }`}
-                >
-                  <Filter size={14} />
-                  {filterBy === "all" ? "Filter" : filterBy.charAt(0).toUpperCase() + filterBy.slice(1)}
-                </button>
-
-                {showFilters && (
-                  <div className="absolute right-0 top-full mt-2 w-36 bg-[var(--bg-card)] rounded-lg border border-[var(--border-primary)] shadow-lg z-20 overflow-hidden">
-                    {(["all", "starred", "gainers", "losers"] as FilterOption[]).map((option) => (
-                      <button
-                        key={option}
-                        onClick={() => { setFilterBy(option); setShowFilters(false); }}
-                        className={`w-full px-4 py-2 text-left text-xs transition-colors ${
-                          filterBy === option
-                            ? "bg-[var(--accent-primary)] text-black font-semibold"
-                            : "text-[var(--text-primary)] hover:bg-[var(--bg-muted)]"
-                        }`}
-                      >
-                        {option.charAt(0).toUpperCase() + option.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Sort */}
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className="px-3 py-2.5 rounded-lg border border-[var(--border-muted)] bg-[var(--bg-card-inner)] text-xs text-[var(--text-primary)] outline-none cursor-pointer"
-              >
-                <option value="name">Sort: Name</option>
-                <option value="price">Sort: Price</option>
-                <option value="change">Sort: Change</option>
-                <option value="changePercent">Sort: % Change</option>
-              </select>
-            </div>
-
-            {/* Watchlist Grid */}
-            <div className="flex-1 overflow-auto p-5">
-              <div className={`grid grid-cols-3 ${settings.compactMode ? "gap-3" : "gap-4"}`}>
-                {filteredWatchlist.map((stock) => {
-                  const stockAlerts = getAlertsForSymbol(stock.symbol);
-                  const hasActiveAlert = stockAlerts.some((a) => a.enabled);
-                  const isPositive = stock.changePercent >= 0;
-
-                  return (
-                    <div
-                      key={stock.symbol}
-                      className={`bg-[var(--bg-card-inner)] rounded-xl ${settings.compactMode ? "p-3" : "p-4"} border border-[var(--border-primary)] hover:border-[var(--border-muted)] transition-all group relative`}
-                    >
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div
-                          className="cursor-pointer"
-                          onClick={() => navigateToTrade(stock.symbol)}
-                        >
-                          <div className="font-mono text-base font-semibold text-[var(--text-primary)] hover:text-[var(--accent-primary)] transition-colors">
-                            {stock.symbol}
-                          </div>
-                          <div className="text-[11px] text-[var(--text-muted)] truncate max-w-[120px]">
-                            {stock.name}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {hasActiveAlert && (
-                            <Bell size={12} className="text-[var(--accent-primary)]" />
-                          )}
-                          <button
-                            onClick={() => toggleWatchlistStar(stock.symbol)}
-                            className="p-1 rounded-md hover:bg-[var(--bg-muted)] transition-colors"
-                          >
-                            <Star
-                              size={14}
-                              className={
-                                stock.starred
-                                  ? "text-[var(--accent-primary)] fill-[var(--accent-primary)]"
-                                  : "text-[var(--text-dim)] hover:text-[var(--accent-primary)]"
-                              }
-                            />
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Price */}
-                      <div className="mb-3">
-                        <div className="font-mono text-xl font-semibold text-[var(--text-primary)]">
-                          {formatCurrency(stock.price, false, { sourceCurrency: stock.currency || "USD" })}
-                        </div>
-                        <div className="flex items-center gap-1 mt-1">
-                          {isPositive ? (
-                            <ArrowUpRight size={14} className="text-[var(--accent-green)]" />
-                          ) : (
-                            <ArrowDownRight size={14} className="text-[var(--accent-red)]" />
-                          )}
-                          <span
-                            className={`font-mono text-xs font-medium ${
-                              isPositive ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"
-                            }`}
-                          >
-                            {formatCurrency(Math.abs(stock.change), false, { sourceCurrency: stock.currency || "USD" })} ({formatPercent(stock.changePercent)})
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 pt-3 border-t border-[var(--border-primary)]">
-                        <button
-                          onClick={() => navigateToTrade(stock.symbol)}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-[var(--accent-primary)] text-[11px] font-semibold text-black hover:brightness-110 transition-all"
-                        >
-                          <ShoppingCart size={12} />
-                          Trade
-                        </button>
-                        <button
-                          onClick={() => openAlertModal(stock.symbol)}
-                          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-[var(--bg-muted)] text-[11px] font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all"
-                        >
-                          <Bell size={12} />
-                        </button>
-                        <button
-                          onClick={() => removeFromWatchlist(stock.symbol)}
-                          className="flex items-center justify-center px-2 py-2 rounded-lg text-[var(--text-dim)] hover:text-[var(--accent-red)] hover:bg-[var(--accent-red)]/10 transition-all"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {filteredWatchlist.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <Search size={32} className="text-[var(--text-dim)] mb-3" />
-                  <span className="text-sm text-[var(--text-muted)]">
-                    {searchQuery ? "No stocks match your search" : "No stocks match the current filter"}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Alerts Panel */}
-          <div className="w-[340px] bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] flex flex-col overflow-hidden shrink-0">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
-              <span className="text-sm font-semibold text-[var(--text-primary)]">
-                Price Alerts ({alerts.length})
-              </span>
-            </div>
-
-            {/* Alerts List */}
-            <div className="flex-1 overflow-auto p-4">
-              {alerts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <BellOff size={32} className="text-[var(--text-dim)] mb-3" />
-                  <span className="text-sm text-[var(--text-muted)] mb-1">Nenhum alerta configurado</span>
-                  <span className="text-xs text-[var(--text-dim)]">
-                    Click the bell icon on any stock to create one
-                  </span>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {alerts.map((alert) => {
-                    const watchlistItem = watchlist.find((w) => w.symbol === alert.symbol);
-                    const currentPrice = watchlistItem?.price || alert.currentPrice;
-                    const currency = watchlistItem?.currency || "USD";
-                    const distance = alert.condition === "above"
-                      ? ((alert.targetPrice - currentPrice) / currentPrice) * 100
-                      : ((currentPrice - alert.targetPrice) / currentPrice) * 100;
-                    const isClose = Math.abs(distance) < 5;
-                    const isTriggered = alert.condition === "above"
-                      ? currentPrice >= alert.targetPrice
-                      : currentPrice <= alert.targetPrice;
-                    const showTriggered = isTriggered && notifications.priceAlerts;
-
-                    return (
-                      <div
-                        key={alert.id}
-                        className={`rounded-xl p-4 border transition-all ${
-                          showTriggered
-                            ? "bg-[var(--accent-primary)]/10 border-[var(--accent-primary)]/30"
-                            : isClose
-                            ? "bg-[var(--bg-card-inner)] border-[var(--accent-primary)]/20"
-                            : "bg-[var(--bg-card-inner)] border-[var(--border-primary)]"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                                alert.condition === "above"
-                                  ? "bg-[var(--accent-green)]/20"
-                                  : "bg-[var(--accent-red)]/20"
-                              }`}
-                            >
-                              {alert.condition === "above" ? (
-                                <ArrowUp size={14} className="text-[var(--accent-green)]" />
-                              ) : (
-                                <ArrowDown size={14} className="text-[var(--accent-red)]" />
-                              )}
-                            </div>
-                            <div>
-                              <div className="font-mono text-sm font-semibold text-[var(--text-primary)]">
-                                {alert.symbol}
-                              </div>
-                              <div className="text-[10px] text-[var(--text-muted)]">
-                                {alert.condition === "above" ? "Above" : "Below"}{" "}
-                                {formatCurrency(alert.targetPrice, false, { sourceCurrency: currency })}
-                              </div>
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={() => removeAlert(alert.id)}
-                            className="p-1 rounded-md text-[var(--text-dim)] hover:text-[var(--accent-red)] hover:bg-[var(--accent-red)]/10 transition-all"
-                          >
-                            <X size={12} />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <div className="text-xs text-[var(--text-muted)]">
-                            Current: {formatCurrency(currentPrice, false, { sourceCurrency: currency })}
-                            {showTriggered ? (
-                              <span className="ml-2 text-[var(--accent-primary)] font-medium">Triggered!</span>
-                            ) : (
-                              <span className={`ml-2 ${isClose ? "text-[var(--accent-primary)]" : ""}`}>
-                                ({distance > 0 ? "+" : ""}{distance.toFixed(1)}%)
-                              </span>
-                            )}
-                          </div>
-
-                          <button
-                            onClick={() => toggleAlert(alert.id)}
-                            className={`w-9 h-5 rounded-full relative transition-colors ${
-                              alert.enabled
-                                ? "bg-[var(--accent-primary)]"
-                                : "bg-[var(--border-muted)]"
-                            }`}
-                          >
-                            <div
-                              className={`w-4 h-4 rounded-full absolute top-0.5 transition-all bg-white ${
-                                alert.enabled ? "left-[18px]" : "left-0.5"
-                              }`}
-                            />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[
+            ["Ativos favoritos", watchlist.length],
+            ["Em alta", rows.filter(item => item.changePercent > 0).length],
+            ["Em queda", rows.filter(item => item.changePercent < 0).length],
+            ["Alertas cadastrados", alerts.length],
+          ].map(([label,value]) => <div key={label} className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-4"><p className="text-xs text-[var(--text-muted)]">{label}</p><p className="mt-2 text-2xl font-semibold tabular-nums text-[var(--text-primary)]">{value}</p></div>)}
         </div>
-
-        {/* Add Alert Modal */}
-        {showAddAlert && selectedSymbolForAlert && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-[var(--bg-card)] rounded-xl p-6 w-[360px] border border-[var(--border-primary)]">
-              <div className="flex items-center justify-between mb-5">
-                <span className="text-base font-semibold text-[var(--text-primary)]">
-                  Configurar alerta de preço
-                </span>
-                <button
-                  onClick={() => { setShowAddAlert(false); setSelectedSymbolForAlert(null); }}
-                  className="p-1 rounded-md hover:bg-[var(--bg-muted)] transition-colors"
-                >
-                  <X size={18} className="text-[var(--text-muted)]" />
-                </button>
-              </div>
-
-              <div className="flex flex-col gap-4">
-                <div>
-                  <label className="text-xs text-[var(--text-muted)] mb-1.5 block">Symbol</label>
-                  <div className="px-4 py-3 rounded-lg bg-[var(--bg-muted)] font-mono text-sm font-semibold text-[var(--text-primary)]">
-                    {selectedSymbolForAlert}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs text-[var(--text-muted)] mb-1.5 block">Condition</label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setNewAlertCondition("above")}
-                      className={`flex-1 py-3 rounded-lg text-sm font-medium transition-all ${
-                        newAlertCondition === "above"
-                          ? "bg-[var(--accent-green)] text-black"
-                          : "bg-[var(--bg-muted)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                      }`}
-                    >
-                      Preço acima de
-                    </button>
-                    <button
-                      onClick={() => setNewAlertCondition("below")}
-                      className={`flex-1 py-3 rounded-lg text-sm font-medium transition-all ${
-                        newAlertCondition === "below"
-                          ? "bg-[var(--accent-red)] text-white"
-                          : "bg-[var(--bg-muted)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                      }`}
-                    >
-                      Preço abaixo de
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs text-[var(--text-muted)] mb-1.5 block">Preço-alvo</label>
-                  <input
-                    type="number"
-                    value={newAlertPrice}
-                    onChange={(e) => setNewAlertPrice(e.target.value)}
-                    placeholder="0.00"
-                    className="w-full px-4 py-3 rounded-lg bg-[var(--bg-muted)] text-sm font-mono text-[var(--text-primary)] border border-[var(--border-muted)] outline-none focus:border-[var(--accent-primary)] transition-colors"
-                  />
-                </div>
-
-                <button
-                  onClick={handleAddAlert}
-                  disabled={!newAlertPrice}
-                  className="w-full py-3 rounded-lg bg-[var(--accent-primary)] text-sm font-semibold text-black hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Criar alerta
-                </button>
-              </div>
+        <section className="overflow-hidden rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)]">
+          <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border-primary)] p-4">
+            <div className="relative min-w-[210px] flex-1">
+              <div className="flex items-center gap-2 rounded-lg border border-[var(--border-primary)] px-3 py-2"><Search size={16} className="text-[var(--text-muted)]"/><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar ou adicionar ativo" aria-label="Buscar ou adicionar ativo" className="w-full bg-transparent text-xs text-[var(--text-primary)] outline-none"/>{searching && <Loader2 size={14} className="animate-spin text-[var(--text-muted)]"/>}</div>
+              {results.length > 0 && <div className="absolute inset-x-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] shadow-xl">{results.map(item => <button key={item.symbol} type="button" disabled={busy === item.symbol} onClick={() => void add(item.symbol, item.name)} className="flex w-full items-center justify-between gap-3 border-b border-[var(--border-primary)] px-3 py-3 text-left text-xs text-[var(--text-primary)] last:border-0 hover:bg-[var(--bg-muted)]"><span className="truncate"><strong>{item.symbol}</strong> · {item.name}</span><Plus size={15}/></button>)}</div>}
             </div>
+            <div className="flex flex-wrap gap-1">{([["all","Todos"],["starred","Destaques"],["gainers","Altas"],["losers","Quedas"]] as const).map(([key,label]) => <button key={key} type="button" onClick={() => setFilter(key)} className={`rounded-lg px-3 py-2 text-xs font-medium ${filter === key ? "bg-[var(--accent-primary)] text-white" : "text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]"}`}>{label}</button>)}</div>
+            <select aria-label="Ordenar favoritos" value={sort} onChange={event => setSort(event.target.value as typeof sort)} className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] px-2 py-2 text-xs text-[var(--text-secondary)]"><option value="name">Nome</option><option value="price">Preço</option><option value="change">Variação</option></select>
           </div>
-        )}
+          <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-xs"><thead className="border-b border-[var(--border-primary)] text-[var(--text-muted)]"><tr><th className="px-4 py-3 font-medium">Ativo / símbolo</th><th className="px-4 py-3 text-right font-medium">Preço</th><th className="px-4 py-3 text-right font-medium">Variação</th><th className="px-4 py-3 text-right font-medium">Ações</th></tr></thead><tbody>{rows.map(item => <tr key={item.symbol} className="border-b border-[var(--border-primary)] last:border-0 hover:bg-[var(--bg-muted)]"><td className="px-4 py-3"><div className="font-semibold text-[var(--text-primary)]">{item.name || item.symbol}</div><div className="mt-1 text-[var(--text-muted)]">{item.symbol}</div></td><td className="px-4 py-3 text-right font-semibold tabular-nums text-[var(--text-primary)]">{item.price > 0 ? formatCurrency(item.price, false, { sourceCurrency: item.currency }) : "Indisponível"}</td><td className={`px-4 py-3 text-right font-semibold tabular-nums ${item.changePercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{item.price > 0 ? formatPercent(item.changePercent) : "—"}</td><td className="px-4 py-3"><div className="flex items-center justify-end gap-1.5"><button title="Marcar destaque" aria-label="Marcar destaque" onClick={() => void toggleWatchlistStar(item.symbol)} className="rounded-lg border border-[var(--border-primary)] p-2 text-[var(--accent-primary)]"><Star size={15} fill={item.starred ? "currentColor" : "none"}/></button><button title="Criar alerta" aria-label="Criar alerta" onClick={() => { setAlertSymbol(item.symbol); setAlertPrice(item.price > 0 ? String(item.price) : ""); }} className="rounded-lg border border-[var(--border-primary)] p-2 text-[var(--text-secondary)]"><Bell size={15}/></button><button title="Remover favorito" aria-label="Remover favorito" onClick={() => void removeFromWatchlist(item.symbol)} className="rounded-lg border border-[var(--border-primary)] p-2 text-[var(--text-secondary)]"><Trash2 size={15}/></button><Link href={`/trade?symbol=${encodeURIComponent(item.symbol)}`} className="inline-flex items-center gap-1 rounded-lg bg-[var(--accent-primary)] px-3 py-2 font-semibold text-white">Negociar <ArrowUpRight size={13}/></Link></div></td></tr>)}</tbody></table>
+          {rows.length === 0 && <div className="p-10 text-center text-sm text-[var(--text-muted)]">{watchlist.length === 0 ? "Sua lista está vazia. Busque um ativo acima ou explore Mercados." : "Nenhum favorito corresponde aos filtros."}</div>}</div>
+        </section>
+        {alerts.length > 0 && <section className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-4"><h2 className="mb-3 text-sm font-semibold text-[var(--text-primary)]">Alertas cadastrados</h2><div className="space-y-2">{alerts.map(alert => <div key={alert.id} className="flex items-center justify-between gap-3 rounded-lg border border-[var(--border-primary)] p-3 text-xs"><span className="text-[var(--text-secondary)]"><strong className="text-[var(--text-primary)]">{alert.symbol}</strong> · {alert.condition === "above" ? "Acima de" : "Abaixo de"} {formatCurrency(alert.targetPrice, false, { sourceCurrency: "USD" })}</span><button title="Excluir alerta" aria-label="Excluir alerta" onClick={() => void removeAlert(alert.id)} className="text-[var(--text-muted)] hover:text-[var(--accent-red)]"><X size={16}/></button></div>)}</div></section>}
+        <p className="text-xs text-[var(--text-muted)]">Cotações podem estar atrasadas. Dados destinados ao ambiente de simulação.</p>
       </main>
+      {alertSymbol && <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4"><form onSubmit={event => void submitAlert(event)} className="w-full max-w-sm space-y-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5"><div className="flex items-center justify-between"><h2 className="font-semibold text-[var(--text-primary)]">Novo alerta · {alertSymbol}</h2><button type="button" aria-label="Fechar" onClick={() => setAlertSymbol(null)}><X size={18}/></button></div><label className="block text-xs text-[var(--text-secondary)]">Condição<select value={alertCondition} onChange={event => setAlertCondition(event.target.value as "above" | "below")} className="mt-2 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] p-3 text-sm"><option value="above">Preço acima de</option><option value="below">Preço abaixo de</option></select></label><label className="block text-xs text-[var(--text-secondary)]">Preço-alvo (USD)<input type="number" min="0.000001" step="any" required value={alertPrice} onChange={event => setAlertPrice(event.target.value)} className="mt-2 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] p-3 text-sm"/></label><button type="submit" disabled={busy === alertSymbol || !(Number(alertPrice) > 0)} className="w-full rounded-lg bg-[var(--accent-primary)] p-3 text-sm font-semibold text-white disabled:opacity-50">Criar alerta</button></form></div>}
     </div>
   );
 }
