@@ -20,13 +20,12 @@ from rest_framework.views import APIView
 logger = logging.getLogger(__name__)
 
 SEARCHES = {
-    'all': 'stock market OR finance OR economy',
-    'stocks': 'stocks OR earnings OR wall street',
-    'crypto': 'bitcoin OR ethereum OR cryptocurrency',
-    'etfs': 'ETF OR exchange traded funds',
-    'economy': 'inflation OR central bank OR interest rates',
+    'all': '(mercado financeiro OR bolsa de valores OR economia OR investimentos) when:7d',
+    'stocks': '(ações OR bolsa de valores OR resultados de empresas) when:7d',
+    'crypto': '(bitcoin OR ethereum OR criptomoedas) when:7d',
+    'etfs': '(ETF OR fundos de índice) when:14d',
+    'economy': '(inflação OR banco central OR taxa de juros OR economia) when:7d',
 }
-CNBC_RSS = 'https://www.cnbc.com/id/100003114/device/rss/rss.html'
 MAX_BYTES = 1_000_000
 
 
@@ -83,17 +82,15 @@ class MarketNewsView(APIView):
         category = request.query_params.get('category', 'all').lower()
         if category not in SEARCHES:
             return Response({'error': 'Categoria inválida.'}, status=400)
-        key = 'marketnews:rss:v2:' + category
+        key = 'marketnews:rss:ptbr:v3:' + category
         cached = cache.get(key)
         if cached is not None:
             return Response(cached)
 
-        query = quote(SEARCHES[category], safe='')
+        query = quote(SEARCHES[category] + ' lang:pt', safe='')
         feeds = [
             ('Google News', 'https://news.google.com/rss/search?q=' + query + '&hl=pt-BR&gl=BR&ceid=BR:pt'),
         ]
-        if category in ('all', 'stocks', 'economy'):
-            feeds.append(('CNBC', CNBC_RSS))
 
         articles = []
         failures = 0
