@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, TrendingUp, ArrowLeftRight, Wallet, History, Star, Settings, LogOut, CandlestickChart, ChevronDown, UserRound, Eye, EyeOff, Bot } from "lucide-react";
+import { LayoutDashboard, TrendingUp, ArrowLeftRight, Wallet, History, Star, Settings, LogOut, CandlestickChart, ChevronDown, UserRound, Eye, EyeOff, Bot, Menu, Home, X } from "lucide-react";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { useAuth } from "@/context/AuthContext";
 import { API_HOST } from "@/lib/api";
@@ -32,6 +32,7 @@ export default function Sidebar() {
   };
   const { logout } = useAuth();
   const [accountOpen, setAccountOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const handleLogout = async () => {
     await logout();
     setAccountOpen(false);
@@ -39,6 +40,7 @@ export default function Sidebar() {
   };
 
   return (
+    <>
     <header className="master-topnav relative z-[100] min-h-[66px] border-b border-[var(--border-primary)] bg-[var(--bg-sidebar)]/95 backdrop-blur-xl">
       <div className="mx-auto flex min-h-[66px] w-full max-w-[1440px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 lg:px-6">
         <Link href="/dashboard" className="flex shrink-0 items-center gap-2.5 hover:opacity-90" aria-label="Master Trade — Painel">
@@ -48,7 +50,7 @@ export default function Sidebar() {
           </span>
         </Link>
         <div className="hidden h-6 w-px bg-[var(--border-primary)] xl:block" />
-        <nav aria-label="Navegação principal" className="order-3 flex w-full min-w-0 items-center justify-start gap-1 overflow-x-auto whitespace-nowrap pb-1 lg:order-none lg:w-auto lg:flex-1 lg:pb-0">
+        <nav aria-label="Navegação principal" className="order-3 hidden w-full min-w-0 items-center justify-start gap-1 overflow-x-auto lg:flex whitespace-nowrap pb-1 lg:order-none lg:w-auto lg:flex-1 lg:pb-0">
           {navItems.map(({ href, label, icon: Icon }) => {
             const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
             return (
@@ -94,5 +96,44 @@ export default function Sidebar() {
       </div>
 
     </header>
+    <nav aria-label="Navegação mobile" className="master-mobile-nav fixed inset-x-0 bottom-0 z-[110] grid grid-cols-5 items-end border-t border-[var(--border-primary)] bg-[var(--bg-sidebar)]/95 px-1 pt-2 pb-[max(8px,env(safe-area-inset-bottom))] shadow-[0_-8px_30px_rgba(0,0,0,.12)] backdrop-blur-xl lg:hidden">
+      {[
+        { href: "/dashboard", label: "Início", Icon: Home },
+        { href: "/markets", label: "Mercados", Icon: TrendingUp },
+        { href: "/trade", label: "Negociar", Icon: ArrowLeftRight },
+        { href: "/portfolio", label: "Carteira", Icon: Wallet },
+      ].slice(0, 2).map(({ href, label, Icon }) => (
+        <Link key={href} href={href} aria-current={pathname.startsWith(href) ? "page" : undefined}
+          className={`flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-semibold ${pathname.startsWith(href) ? "text-[var(--accent-primary)]" : "text-[var(--text-secondary)]"}`}>
+          <Icon size={21}/><span>{label}</span>
+        </Link>
+      ))}
+      <Link href="/trade" aria-current={pathname.startsWith("/trade") ? "page" : undefined}
+        className="relative -mt-4 flex min-w-0 flex-col items-center gap-1 rounded-xl bg-[var(--accent-primary)] px-1 py-3 text-[10px] font-bold text-white shadow-lg shadow-black/15">
+        <ArrowLeftRight size={22}/><span>Negociar</span>
+      </Link>
+      <Link href="/portfolio" aria-current={pathname.startsWith("/portfolio") ? "page" : undefined}
+        className={`flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-semibold ${pathname.startsWith("/portfolio") ? "text-[var(--accent-primary)]" : "text-[var(--text-secondary)]"}`}>
+        <Wallet size={21}/><span>Carteira</span>
+      </Link>
+      <button type="button" onClick={() => setMobileMenuOpen(open => !open)} aria-expanded={mobileMenuOpen} aria-controls="master-mobile-menu"
+        className={`flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-semibold ${mobileMenuOpen ? "text-[var(--accent-primary)]" : "text-[var(--text-secondary)]"}`}>
+        <Menu size={21}/><span>Menu</span>
+      </button>
+    </nav>
+    {mobileMenuOpen && (
+      <div className="fixed inset-0 z-[105] bg-black/50 lg:hidden" onClick={() => setMobileMenuOpen(false)}>
+        <section id="master-mobile-menu" aria-label="Mais opções" onClick={event => event.stopPropagation()}
+          className="absolute inset-x-3 bottom-[calc(82px+env(safe-area-inset-bottom))] max-h-[65dvh] overflow-y-auto rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-3 shadow-2xl">
+          <div className="mb-2 flex items-center justify-between px-2"><strong className="text-sm">Menu</strong><button type="button" onClick={() => setMobileMenuOpen(false)} aria-label="Fechar menu" className="rounded-lg p-2"><X size={18}/></button></div>
+          {navItems.filter(item => !["/dashboard","/markets","/trade","/portfolio"].includes(item.href)).map(({href,label,icon:Icon}) => (
+            <Link key={href} href={href} onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"><Icon size={18}/>{label}</Link>
+          ))}
+          <Link href="/account" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"><Settings size={18}/>Minha conta</Link>
+          <button type="button" onClick={() => { setMobileMenuOpen(false); void handleLogout(); }} className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-sm text-[var(--accent-red)]"><LogOut size={18}/>Sair</button>
+        </section>
+      </div>
+    )}
+    </>
   );
 }
