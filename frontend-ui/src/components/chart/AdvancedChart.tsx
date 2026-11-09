@@ -1118,9 +1118,9 @@ export default function AdvancedChart({
             <button
               key={id}
               onClick={() => setMode(id)}
-              title={label === "Cursor" ? "Selecionar / mover" : label === "Trendline" ? "Linha de tendência: marque dois pontos" : label === "Horizontal Line" ? "Linha horizontal: clique no nível desejado" : label === "Rectangle" ? "Retângulo: marque dois cantos" : label === "Fibonacci" ? "Fibonacci: marque dois extremos" : "Nota de texto: clique no gráfico"}
+              title={label}
               aria-label={label}
-              aria-pressed={activeTool === id}
+              aria-pressed={mode === id}
               className={`p-1.5 rounded transition-all ${
                 mode === id
                   ? "bg-[var(--bg-muted)] text-[var(--accent-primary)]"
