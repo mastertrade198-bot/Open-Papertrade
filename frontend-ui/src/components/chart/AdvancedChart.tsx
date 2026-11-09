@@ -275,7 +275,7 @@ export default function AdvancedChart({
       const first = bars[0];
       const base = symbol.toUpperCase().replace(/-(USDT|USD)$/, "");
       if (!/^(BTC|ETH|SOL|XRP|BNB|ADA|DOGE|AVAX|LINK|SHIB|DOT|LTC|BCH|UNI|AAVE|ATOM|NEAR|ICP|FIL|ETC|XLM|ALGO|HBAR|PEPE)$/.test(base)) return;
-      if (!first || !/^\\d+$/.test(String(first.time))) return;
+      if (!first || !/^\d+$/.test(String(first.time))) return;
       historyLoadingRef.current = true;
       const earliest = Number(first.time);
       void stockAPI.getHistory(symbol, timeframe, candleInterval, earliest)
