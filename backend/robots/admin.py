@@ -7,19 +7,30 @@ from django.utils.html import format_html
 from .models import TradingRobot, RobotOperation, RobotAudit
 
 class RobotScheduleForm(forms.ModelForm):
-    scheduled_end_at = forms.DateTimeField(
-        label='Data e hora de finalização',
+    scheduled_end_at = forms.SplitDateTimeField(
+        label='Finalização programada',
         required=False,
-        input_formats=['%Y-%m-%dT%H:%M', '%Y-%m-%dT%H:%M:%S'],
-        widget=forms.DateTimeInput(
-            format='%Y-%m-%dT%H:%M',
-            attrs={
-                'type': 'datetime-local',
-                'step': '60',
-                'style': 'width:100%;max-width:440px;min-height:44px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;background:transparent;',
+        input_date_formats=['%d/%m/%Y', '%d-%m-%Y', '%Y-%m-%d'],
+        input_time_formats=['%H:%M', '%H:%M:%S'],
+        widget=forms.SplitDateTimeWidget(
+            date_format='%d/%m/%Y',
+            time_format='%H:%M',
+            date_attrs={
+                'type': 'text',
+                'placeholder': 'DD/MM/AAAA',
+                'autocomplete': 'off',
+                'inputmode': 'numeric',
+                'style': 'width:170px;max-width:100%;min-height:44px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;',
+            },
+            time_attrs={
+                'type': 'text',
+                'placeholder': 'HH:MM',
+                'autocomplete': 'off',
+                'inputmode': 'numeric',
+                'style': 'width:120px;max-width:100%;min-height:44px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;',
             },
         ),
-        help_text='Selecione a data e o horário de encerramento.',
+        help_text='Digite a data (ex.: 15/11/2026) e a hora em formato 24h (ex.: 18:30).',
     )
     scheduled_pnl_percent = forms.DecimalField(
         label='Lucro ou prejuízo (%)',
