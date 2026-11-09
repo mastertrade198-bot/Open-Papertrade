@@ -182,7 +182,7 @@ function TradePageContent() {
       for (let i = 0; i < batches.length; i += 3) {
         await Promise.all(batches.slice(i, i + 3).map(async batch => {
           try {
-            const response = await stockAPI.getQuotes(batch);
+            const response = await stockAPI.getQuotes(batch, true);
             const next: Record<string, StockQuote> = {};
             for (const [symbol, result] of Object.entries(response.quotes || {})) {
               if (result.success && result.data && Number.isFinite(result.data.price) && result.data.price > 0) {
@@ -206,7 +206,7 @@ function TradePageContent() {
     void refreshMarketQuotes();
     const timer = window.setInterval(() => {
       if (!document.hidden) void refreshMarketQuotes();
-    }, 60000);
+    }, 15000);
     return () => window.clearInterval(timer);
   }, [refreshMarketQuotes]);
 
@@ -333,7 +333,8 @@ function TradePageContent() {
   const getAssetFullName = (symbol: string) => assetNameBySymbol.get(symbol.toUpperCase()) || getStockBySymbol(symbol)?.name || (selectedQuote?.symbol === symbol ? selectedQuote.name : undefined) || symbol;
   const selectedAssetName = getAssetFullName(selectedSymbol);
 
-  const currentPrice = selectedQuote?.price || getStockBySymbol(selectedSymbol)?.price || 0;
+  const activeQuote = marketQuotes[selectedSymbol.toUpperCase()] ?? (selectedQuote?.symbol?.toUpperCase() === selectedSymbol.toUpperCase() ? selectedQuote : null);
+  const currentPrice = activeQuote?.price || getStockBySymbol(selectedSymbol)?.price || 0;
   const effectivePrice = currentPrice;
   const margin = marginInput.trim() === "" ? 0 : Number(marginInput);
   const quantity = currentPrice > 0 && leverage > 0 && Number.isFinite(margin) ? (margin * leverage) / currentPrice : 0;
@@ -633,11 +634,11 @@ function TradePageContent() {
               <strong className="text-lg text-[var(--text-primary)]">{displaySymbol(selectedSymbol)}</strong>
               <span className="max-w-32 truncate text-[var(--text-muted)]">{selectedAssetName}</span>
               <strong className="text-xl tabular-nums text-[var(--text-primary)]">{formatCurrency(currentPrice, false, {sourceCurrency})}</strong>
-              {selectedQuote && <>
-                <span className="text-[var(--text-muted)]">Abert. <b className="tabular-nums text-[var(--text-primary)]">{selectedQuote.open.toFixed(2)}</b></span>
-                <span className="text-[var(--text-muted)]">Máx. <b className="tabular-nums text-[var(--accent-green)]">{selectedQuote.high.toFixed(2)}</b></span>
-                <span className="text-[var(--text-muted)]">Mín. <b className="tabular-nums text-[var(--accent-red)]">{selectedQuote.low.toFixed(2)}</b></span>
-                <span className="text-[var(--text-muted)]">Anterior <b className="tabular-nums text-[var(--text-primary)]">{selectedQuote.previousClose.toFixed(2)}</b></span>
+              {activeQuote && <>
+                <span className="text-[var(--text-muted)]">Abert. <b className="tabular-nums text-[var(--text-primary)]">{activeQuote.open.toFixed(2)}</b></span>
+                <span className="text-[var(--text-muted)]">Máx. <b className="tabular-nums text-[var(--accent-green)]">{activeQuote.high.toFixed(2)}</b></span>
+                <span className="text-[var(--text-muted)]">Mín. <b className="tabular-nums text-[var(--accent-red)]">{activeQuote.low.toFixed(2)}</b></span>
+                <span className="text-[var(--text-muted)]">Anterior <b className="tabular-nums text-[var(--text-primary)]">{activeQuote.previousClose.toFixed(2)}</b></span>
               </>}
             </div>
             <section aria-label="Gráfico avançado de negociação" className="min-w-0">
