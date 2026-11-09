@@ -12,6 +12,14 @@ const presets:Record<string,Record<string,number>> = {
   rsi:{period:14,overbought:70,oversold:30},bollinger:{period:20,deviation:2},
   stochastic:{k:14,d:3,smooth:3},adx:{period:14,threshold:25},
 };
+const indicatorSettings:Record<string,{field:string;label:string;min:number;max:number;help:string}>={
+  ema:{field:"fast",label:"Período rápido",min:2,max:200,help:"Menor valor acompanha movimentos mais recentes."},
+  macd:{field:"signal",label:"Período do sinal",min:2,max:100,help:"Controla a suavização do sinal MACD."},
+  rsi:{field:"period",label:"Período do IFR",min:2,max:100,help:"Menor valor torna o indicador mais sensível."},
+  bollinger:{field:"period",label:"Período das bandas",min:2,max:200,help:"Quantidade de períodos usados nas bandas."},
+  stochastic:{field:"k",label:"Período %K",min:2,max:100,help:"Quantidade de períodos observados."},
+  adx:{field:"period",label:"Período do ADX",min:2,max:100,help:"Janela usada para medir a força da tendência."},
+};
 const api = (path:string, options?:RequestInit) => fetch(`${API_HOST}/api/robots/${path}`,{credentials:"include",...options,headers:{"Content-Type":"application/json",...options?.headers}}).then(async r=>{const data=await r.json();if(!r.ok)throw new Error(data.error||"Erro na API");return data;});
 export default function RobotsPage(){
   const [robots,setRobots]=useState<Robot[]>([]);
@@ -22,6 +30,7 @@ export default function RobotsPage(){
   const [tp,setTp]=useState("5");
   const [sl,setSl]=useState("3");
   const [selected,setSelected]=useState<string[]>(["ema","macd","rsi"]);
+  const [indicatorParams,setIndicatorParams]=useState<Record<string,Record<string,number>>>(()=>Object.fromEntries(Object.entries(presets).map(([key,params])=>[key,{...params}])));
   const [creating,setCreating]=useState(false);
   const [error,setError]=useState("");
   const [loading,setLoading]=useState(true);
@@ -58,7 +67,7 @@ export default function RobotsPage(){
   const signed=(n:number)=>`${n>0?"+":""}${n.toFixed(2)}%`;
   const reload=()=>api("").then(data=>setRobots(data.robots));
   useEffect(()=>{reload().catch(e=>setError(e.message)).finally(()=>setLoading(false));const timer=setInterval(()=>{reload().catch(()=>{});},5000);fetch(`${API_HOST}/api/stocks/catalog/?page=1`,{credentials:"include"}).then(r=>r.json()).then(d=>{if(Array.isArray(d.assets))setAssets(d.assets)}).catch(()=>{});return()=>clearInterval(timer);},[]);
-  const create=async(e:React.FormEvent)=>{e.preventDefault();if(!value.trim()||!Number.isFinite(Number(value))||Number(value)<=0){setError("Informe o valor em USD que deseja reservar para este robô.");return;}if(Number(tp)<=0||Number(sl)<=0||selected.length===0){setError("Confira os limites e selecione pelo menos um indicador.");return;}setCreating(true);setError("");try{await api("",{method:"POST",body:JSON.stringify({symbol,value,tp,sl,indicators:Object.fromEntries(selected.map(key=>[key,presets[key]]))})});await reload();setShowForm(false);setShowAdvanced(false);}catch(e){setError(e instanceof Error?e.message:"Falha ao criar robô")}finally{setCreating(false)}};
+  const create=async(e:React.FormEvent)=>{e.preventDefault();if(!value.trim()||!Number.isFinite(Number(value))||Number(value)<=0){setError("Informe o valor em USD que deseja reservar para este robô.");return;}if(!Number.isFinite(Number(tp))||!Number.isFinite(Number(sl))||Number(tp)<=0||Number(sl)<=0||selected.length===0||selected.some(key=>{const config=indicatorSettings[key];const n=indicatorParams[key][config.field];return !Number.isInteger(n)||n<config.min||n>config.max;})){setError("Confira os limites e selecione pelo menos um indicador.");return;}setCreating(true);setError("");try{await api("",{method:"POST",body:JSON.stringify({symbol,value,tp,sl,indicators:Object.fromEntries(selected.map(key=>[key,indicatorParams[key]]))})});await reload();setShowForm(false);setShowAdvanced(false);}catch(e){setError(e instanceof Error?e.message:"Falha ao criar robô")}finally{setCreating(false)}};
   return <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]"><Sidebar/><main className="mx-auto max-w-[1440px] px-4 py-8 lg:px-8">
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs uppercase tracking-widest text-[var(--accent-primary)]">Ambiente de demonstração</p><h1 className="text-2xl font-bold">Meus robôs de investimento</h1><p className="text-sm text-[var(--text-secondary)]">Acompanhe estratégias, indicadores e resultados em um único painel.</p></div><button onClick={openForm} className="rounded-lg bg-[var(--accent-primary)] px-5 py-3 text-sm font-bold text-white">+ Iniciar novo robô</button></div>
     {error&&!showForm&&<p role="alert" className="mb-4 rounded-lg border border-red-500/40 p-3 text-sm text-red-400">{error}</p>}
@@ -99,9 +108,18 @@ export default function RobotsPage(){
               <label className="text-xs font-medium">Limite de perda (%)<input required type="number" min="0.01" step="0.01" value={sl} onChange={e=>setSl(e.target.value)} className="mt-2 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2.5 text-sm"/></label>
             </div>
             <div><p className="mb-2 text-xs font-semibold">Indicadores utilizados</p>
-              <div className="grid gap-2 sm:grid-cols-2">{([["ema","Médias móveis"],["macd","MACD"],["rsi","Força relativa (IFR)"],["bollinger","Bandas de Bollinger"],["stochastic","Estocástico"],["adx","Força da tendência (ADX)"]] as const).map(([key,label])=><label key={key} className="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--border-primary)] px-3 py-2 text-xs"><input type="checkbox" checked={selected.includes(key)} onChange={e=>setSelected(current=>e.target.checked?[...current,key]:current.filter(item=>item!==key))}/>{label}</label>)}</div>
+              <div className="space-y-2">{([["ema","Médias móveis"],["macd","MACD"],["rsi","Força relativa (IFR)"],["bollinger","Bandas de Bollinger"],["stochastic","Estocástico"],["adx","Força da tendência (ADX)"]] as const).map(([key,label])=>{
+                const setting=indicatorSettings[key];
+                return <div key={key} className="rounded-lg border border-[var(--border-primary)] p-3">
+                  <label className="flex cursor-pointer items-center gap-2 text-sm font-medium"><input type="checkbox" checked={selected.includes(key)} onChange={e=>setSelected(current=>e.target.checked?[...current,key]:current.filter(item=>item!==key))}/>{label}</label>
+                  {selected.includes(key)&&<div className="mt-3 pl-5">
+                    <label className="flex items-center justify-between gap-3 text-xs text-[var(--text-secondary)]"><span>{setting.label}</span><input aria-label={setting.label+" de "+label} type="number" required min={setting.min} max={setting.max} step="1" value={indicatorParams[key][setting.field]} onChange={e=>setIndicatorParams(current=>({...current,[key]:{...current[key],[setting.field]:e.target.value===""?0:Number(e.target.value)}}))} className="w-24 rounded-md border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2 text-right text-sm text-[var(--text-primary)]"/></label>
+                    <p className="mt-1 text-[11px] text-[var(--text-secondary)]">{setting.help}</p>
+                  </div>}
+                </div>;
+              })}</div>
             </div>
-            <p className="text-xs leading-relaxed text-[var(--text-secondary)]">Os indicadores são parâmetros da simulação; não determinam os resultados demonstrativos.</p>
+            <p className="text-xs leading-relaxed text-[var(--text-secondary)]">Os valores ajustam os parâmetros registrados para cada indicador. Atualmente, eles não comandam as operações nem determinam os resultados demonstrativos.</p>
           </div>}
         </section>
       </div>
