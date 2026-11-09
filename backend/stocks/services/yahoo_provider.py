@@ -220,6 +220,13 @@ class YahooFinanceProvider(BaseStockProvider):
                 return quote
             return None
 
+        # US stocks and ETFs use the bare symbol. Avoid expensive and misleading
+        # foreign-exchange suffix probes for common USD instruments.
+        direct_quote = self._try_fetch_quote(symbol)
+        if direct_quote:
+            self._symbol_cache[symbol] = symbol
+            return direct_quote
+
         # Try different exchange suffixes
         for suffix in self.EXCHANGE_SUFFIXES:
             yahoo_symbol = f"{symbol}{suffix}"
@@ -448,19 +455,9 @@ class YahooFinanceProvider(BaseStockProvider):
             yahoo_symbol = INDEX_SYMBOLS[symbol]
         elif symbol in self._symbol_cache:
             yahoo_symbol = self._symbol_cache[symbol]
-        elif "." not in symbol and not symbol.startswith("^") and "-" not in symbol:
-            # Try suffix resolution (same logic as get_quote)
-            for suffix in self.EXCHANGE_SUFFIXES:
-                candidate = f"{symbol}{suffix}"
-                try:
-                    ticker = yf.Ticker(candidate)
-                    hist = ticker.history(period="5d", interval="1d")
-                    if hist is not None and not hist.empty:
-                        yahoo_symbol = candidate
-                        self._symbol_cache[symbol] = candidate
-                        break
-                except Exception:
-                    continue
+        # For bare US stock/ETF symbols, query the exact ticker first.
+        # Trying exchange suffixes before the original symbol causes many
+        # unnecessary requests and can select an unrelated instrument.
 
         try:
             ticker = yf.Ticker(yahoo_symbol)
