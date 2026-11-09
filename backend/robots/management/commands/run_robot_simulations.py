@@ -65,6 +65,10 @@ def tick(robot_id, now):
                 change = max(-limit, min(limit, change))
                 future_capacity = maximum * (remaining_count - 1)
                 change = max(remaining - future_capacity, min(remaining + future_capacity, change))
+                # Keep every intermediate balance within the configured TP/SL.
+                lower = (robot.capital * (Decimal("1") - robot.stop_loss / Decimal("100")) - robot.equity).quantize(CENT)
+                upper = (robot.capital * (Decimal("1") + robot.take_profit / Decimal("100")) - robot.equity).quantize(CENT)
+                change = max(lower, min(upper, change))
                 change = change.quantize(CENT, rounding=ROUND_HALF_UP)
             if abs(change) > maximum:
                 raise ValueError("Micro-operação excede o limite programado")
