@@ -7,7 +7,7 @@ import {Activity, ArrowLeft, Clock3, TrendingUp, Radio, Cpu} from "lucide-react"
 import {API_HOST} from "@/lib/api";
 type Op={id:string;side:string;status:string;pnl:number;pnlPercent:number;openedAt:string;closedAt:string|null;entryPrice:number;exitPrice:number|null};
 type Pagination={page:number;pageSize:number;totalPages:number;totalOperations:number;hasPrevious:boolean;hasNext:boolean};
-type Robot={id:string;displayNumber:number;symbol:string;assetName:string;capital:number;equity:number;pnl:number;pnlPercent:number;tp:number;sl:number;status:string;operations:Op[];pagination:Pagination;indicators:Record<string,unknown>};
+type Robot={id:string;displayNumber:number;symbol:string;assetName:string;capital:number;equity:number;pnl:number;pnlPercent:number;tp:number;sl:number;status:string;configured:boolean;operations:Op[];pagination:Pagination;indicators:Record<string,unknown>};
 const robotAssetLabel = (name: string, symbol: string) => {
  const normalized = symbol.toUpperCase().replace(/[-/]?USD(T)?$/, "");
  const names: Record<string,string> = {BTC:"Bitcoin",ETH:"Ethereum",SOL:"Solana",XRP:"XRP",ADA:"Cardano",DOGE:"Dogecoin",BNB:"BNB",LTC:"Litecoin",AVAX:"Avalanche",DOT:"Polkadot"};
@@ -29,7 +29,7 @@ export default function RobotDetail({params}:{params:Promise<{id:string}>}){
  {error&&<p role="alert" className="my-4 text-red-400">{error}</p>}
  {!robot?<p className="mt-6">Carregando robô...</p>:<>
  <header className="my-6 flex flex-wrap items-center justify-between gap-4">
- <div><div className="mb-2 flex items-center gap-2 text-xs text-[var(--text-secondary)]"><span className="rounded-md bg-[var(--bg-muted)] px-2 py-1 font-semibold">ROBÔ #{String(robot.displayNumber).padStart(2,"0")}</span><span className="rounded-md border border-[var(--border-primary)] px-2 py-1">{robot.status==="ACTIVE"?"Ativo":robot.status==="CLOSED"?"Encerrado":robot.status}</span></div>
+ <div><div className="mb-2 flex items-center gap-2 text-xs text-[var(--text-secondary)]"><span className="rounded-md bg-[var(--bg-muted)] px-2 py-1 font-semibold">ROBÔ #{String(robot.displayNumber).padStart(2,"0")}</span><span className="rounded-md border border-[var(--border-primary)] px-2 py-1">{robot.status==="ACTIVE"?(robot.configured?"Ativo":"Realizando verificação"):robot.status==="CLOSED"?"Encerrado":robot.status}</span></div>
  <h1 className="text-2xl font-bold tracking-tight">{robotAssetLabel(robot.assetName,robot.symbol)}</h1><p className="mt-1 text-xs text-[var(--text-secondary)]">Simulação de mercado · dados demonstrativos</p></div>
  {robot.status!=="CLOSED"&&<button type="button" onClick={close} className="rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card)] px-4 py-2 text-sm hover:opacity-80">Encerrar robô</button>}
  </header>
@@ -44,10 +44,10 @@ export default function RobotDetail({params}:{params:Promise<{id:string}>}){
  <div className="flex min-w-0 items-center gap-3">
  <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)]">
  <Cpu size={17} className="text-[var(--accent-primary)]"/>
- {robot.status==="ACTIVE"&&<span className="robot-status-pulse absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-emerald-400"/>}
+ {robot.status==="ACTIVE"&&robot.configured&&<span className="robot-status-pulse absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-emerald-400"/>}
  </div>
- <div><div className="flex items-center gap-2 text-sm font-semibold"><span>{robot.status==="ACTIVE"?"Monitoramento da simulação":robot.status==="CLOSED"?"Simulação encerrada":"Simulação pausada"}</span>{robot.status==="ACTIVE"&&<Radio size={14} className="text-emerald-400"/>}</div>
- <p className="text-xs text-[var(--text-secondary)]">Atividade visual demonstrativa · operações registradas separadamente</p></div>
+ <div><div className="flex items-center gap-2 text-sm font-semibold"><span>{robot.status==="CLOSED"?"Simulação encerrada":robot.status==="ACTIVE"&&!robot.configured?"Realizando verificação":robot.status==="ACTIVE"?"Analisando cenário configurado":"Simulação pausada"}</span>{robot.status==="ACTIVE"&&robot.configured&&<Radio size={14} className="text-emerald-400"/>}</div>
+ <p className="text-xs text-[var(--text-secondary)]">{robot.status==="CLOSED"?"Cenário demonstrativo finalizado · consulte as operações registradas":robot.status==="ACTIVE"&&!robot.configured?"Aguardando configuração do cenário simulado para iniciar as operações":robot.status==="ACTIVE"&&(robot.pagination?.totalOperations??0)>0?"Simulação em andamento · acompanhando resultados e novas operações registradas":"Analisando a programação definida para iniciar as operações simuladas"}</p></div>
  </div>
  <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
  <span className="text-[var(--text-secondary)]">Ativo <strong className="ml-1 text-[var(--text-primary)]">{robot.symbol}</strong></span>
@@ -56,7 +56,7 @@ export default function RobotDetail({params}:{params:Promise<{id:string}>}){
  </div>
  </div>
  <div aria-hidden="true" className="robot-activity-track relative mt-3 h-1 overflow-hidden rounded-full bg-[var(--bg-primary)]">
- {robot.status==="ACTIVE"&&<div className="robot-activity-scan absolute inset-y-0 left-0 w-1/4 rounded-full bg-emerald-400/70"/>}
+ {robot.status==="ACTIVE"&&robot.configured&&<div className="robot-activity-scan absolute inset-y-0 left-0 w-1/4 rounded-full bg-emerald-400/70"/>}
  </div>
  </section>
  <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_350px]">
