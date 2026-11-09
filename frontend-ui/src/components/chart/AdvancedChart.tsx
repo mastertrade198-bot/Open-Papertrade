@@ -1077,7 +1077,7 @@ export default function AdvancedChart({
     return groups;
   }, []);
 
-  const lastPrice = bars[bars.length - 1]?.close;
+  const lastPrice = Number.isFinite(livePrice) && livePrice && livePrice > 0 && !replayActive ? livePrice : bars[bars.length - 1]?.close;
   const firstPrice = bars[0]?.close;
   const priceChange = lastPrice && firstPrice ? lastPrice - firstPrice : 0;
   const priceChangePct = firstPrice ? (priceChange / firstPrice) * 100 : 0;
