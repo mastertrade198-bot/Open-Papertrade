@@ -640,15 +640,21 @@ class StockHistoryView(APIView):
         if is_crypto:
             # Binance spot OHLCV; do not fabricate candles if provider is unavailable.
             pair = base + "USDT"
-            cache_key = f"chart:binance:{pair}:{interval}:{period}"
+            before = request.query_params.get("before")
+            if before is not None and (not before.isdigit() or len(before) > 13):
+                return Response({"error": "Cursor inválido."}, status=status.HTTP_400_BAD_REQUEST)
+            cache_key = f"chart:binance:{pair}:{interval}:{period}:{before or 'latest'}"
             cached = cache.get(cache_key)
             if cached is not None:
                 return Response(cached)
             binance_interval = {"1m": "1m", "5m": "5m", "15m": "15m", "1h": "1h", "1d": "1d"}[interval]
             try:
+                params = {"symbol": pair, "interval": binance_interval, "limit": 1000}
+                if before:
+                    params["endTime"] = int(before) * 1000 - 1
                 response = requests.get(
                     "https://api.binance.com/api/v3/klines",
-                    params={"symbol": pair, "interval": binance_interval, "limit": 1000},
+                    params=params,
                     timeout=8,
                 )
                 response.raise_for_status()
