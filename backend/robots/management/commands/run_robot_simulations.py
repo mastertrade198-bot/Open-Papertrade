@@ -13,6 +13,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from robots.models import TradingRobot, RobotOperation, RobotAudit
+from robots.settlement import settle_robot
 
 CENT = Decimal("0.01")
 PRICE = Decimal("100.00000000")
@@ -98,6 +99,8 @@ def tick(robot_id, now):
                 after={"operations_added": created, "equity": str(robot.equity), "simulated": True},
                 reason="Operações sintéticas; resultado configurado pelo administrador",
             )
+        if robot.status == "CLOSED":
+            settle_robot(robot)
         return created
 
 
