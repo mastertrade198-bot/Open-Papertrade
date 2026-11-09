@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback, Suspense } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Search,
@@ -147,27 +147,53 @@ function TradePageContent() {
   const [marketQuotes, setMarketQuotes] = useState<Record<string, StockQuote>>({});
   const [marketQuotesLoading, setMarketQuotesLoading] = useState(false);
   const [marketQuotesUpdatedAt, setMarketQuotesUpdatedAt] = useState<number | null>(null);
-  const marketSymbols = useMemo(() => availableAssets.map(asset => asset.symbol), [availableAssets]);
+  const marketSymbols = useMemo(() => {
+    const symbols = new Set<string>();
+    // Refresh the selected asset and currently displayed market list first.
+    symbols.add(selectedSymbol);
+    for (const asset of visibleMarketAssets) symbols.add(asset.symbol);
+    return [...symbols];
+  }, [selectedSymbol, visibleMarketAssets]);
+  const marketQuotesInFlight = useRef(false);
   const refreshMarketQuotes = useCallback(async () => {
-    if (!marketSymbols.length) return;
+    if (!marketSymbols.length || marketQuotesInFlight.current) return;
+    marketQuotesInFlight.current = true;
     setMarketQuotesLoading(true);
+    let received = false;
     try {
-      const batchSize = 25;
-      const next: Record<string, StockQuote> = {};
-      for (let i = 0; i < marketSymbols.length; i += batchSize) {
-        const batch = marketSymbols.slice(i, i + batchSize);
-        try {
-          const response = await stockAPI.getQuotes(batch);
-          for (const [symbol, result] of Object.entries(response.quotes || {})) {
-            if (result.success && result.data && Number.isFinite(result.data.price)) next[symbol.toUpperCase()] = result.data;
-          }
-        } catch (error) { console.warn("Market quote batch failed", error); }
+      const batches: string[][] = [];
+      for (let i = 0; i < marketSymbols.length; i += 12) batches.push(marketSymbols.slice(i, i + 12));
+      // Limit concurrency so slow providers do not block the entire list.
+      for (let i = 0; i < batches.length; i += 3) {
+        await Promise.all(batches.slice(i, i + 3).map(async batch => {
+          try {
+            const response = await stockAPI.getQuotes(batch);
+            const next: Record<string, StockQuote> = {};
+            for (const [symbol, result] of Object.entries(response.quotes || {})) {
+              if (result.success && result.data && Number.isFinite(result.data.price) && result.data.price > 0) {
+                next[symbol.toUpperCase()] = result.data;
+              }
+            }
+            if (Object.keys(next).length) {
+              received = true;
+              setMarketQuotes(previous => ({ ...previous, ...next }));
+            }
+          } catch (error) { console.warn("Market quote batch failed", error); }
+        }));
       }
-      setMarketQuotes(previous => ({ ...previous, ...next }));
-      setMarketQuotesUpdatedAt(Date.now());
-    } finally { setMarketQuotesLoading(false); }
+      if (received) setMarketQuotesUpdatedAt(Date.now());
+    } finally {
+      marketQuotesInFlight.current = false;
+      setMarketQuotesLoading(false);
+    }
   }, [marketSymbols]);
-  useEffect(() => { void refreshMarketQuotes(); const timer = window.setInterval(() => void refreshMarketQuotes(), 300000); return () => window.clearInterval(timer); }, [refreshMarketQuotes]);
+  useEffect(() => {
+    void refreshMarketQuotes();
+    const timer = window.setInterval(() => {
+      if (!document.hidden) void refreshMarketQuotes();
+    }, 60000);
+    return () => window.clearInterval(timer);
+  }, [refreshMarketQuotes]);
 
   useEffect(() => { void refreshCatalog(); }, [refreshCatalog]);
 
