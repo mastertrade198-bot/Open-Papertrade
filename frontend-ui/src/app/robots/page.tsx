@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { X, Search, ChevronDown, Check } from "lucide-react";
+import { resolveAssetDisplayName } from "@/lib/assetDisplayName";
 import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
 import { API_HOST } from "@/lib/api";
@@ -8,7 +9,14 @@ import { usePortfolio } from "@/context/PortfolioContext";
 
 type Robot = {id:string;displayNumber:number;symbol:string;assetName:string;capital:number;equity:number;pnl:number;pnlPercent:number;status:string;createdAt:string};
 type Asset = {symbol:string;name:string;category?:string;assetType?:string;type?:string};
-const categoryFor = (asset:Asset) => { const type=(asset.category||asset.assetType||asset.type||"").toUpperCase(); if(/CRYPTO|COIN/.test(type)||["BTC","ETH","SOL","XRP","ADA","DOGE"].includes(asset.symbol.toUpperCase()))return "Criptomoedas"; if(/ETF|FUND/.test(type))return "ETFs"; if(/FOREX|CURRENCY|FX/.test(type))return "Moedas"; if(/INDEX|INDICE/.test(type))return "Índices"; if(/COMMODITY|METAL/.test(type))return "Commodities";return "Ações";};
+const cryptoNames:Record<string,string>={BTC:"Bitcoin",ETH:"Ethereum",SOL:"Solana",XRP:"XRP",ADA:"Cardano",DOGE:"Dogecoin",BNB:"BNB",LTC:"Litecoin",DOT:"Polkadot",AVAX:"Avalanche",LINK:"Chainlink"};
+const displayName=(asset:Asset)=>{
+  const base=asset.symbol.toUpperCase().replace(/[-/]USD(T)?$/,"");
+  if(cryptoNames[base]&&(!asset.name||asset.name.toUpperCase()===asset.symbol.toUpperCase()||asset.name.toUpperCase()===base))return cryptoNames[base];
+  return resolveAssetDisplayName(asset.symbol,asset.name);
+};
+const hasName=(asset:Asset)=>displayName(asset).toUpperCase()!==asset.symbol.toUpperCase();
+const categoryFor=(asset:Asset)=>{const type=(asset.category||asset.assetType||asset.type||"").toUpperCase();if(/CRYPTO|COIN|CRIPTO/.test(type)||cryptoNames[asset.symbol.toUpperCase().replace(/[-/]USD(T)?$/,"")])return "Criptomoedas";if(/ETF|FUND/.test(type))return "ETFs";if(/FOREX|CURRENCY|FX|MOEDA/.test(type))return "Moedas";if(/INDEX|INDICE|ÍNDICE/.test(type))return "Índices";if(/COMMODITY|METAL/.test(type))return "Commodities";return "Ações";};
 const presets:Record<string,Record<string,number>> = {
   ema:{fast:21,slow:50},macd:{fast:12,slow:26,signal:9},
   rsi:{period:14,overbought:70,oversold:30},bollinger:{period:20,deviation:2},
@@ -30,6 +38,7 @@ export default function RobotsPage(){
   const [symbol,setSymbol]=useState("BTC");
   const [assetSearch,setAssetSearch]=useState("");
   const [assetCategory,setAssetCategory]=useState("Todas");
+  const [assetPickerOpen,setAssetPickerOpen]=useState(false);
   const [value,setValue]=useState("");
   const [tp,setTp]=useState("5");
   const [sl,setSl]=useState("3");
@@ -64,9 +73,9 @@ export default function RobotsPage(){
   const [search,setSearch]=useState("");
   const [statusFilter,setStatusFilter]=useState("ALL");
   const visibleRobots=robots.filter(r=>(statusFilter==="ALL"||r.status===statusFilter)&&`${r.assetName} ${r.symbol}`.toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR")));
-  const selectableAssets=[...new Map([{symbol:"BTC",name:"Bitcoin",category:"crypto"},{symbol:"ETH",name:"Ethereum",category:"crypto"},...assets].map(a=>[a.symbol.toUpperCase(),a])).values()];
+  const selectableAssets=[...new Map([...assets,{symbol:"BTC",name:"Bitcoin",category:"Criptomoedas"},{symbol:"ETH",name:"Ethereum",category:"Criptomoedas"}].map(a=>[a.symbol.toUpperCase(),a])).values()].filter(hasName);
   const assetCategories=["Todas",...Array.from(new Set(selectableAssets.map(categoryFor)))];
-  const filteredAssets=selectableAssets.filter(a=>(assetCategory==="Todas"||categoryFor(a)===assetCategory)&&`${a.name} ${a.symbol}`.toLocaleLowerCase("pt-BR").includes(assetSearch.trim().toLocaleLowerCase("pt-BR"))).sort((a,b)=>a.name.localeCompare(b.name,"pt-BR"));
+  const filteredAssets=selectableAssets.filter(a=>(assetCategory==="Todas"||categoryFor(a)===assetCategory)&&`${displayName(a)} ${a.symbol}`.toLocaleLowerCase("pt-BR").includes(assetSearch.trim().toLocaleLowerCase("pt-BR"))).sort((a,b)=>displayName(a).localeCompare(displayName(b),"pt-BR"));
   const chosenAsset=selectableAssets.find(a=>a.symbol===symbol);
   const activeCount=robots.filter(r=>r.status==="ACTIVE").length;
   const invested=robots.reduce((sum,r)=>sum+r.capital,0);
@@ -74,7 +83,7 @@ export default function RobotsPage(){
   const money=(n:number)=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"USD"}).format(n);
   const signed=(n:number)=>`${n>0?"+":""}${n.toFixed(2)}%`;
   const reload=()=>api("").then(data=>setRobots(data.robots));
-  useEffect(()=>{reload().catch(e=>setError(e.message)).finally(()=>setLoading(false));const timer=setInterval(()=>{reload().catch(()=>{});},5000);fetch(`${API_HOST}/api/stocks/catalog/?page=1`,{credentials:"include"}).then(r=>r.json()).then(d=>{if(Array.isArray(d.assets))setAssets(d.assets)}).catch(()=>{});return()=>clearInterval(timer);},[]);
+  useEffect(()=>{reload().catch(e=>setError(e.message)).finally(()=>setLoading(false));const timer=setInterval(()=>{reload().catch(()=>{});},5000);(async()=>{try{const all:Asset[]=[];for(let page=1;page<=30;page++){const response=await fetch(`${API_HOST}/api/stocks/catalog/?page=${page}`,{credentials:"include"});if(!response.ok)break;const data=await response.json();if(!Array.isArray(data.assets))break;all.push(...data.assets);if(!data.hasMore)break;}setAssets(all);}catch{}})();return()=>clearInterval(timer);},[]);
   const create=async(e:React.FormEvent)=>{e.preventDefault();if(!value.trim()||!Number.isFinite(Number(value))||Number(value)<=0){setError("Informe o valor em USD que deseja reservar para este robô.");return;}if(!Number.isFinite(Number(tp))||!Number.isFinite(Number(sl))||Number(tp)<=0||Number(sl)<=0||selected.length===0||selected.some(key=>{const config=indicatorSettings[key];const n=indicatorParams[key][config.field];return !Number.isInteger(n)||n<config.min||n>config.max;})){setError("Confira os limites e selecione pelo menos um indicador.");return;}setCreating(true);setError("");try{await api("",{method:"POST",body:JSON.stringify({symbol,value,tp,sl,indicators:Object.fromEntries(selected.map(key=>[key,indicatorParams[key]]))})});await Promise.all([reload(), refreshUserData()]);setShowForm(false);}catch(e){setError(e instanceof Error?e.message:"Falha ao criar robô")}finally{setCreating(false)}};
   return <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]"><Sidebar/><main className="mx-auto max-w-[1440px] px-4 py-8 lg:px-8">
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs uppercase tracking-widest text-[var(--accent-primary)]">Ambiente de demonstração</p><h1 className="text-2xl font-bold">Meus robôs de investimento</h1><p className="text-sm text-[var(--text-secondary)]">Acompanhe estratégias, indicadores e resultados em um único painel.</p></div><button onClick={openForm} className="rounded-lg bg-[var(--accent-primary)] px-5 py-3 text-sm font-bold text-white">+ Iniciar novo robô</button></div>
@@ -92,22 +101,28 @@ export default function RobotsPage(){
       <div className="space-y-5">
         <section aria-labelledby="robot-asset-heading">
           <h3 id="robot-asset-heading" className="mb-2 text-sm font-semibold">Ativo</h3>
-          <p className="mb-3 text-xs text-[var(--text-secondary)]">Escolha pelo nome ou pesquise o ativo desejado.</p>
-          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_160px]">
-            <label className="text-xs text-[var(--text-secondary)]">Pesquisar ativo
-              <input type="search" value={assetSearch} onChange={e=>setAssetSearch(e.target.value)} placeholder="Ex.: Bitcoin, Apple, BTC..." className="mt-1 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2.5 text-sm text-[var(--text-primary)]" />
-            </label>
-            <label className="text-xs text-[var(--text-secondary)]">Categoria
-              <select value={assetCategory} onChange={e=>setAssetCategory(e.target.value)} className="mt-1 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2.5 text-sm text-[var(--text-primary)]">{assetCategories.map(c=><option key={c} value={c}>{c}</option>)}</select>
-            </label>
-          </div>
-          <div role="listbox" aria-label="Ativos disponíveis" className="mt-3 max-h-48 overflow-y-auto rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)]">
-            {filteredAssets.length===0?<p className="px-3 py-4 text-xs text-[var(--text-secondary)]">Nenhum ativo encontrado. Experimente outro nome ou categoria.</p>:
-              filteredAssets.map(a=><button key={a.symbol} type="button" role="option" aria-selected={symbol===a.symbol} onClick={()=>setSymbol(a.symbol)} className={`flex w-full items-center justify-between gap-3 border-b border-[var(--border-primary)] px-3 py-2.5 text-left text-sm last:border-0 hover:bg-[var(--bg-muted)] ${symbol===a.symbol?"bg-[var(--accent-primary)]/10":""}`}>
-                <span className="min-w-0 truncate font-medium">{a.name&&a.name.toUpperCase()!==a.symbol.toUpperCase()?a.name:a.symbol}</span><span className="shrink-0 text-xs text-[var(--text-secondary)]">{a.symbol}{symbol===a.symbol?" ✓":""}</span>
+          <p className="mb-2 text-xs text-[var(--text-secondary)]">Selecione uma empresa, criptomoeda ou outro investimento.</p>
+          <button type="button" aria-expanded={assetPickerOpen} aria-controls="robot-asset-options" onClick={()=>setAssetPickerOpen(v=>!v)} className="flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-primary)] px-4 py-3 text-left hover:border-[var(--accent-primary)]">
+            <span className="min-w-0"><span className="block truncate text-sm font-semibold">{chosenAsset?displayName(chosenAsset):"Escolher ativo"}</span><span className="mt-0.5 block text-xs text-[var(--text-secondary)]">{chosenAsset?categoryFor(chosenAsset):"Toque para pesquisar"}</span></span>
+            <ChevronDown size={18} className={`shrink-0 text-[var(--text-secondary)] transition-transform ${assetPickerOpen?"rotate-180":""}`}/>
+          </button>
+          {assetPickerOpen&&<div id="robot-asset-options" className="mt-2 overflow-hidden rounded-xl border border-[var(--border-primary)] bg-[var(--bg-primary)]">
+            <div className="space-y-2 border-b border-[var(--border-primary)] p-3">
+              <label className="flex items-center gap-2 rounded-lg border border-[var(--border-primary)] px-3 focus-within:border-[var(--accent-primary)]">
+                <Search size={16} className="shrink-0 text-[var(--text-secondary)]"/>
+                <input autoFocus type="search" value={assetSearch} onChange={e=>setAssetSearch(e.target.value)} placeholder="Buscar por nome ou código" aria-label="Pesquisar ativos" className="min-w-0 w-full bg-transparent py-2.5 text-sm outline-none"/>
+              </label>
+              <div className="flex gap-1.5 overflow-x-auto pb-1" aria-label="Categorias de ativos">
+                {assetCategories.map(c=><button key={c} type="button" onClick={()=>setAssetCategory(c)} aria-pressed={assetCategory===c} className={`shrink-0 rounded-full border px-3 py-1.5 text-xs ${assetCategory===c?"border-[var(--accent-primary)] bg-[var(--accent-primary)] text-white":"border-[var(--border-primary)] text-[var(--text-secondary)]"}`}>{c}</button>)}
+              </div>
+            </div>
+            <div className="max-h-52 overflow-y-auto p-1.5" role="listbox" aria-label="Ativos encontrados">
+              {filteredAssets.length===0?<p className="px-3 py-4 text-xs text-[var(--text-secondary)]">Nenhum ativo com nome disponível nesta categoria.</p>:filteredAssets.map(a=><button key={a.symbol} type="button" role="option" aria-selected={symbol===a.symbol} onClick={()=>{setSymbol(a.symbol);setAssetPickerOpen(false);setAssetSearch("");}} className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left hover:bg-[var(--bg-muted)] ${symbol===a.symbol?"bg-[var(--accent-primary)]/10":""}`}>
+                <span className="min-w-0"><span className="block truncate text-sm font-medium">{displayName(a)}</span><span className="block text-[11px] text-[var(--text-secondary)]">{categoryFor(a)}</span></span>
+                {symbol===a.symbol?<Check size={17} className="shrink-0 text-[var(--accent-primary)]"/>:<span className="shrink-0 text-[11px] text-[var(--text-secondary)]">{a.symbol}</span>}
               </button>)}
-          </div>
-          <p className="mt-2 text-xs text-[var(--text-secondary)]">Selecionado: <strong className="text-[var(--text-primary)]">{chosenAsset?.name||symbol} ({symbol})</strong></p>
+            </div>
+          </div>}
         </section>
         <section aria-labelledby="robot-investment-heading" className="rounded-xl border border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/5 p-4 sm:p-5">
           <h3 id="robot-investment-heading" className="text-sm font-semibold">Valor do investimento</h3>
