@@ -87,15 +87,16 @@ class TradingRobotAdmin(ModelAdmin):
     search_fields = ('symbol', 'asset_name', 'user__email')
     actions = None
     fieldsets = (
-        ('Programação do resultado', {
-            'description': 'Defina quando o robô será finalizado e o resultado percentual demonstrativo. Ambos os campos são opcionais, mas devem ser preenchidos juntos.',
-            'fields': (('scheduled_end_at', 'scheduled_pnl_percent'),),
+        ('Informações do robô', {
+            'description': 'Resumo da conta, ativo e situação atual. Informações somente para consulta.',
+            'fields': (('robot_number', 'status_summary'), ('user', 'asset_name'),
+                       ('symbol', 'capital', 'equity')),
         }),
-        ('Identificação e situação', {
-            'fields': ('user', 'asset_name', 'symbol', 'status', 'capital', 'equity'),
-            'classes': ('collapse',),
+        ('Configurar finalização', {
+            'description': 'Escolha a data no calendário, digite a hora (HH:MM) e informe o percentual de lucro ou prejuízo. O resultado será aplicado apenas no encerramento programado.',
+            'fields': ('scheduled_end_at', 'scheduled_pnl_percent'),
         }),
-        ('Configurações originais', {
+        ('Parâmetros originais', {
             'fields': ('take_profit', 'stop_loss', 'indicators'),
             'classes': ('collapse',),
         }),
@@ -104,8 +105,17 @@ class TradingRobotAdmin(ModelAdmin):
             'classes': ('collapse',),
         }),
     )
-    readonly_fields = ('user', 'symbol', 'asset_name', 'capital', 'equity', 'status',
-                       'take_profit', 'stop_loss', 'indicators', 'created_at', 'closed_at', 'closed_reason')
+    readonly_fields = ('robot_number', 'status_summary', 'user', 'symbol', 'asset_name',
+                       'capital', 'equity', 'take_profit', 'stop_loss', 'indicators',
+                       'created_at', 'closed_at', 'closed_reason')
+
+    @admin.display(description='Número')
+    def robot_number(self, obj):
+        return self.robot_label(obj) if obj and obj.pk else 'Novo robô'
+
+    @admin.display(description='Status atual')
+    def status_summary(self, obj):
+        return self.status_badge(obj) if obj and obj.pk else '—'
 
     @admin.display(description='Robô')
     def robot_label(self, obj):
