@@ -295,6 +295,12 @@ function TradePageContent() {
   const [positionsTab, setPositionsTab] = useState<"OPEN" | "CLOSED">("OPEN");
 
   const closeSimulatedPosition = async (id: string) => {
+    const position = positions.find(p => p.id === id);
+    if (!position) return;
+    if (!getMarketStatusLocal("US", position.symbol).isOpen) {
+      setMessage({ type: "error", text: "Mercado fechado para este ativo. O encerramento estará disponível na próxima sessão regular." });
+      return;
+    }
     if (!window.confirm("Encerrar esta posição pelo preço atual?")) return;
     setClosingPositionId(id);
     try {
@@ -828,7 +834,7 @@ function TradePageContent() {
                           <td className="px-3 py-3 font-mono">{p.marketPrice === undefined ? (p.exitPrice === null ? "—" : `${p.exitPrice.toFixed(2)}`) : `${p.marketPrice.toFixed(2)}`}</td>
                           <td className={`px-3 py-3 font-mono ${pnl === undefined || pnl === null ? "" : pnl >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{pnl === undefined || pnl === null ? "—" : `${pnl.toFixed(2)}`}</td>
                           <td className="px-3 py-3">
-                            {p.status === "OPEN" ? <button type="button" disabled={closingPositionId !== null} onClick={() => void closeSimulatedPosition(p.id)} className="rounded border border-[var(--border-primary)] px-2 py-1 hover:bg-[var(--bg-muted)] disabled:opacity-50">{closingPositionId === p.id ? "Encerrando…" : "Encerrar"}</button> : <span className="text-[var(--text-muted)]">Encerrada</span>}
+                            {p.status === "OPEN" ? <button type="button" disabled={closingPositionId !== null || !getMarketStatusLocal("US", p.symbol).isOpen} title={!getMarketStatusLocal("US", p.symbol).isOpen ? "Mercado fechado — encerramento indisponível" : "Encerrar posição"} onClick={() => void closeSimulatedPosition(p.id)} className="rounded border border-[var(--border-primary)] px-2 py-1 hover:bg-[var(--bg-muted)] disabled:opacity-50">{closingPositionId === p.id ? "Encerrando…" : "Encerrar"}</button> : <span className="text-[var(--text-muted)]">Encerrada</span>}
                           </td>
                         </tr>
                       );
