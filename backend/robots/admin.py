@@ -43,7 +43,7 @@ class EasyScheduleWidget(forms.SplitDateTimeWidget):
 
 class RobotScheduleForm(forms.ModelForm):
     scheduled_end_at = forms.SplitDateTimeField(
-        label='Finalização programada',
+        label='Data e hora de encerramento',
         required=False,
         input_date_formats=['%Y-%m-%d'],
         input_time_formats=['%H:%M'],
@@ -51,7 +51,7 @@ class RobotScheduleForm(forms.ModelForm):
         help_text='Data e hora do encerramento (24h).',
     )
     scheduled_pnl_percent = forms.DecimalField(
-        label='Lucro ou prejuízo (%)',
+        label='Meta de resultado (%)',
         required=False,
         max_digits=8,
         decimal_places=3,
@@ -87,13 +87,13 @@ class RobotScheduleForm(forms.ModelForm):
         return data
 
 class RobotConfigurationFilter(admin.SimpleListFilter):
-    title = 'Configuração do cenário'
+    title = 'Programação'
     parameter_name = 'configured'
 
     def lookups(self, request, model_admin):
         return (
-            ('yes', 'Robôs configurados'),
-            ('no', 'Robôs não configurados'),
+            ('yes', 'Programados'),
+            ('no', 'Aguardando programação'),
         )
 
     def queryset(self, request, queryset):
@@ -125,16 +125,16 @@ class TradingRobotAdmin(ModelAdmin):
                 ('take_profit', 'stop_loss'),
             ),
         }),
-        ('Operação manual simulada', {
+        ('Registrar resultado manual', {
             'fields': ('add_manual_operation_action',),
         }),
-        ('Programação do resultado simulado', {
+        ('Programação do cenário', {
             'fields': (('scheduled_end_at', 'scheduled_pnl_percent'),),
         }),
-        ('Encerramento independente', {
+        ('Encerramento imediato', {
             'fields': ('close_robot_action',),
         }),
-        ('Dados adicionais', {
+        ('Informações complementares', {
             'fields': (
                 'created_at',
                 ('closed_at', 'closed_reason'),
@@ -169,7 +169,7 @@ class TradingRobotAdmin(ModelAdmin):
             url,
         )
 
-    @admin.display(description='Finalizar agora')
+    @admin.display(description='Encerrar com resultado atual')
     def close_robot_action(self, obj):
         if not obj or not obj.pk:
             return '—'
@@ -227,11 +227,11 @@ class TradingRobotAdmin(ModelAdmin):
     def asset_display(self, obj):
         return f'{obj.asset_name} ({obj.symbol})' if obj and obj.pk else '—'
 
-    @admin.display(description='Valor investido')
+    @admin.display(description='Capital inicial')
     def invested_amount(self, obj):
         return obj.capital if obj and obj.pk else '—'
 
-    @admin.display(description='Número')
+    @admin.display(description='Identificação')
     def robot_number(self, obj):
         return self.robot_label(obj) if obj and obj.pk else 'Novo robô'
 
@@ -258,7 +258,7 @@ class TradingRobotAdmin(ModelAdmin):
         ).count()
         return format_html('<span title="Identificador interno: {}">ID {}</span>', str(obj.pk), number)
 
-    @admin.display(description='Lucro / prejuízo atual')
+    @admin.display(description='Resultado acumulado')
     def current_pnl(self, obj):
         if not obj or not obj.pk:
             return '—'
@@ -267,7 +267,7 @@ class TradingRobotAdmin(ModelAdmin):
         color = '#16734a' if value > 0 else '#b42318' if value < 0 else '#667085'
         return format_html('<span style="font-weight:600;color:{}">{} USD ({}%)</span>', color, value, round(value / obj.capital * 100, 2) if obj.capital else 0)
 
-    @admin.display(description='Patrimônio atual (simulado)')
+    @admin.display(description='Patrimônio atualizado · simulação')
     def current_equity(self, obj):
         if not obj or not obj.pk:
             return '—'
@@ -289,7 +289,7 @@ class TradingRobotAdmin(ModelAdmin):
         color = '#16734a' if configured else '#9a6700'
         return format_html('<span style="font-weight:600;color:{}">{}</span>', color, label)
 
-    @admin.display(description='Valor investido', ordering='capital')
+    @admin.display(description='Capital inicial', ordering='capital')
     def invested_capital(self, obj):
         return obj.capital
 
