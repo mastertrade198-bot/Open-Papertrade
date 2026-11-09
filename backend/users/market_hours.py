@@ -98,7 +98,14 @@ def is_market_open(market: str, symbol: str, now: datetime | None = None) -> dic
         dict with keys: is_open, reason, market_name, display_hours, source
     """
     # Crypto trades 24/7
-    if '-USD' in symbol.upper():
+    normalized = symbol.strip().upper()
+    crypto_bases = {
+        'BTC', 'ETH', 'SOL', 'XRP', 'BNB', 'ADA', 'DOGE', 'AVAX',
+        'LINK', 'SHIB', 'DOT', 'LTC', 'BCH', 'UNI', 'AAVE', 'ATOM',
+        'NEAR', 'ICP', 'FIL', 'ETC', 'XLM', 'ALGO', 'HBAR', 'PEPE',
+    }
+    base = normalized.removesuffix('-USDT').removesuffix('-USD')
+    if normalized.endswith(('-USD', '-USDT')) or base in crypto_bases:
         return {
             'is_open': True,
             'reason': 'Crypto markets are always open',
