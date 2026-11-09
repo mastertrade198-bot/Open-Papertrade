@@ -110,7 +110,6 @@ export default function HistoryPage() {
     <div className="flex h-full bg-[var(--bg-primary)]">
       <Sidebar />
       <main className="flex-1 flex flex-col gap-7 py-8 px-10 overflow-auto">
-        <LeveragedTradeHistory />
         <PageHeader
           title="Histórico"
           subtitle="Consulte todas as suas operações e transações"
@@ -118,6 +117,8 @@ export default function HistoryPage() {
           primaryButtonIcon="download"
           onPrimaryClick={exportCSV}
         />
+
+        <LeveragedTradeHistory />
 
         {/* Metrics Row */}
         <div className="flex gap-4">
