@@ -159,18 +159,14 @@ export default function Home() {
           <div><h3 className="text-sm font-semibold text-white">Sua conta</h3><nav aria-label="Acesso à conta" className="mt-5 flex flex-col gap-3 text-sm"><Link href="/login" className="hover:text-white">Entrar</Link><Link href="/signup" className="hover:text-white">Criar conta</Link><a href="#perguntas" className="hover:text-white">Perguntas frequentes</a><a href="#avaliacoes" className="hover:text-white">Experiência da comunidade</a></nav></div>
           <div><h3 className="text-sm font-semibold text-white">Informações importantes</h3><div className="mt-5 space-y-3 text-sm leading-6"><p>Negociação demonstrativa, sem envio de ordens a bolsas de valores.</p><p>Cotações sujeitas a atrasos e disponibilidade das fontes integradas.</p><p>O conteúdo da plataforma não constitui recomendação individual de investimento.</p></div></div>
         </div>
-        <div className="border-b border-white/10 py-9">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between"><h3 className="text-sm font-semibold text-white">Políticas Legais Master Trade</h3><p className="text-xs text-[#9BB1C6]">Documentação institucional em preparação</p></div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {[
-              { title: "Compliance", detail: "Conformidade e boas práticas" },
-              { title: "Privacidade", detail: "Proteção de dados pessoais" },
-              { title: "Gestão de Risco", detail: "Riscos e controles" },
-              { title: "AML", detail: "Prevenção à lavagem de dinheiro" },
-              { title: "KYC", detail: "Conheça seu cliente" },
-            ].map(policy => <div key={policy.title} className="rounded-xl border border-white/10 bg-white/[.035] p-4"><p className="text-sm font-semibold text-white">{policy.title}</p><p className="mt-1 text-xs leading-5 text-[#9BB1C6]">{policy.detail}</p><span className="mt-3 inline-block text-[11px] text-[#64D9C2]">Documento em preparação</span></div>)}
+        <div className="border-b border-white/10 py-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-7">
+            <h3 className="shrink-0 text-xs font-semibold text-white">Políticas Legais</h3>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-[#9BB1C6]">
+              {["Compliance", "Privacidade", "Gestão de Risco", "AML", "KYC"].map(policy => <span key={policy} title="Documento em preparação" className="cursor-default transition-colors hover:text-white">{policy}</span>)}
+            </div>
+            <span className="text-[10px] text-[#7890A6] sm:ml-auto sm:whitespace-nowrap">Documentos em preparação</span>
           </div>
-          <p className="mt-4 text-xs leading-5 text-[#9BB1C6]">Os documentos serão disponibilizados nesta área após elaboração e aprovação. Esta seção não representa declaração de registro ou autorização regulatória.</p>
         </div>
         <div className="grid gap-6 border-b border-white/10 py-9 lg:grid-cols-[190px_1fr]"><h3 className="text-sm font-semibold text-white">Avisos e riscos</h3><div className="space-y-3 text-xs leading-6 text-[#9BB1C6]"><p>A Master Trade disponibiliza um ambiente de demonstração e aprendizado. Saldos, ordens, resultados e operações simuladas não representam recursos financeiros reais, custódia de ativos ou execução de investimentos.</p><p>Dados e preços de mercado podem apresentar atrasos, interrupções ou diferenças em relação às fontes oficiais. Exemplos, resultados históricos e simulações não representam promessa de rentabilidade ou garantia de desempenho futuro.</p><p>Os modelos de cartões exibidos nesta página são conceitos visuais, não cartões de pagamento emitidos ou produtos financeiros disponíveis.</p></div></div>
         <div className="flex flex-col gap-4 pt-7 text-xs leading-6 sm:flex-row sm:items-center sm:justify-between"><p>© {new Date().getFullYear()} Master Trade. Todos os direitos reservados.</p><p>Informação clara. Experiência responsável.</p></div>
