@@ -109,6 +109,20 @@ function TradePageContent() {
     if (showAssetMenu) void refreshCatalog();
   }, [showAssetMenu, refreshCatalog]);
 
+  const cryptoNames: Record<string, string> = {
+    BTC: "Bitcoin", ETH: "Ethereum", BNB: "BNB", XRP: "XRP", SOL: "Solana",
+    ADA: "Cardano", DOGE: "Dogecoin", AVAX: "Avalanche", LINK: "Chainlink",
+    SHIB: "Shiba Inu", DOT: "Polkadot", LTC: "Litecoin", BCH: "Bitcoin Cash",
+    UNI: "Uniswap", AAVE: "Aave", ATOM: "Cosmos", NEAR: "NEAR Protocol",
+    ICP: "Internet Computer", FIL: "Filecoin", ETC: "Ethereum Classic",
+    XLM: "Stellar", ALGO: "Algorand", HBAR: "Hedera", PEPE: "Pepe",
+  };
+  const resolveCryptoName = (symbol: string, name?: string) => {
+    const base = symbol.toUpperCase().replace(/(?:-USD|\/USD|USDT|USD)$/i, "");
+    const known = cryptoNames[base];
+    return known && (!name || name.toUpperCase() === symbol.toUpperCase() || name.toUpperCase() === base) ? known : name || known || symbol;
+  };
+
   const availableAssets = useMemo(() => {
     const bySymbol = new Map<string, CatalogAsset>();
     for (const asset of catalogAssets) {
@@ -125,7 +139,7 @@ function TradePageContent() {
         bySymbol.set(asset.symbol, { symbol: asset.symbol, name: asset.name || asset.symbol, category: "Criptomoedas", currency: "USD" });
       }
     }
-    return Array.from(bySymbol.values()).sort((a, b) => a.category.localeCompare(b.category, "pt-BR") || a.symbol.localeCompare(b.symbol));
+    return Array.from(bySymbol.values()).map(asset => asset.category === "Criptomoedas" ? { ...asset, name: resolveCryptoName(asset.symbol, asset.name) } : asset).sort((a, b) => a.category.localeCompare(b.category, "pt-BR") || a.symbol.localeCompare(b.symbol));
   }, [catalogAssets, stocks, crypto]);
 
   const displaySymbol = (symbol: string) =>
@@ -330,7 +344,7 @@ function TradePageContent() {
 
 // Use selected quote price or fall back to context
   const assetNameBySymbol = useMemo(() => new Map(availableAssets.map(asset => [asset.symbol.toUpperCase(), asset.name])), [availableAssets]);
-  const getAssetFullName = (symbol: string) => assetNameBySymbol.get(symbol.toUpperCase()) || getStockBySymbol(symbol)?.name || (selectedQuote?.symbol === symbol ? selectedQuote.name : undefined) || symbol;
+  const getAssetFullName = (symbol: string) => { const name = assetNameBySymbol.get(symbol.toUpperCase()) || getStockBySymbol(symbol)?.name || (selectedQuote?.symbol === symbol ? selectedQuote.name : undefined); return resolveCryptoName(symbol, name); };
   const selectedAssetName = getAssetFullName(selectedSymbol);
 
   const activeQuote = marketQuotes[selectedSymbol.toUpperCase()] ?? (selectedQuote?.symbol?.toUpperCase() === selectedSymbol.toUpperCase() ? selectedQuote : null);
