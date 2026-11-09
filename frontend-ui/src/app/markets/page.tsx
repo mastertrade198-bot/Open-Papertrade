@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Search, Star, ArrowUpRight, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
@@ -11,8 +12,13 @@ import { formatCurrency, formatPercent } from "@/lib/utils";
 type Filter = "all" | "stocks" | "crypto" | "favorites";
 
 export default function MarketsPage() {
+  return <Suspense><MarketsContent /></Suspense>;
+}
+
+function MarketsContent() {
+  const params = useSearchParams();
   const { stocks, crypto, watchlist, addToWatchlist, removeFromWatchlist, refreshPrices, isLoading, lastUpdated } = usePortfolio();
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>(params.get("tab") === "favorites" ? "favorites" : "all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"name" | "change" | "price">("name");
   const [busy, setBusy] = useState<string | null>(null);
@@ -23,12 +29,13 @@ export default function MarketsPage() {
       ...stocks.map(item => ({ ...item, kind: "stocks" as const })),
       ...crypto.map(item => ({ ...item, kind: "crypto" as const })),
     ];
-    const unique = [...new Map(combined.map(item => [item.symbol.toUpperCase(), item])).values()];
+    // Favorites may include assets not present in the popular market lists.
+    const unique = [...new Map([...combined, ...watchlist.map(item => ({ ...item, kind: "stocks" as const }))].map(item => [item.symbol.toUpperCase(), item])).values()];
     return unique.filter(item =>
       (filter === "all" || (filter === "favorites" ? favoriteSet.has(item.symbol.toUpperCase()) : item.kind === filter)) &&
       (item.symbol + " " + item.name).toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR"))
     ).sort((a, b) => sort === "change" ? b.changePercent - a.changePercent : sort === "price" ? b.price - a.price : a.name.localeCompare(b.name));
-  }, [stocks, crypto, filter, favoriteSet, search, sort]);
+  }, [stocks, crypto, watchlist, filter, favoriteSet, search, sort]);
 
   const all = [...stocks, ...crypto];
   const positive = all.filter(item => item.changePercent > 0).length;
