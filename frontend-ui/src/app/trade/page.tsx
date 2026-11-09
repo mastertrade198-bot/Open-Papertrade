@@ -78,7 +78,6 @@ function TradePageContent() {
 
   const [selectedQuote, setSelectedQuote] = useState<StockQuote | null>(null);
   const [showAssetMenu, setShowAssetMenu] = useState(false);
-  const [showRiskControls, setShowRiskControls] = useState(false);
   const [expandedAssetCategory, setExpandedAssetCategory] = useState<string | null>("Ações");
   const [catalogAssets, setCatalogAssets] = useState<CatalogAsset[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
@@ -252,7 +251,7 @@ function TradePageContent() {
   useEffect(() => { void refreshCatalog(); }, [refreshCatalog]);
 
   const [orderType, setOrderType] = useState<"BUY" | "SELL">("BUY");
-  const [marginInput, setMarginInput] = useState("100.00");
+  const [marginInput, setMarginInput] = useState("");
   const [stopLossInput, setStopLossInput] = useState("");
   const [takeProfitInput, setTakeProfitInput] = useState("");
   const [leverage, setLeverage] = useState(10);
@@ -337,7 +336,7 @@ function TradePageContent() {
 
   const currentPrice = selectedQuote?.price || getStockBySymbol(selectedSymbol)?.price || 0;
   const effectivePrice = currentPrice;
-  const margin = Number(marginInput);
+  const margin = marginInput.trim() === "" ? 0 : Number(marginInput);
   const quantity = currentPrice > 0 && leverage > 0 && Number.isFinite(margin) ? (margin * leverage) / currentPrice : 0;
   const estimatedTotal = margin * leverage;
   // Projections use a 1% underlying-price movement unless SL/TP percentages are provided.
@@ -666,7 +665,7 @@ function TradePageContent() {
               <div className="flex flex-col gap-2.5">
                 <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
                   Margem da posição (USD)
-                  <input type="number" min="0.01" step="0.01" value={marginInput} onChange={(e) => setMarginInput(e.target.value)}
+                  <input type="number" min="0.01" step="0.01" placeholder="Informe o valor" value={marginInput} onChange={(e) => setMarginInput(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-md border border-[var(--border-muted)] bg-[var(--bg-card-inner)] font-primary tabular-nums text-base font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
                 </label>
                 <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
@@ -680,20 +679,20 @@ function TradePageContent() {
                   {[0.25, 0.5, 0.75, 1].map(pct => <button key={pct} type="button" onClick={() => setMarginPercent(pct)}
                     className="py-2 rounded-md border border-[var(--border-primary)] text-[11px] font-semibold bg-[var(--bg-card-inner)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]">{pct * 100}%</button>)}
                 </div>
-                <button type="button" aria-expanded={showRiskControls} onClick={() => setShowRiskControls(value => !value)} className="flex items-center justify-between rounded-lg border border-[var(--border-primary)] px-3 py-2 text-xs font-semibold text-[var(--text-secondary)]">Stop Loss / Take Profit<ChevronDown size={15} className={showRiskControls ? "rotate-180" : ""} /></button>
-                {showRiskControls && <div className="grid grid-cols-2 gap-2">
-                  <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
-                    Stop Loss (%)
-                    <input type="number" min="0.01" step="0.01" placeholder="Ex.: 2" value={stopLossInput} onChange={(e) => setStopLossInput(e.target.value)}
-                      className="min-w-0 w-full px-2 py-2 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-sm text-[var(--text-primary)]" />
-                  </label>
-                  <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
-                    Take Profit (%)
-                    <input type="number" min="0.01" step="0.01" placeholder="Ex.: 5" value={takeProfitInput} onChange={(e) => setTakeProfitInput(e.target.value)}
-                      className="min-w-0 w-full px-2 py-2 rounded-lg border border-[var(--border-muted)] bg-transparent font-mono text-sm text-[var(--text-primary)]" />
-                  </label>
-                </div>}
-                {showRiskControls && <p className="text-[11px] text-[var(--text-muted)]">SL/TP são variações do preço do ativo, não da margem.</p>}
+                <div className="border-t border-[var(--border-primary)] pt-3">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">Proteção da operação <span className="font-normal normal-case">(opcional)</span></p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="flex min-w-0 flex-col gap-1 text-xs text-[var(--text-muted)]">Stop Loss (%)
+                      <input type="number" min="0.01" step="0.01" placeholder="Opcional" value={stopLossInput} onChange={e => setStopLossInput(e.target.value)}
+                        className="w-full min-w-0 rounded-md border border-[var(--border-muted)] bg-[var(--bg-card-inner)] px-2 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
+                    </label>
+                    <label className="flex min-w-0 flex-col gap-1 text-xs text-[var(--text-muted)]">Take Profit (%)
+                      <input type="number" min="0.01" step="0.01" placeholder="Opcional" value={takeProfitInput} onChange={e => setTakeProfitInput(e.target.value)}
+                        className="w-full min-w-0 rounded-md border border-[var(--border-muted)] bg-[var(--bg-card-inner)] px-2 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
+                    </label>
+                  </div>
+                  <p className="mt-1.5 text-[10px] text-[var(--text-muted)]">Percentuais sobre o preço do ativo.</p>
+                </div>
                 {(stopLoss !== null || takeProfit !== null) && currentPrice > 0 && (
                   <p className="text-[11px] text-[var(--text-muted)]">
                     {stopLoss !== null && validStopLoss ? `SL estimado: ${formatCurrency(stopLoss, false, { sourceCurrency })}` : ""}
@@ -704,49 +703,11 @@ function TradePageContent() {
                 {(!validStopLoss || !validTakeProfit) && <p className="text-xs text-[var(--accent-red)]">Informe percentuais positivos que resultem em preços válidos para a operação.</p>}
               </div>
 
-              {/* Secondary calculations stay accessible without competing with order entry. */}
-              <details className="group rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)]">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-xs font-semibold text-[var(--text-secondary)] marker:hidden">
-                  Resumo e estimativas
-                  <ChevronDown size={15} className="text-[var(--text-muted)] transition-transform group-open:rotate-180" />
-                </summary>
-                <div className="border-t border-[var(--border-primary)] px-3 py-2">
-              {/* Order Summary */}
-              <div className="flex flex-col gap-0 border-y border-[var(--border-primary)]">
-                <div className="flex items-center justify-between py-1.5 border-b border-[var(--border-primary)]">
-                  <span className="text-xs text-[var(--text-muted)]">
-                    Preço de mercado
-                  </span>
-                  <span className="font-mono text-xs text-[var(--text-primary)]">
-                    {formatCurrency(effectivePrice, false, { sourceCurrency })}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-[var(--border-primary)]">
-                  <span className="text-xs text-[var(--text-muted)]">Quantidade estimada</span>
-                  <span className="font-mono text-xs text-[var(--text-primary)]">
-                    {quantity > 0 ? quantity.toFixed(8) : "—"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-2 py-1.5 border-b border-[var(--border-primary)]">
-                  <span className="text-xs text-[var(--text-muted)]">Possível lucro ({hasProjectedProfitTarget ? "Take Profit" : "alta favorável de 1%"})</span>
-                  <span className="font-mono text-xs font-bold text-[var(--accent-green)]">+{formatCurrency(projectedProfit, false, { convertFromUSD: false })}</span>
-                </div>
-                <div className="flex items-center justify-between gap-2 py-1.5 border-b border-[var(--border-primary)]">
-                  <span className="text-xs text-[var(--text-muted)]">Possível prejuízo ({hasProjectedLossTarget ? "Stop Loss" : "queda desfavorável de 1%"})</span>
-                  <span className="font-mono text-xs font-bold text-[var(--accent-red)]">-{formatCurrency(projectedLoss, false, { convertFromUSD: false })}</span>
-                </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-[var(--border-primary)]">
-                  <span className="text-xs font-medium text-[var(--text-primary)]">
-                    Margem estimada
-                  </span>
-                  <span className="font-mono text-sm font-bold text-[var(--text-primary)]">
-                    {formatCurrency(estimatedMargin, false, { sourceCurrency })}
-                  </span>
-                </div>
+              <div className="flex flex-col gap-1.5 border-t border-[var(--border-primary)] pt-2 text-xs">
+                <div className="flex items-center justify-between gap-2"><span className="text-[var(--text-muted)]">Preço de mercado</span><span className="tabular-nums text-[var(--text-primary)]">{formatCurrency(effectivePrice, false, { sourceCurrency })}</span></div>
+                <div className="flex items-center justify-between gap-2"><span className="text-[var(--text-muted)]">Quantidade estimada</span><span className="tabular-nums text-[var(--text-primary)]">{quantity > 0 ? quantity.toFixed(8) : "—"}</span></div>
+                <div className="flex items-center justify-between gap-2"><span className="text-[var(--text-muted)]">Valor nocional</span><span className="tabular-nums font-semibold text-[var(--text-primary)]">{margin > 0 ? formatCurrency(estimatedTotal, false, { sourceCurrency }) : "—"}</span></div>
               </div>
-
-                </div>
-              </details>
 
               {/* Available Balance */}
               <div className="hidden items-center justify-between text-xs py-1">
