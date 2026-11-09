@@ -4,7 +4,7 @@ import time
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from robots.models import TradingRobot
-from robots.demo_engine import run_demo_tick
+from robots.demo_engine import run_demo_tick, settle_scheduled
 
 class Command(BaseCommand):
     help = "Executa simulações aleatórias (20-30 entradas na primeira hora, ~10/h depois)."
@@ -31,6 +31,12 @@ class Command(BaseCommand):
             active_ids = {robot_id for robot_id, _ in active_robots}
             current_time = timezone.now()
             for robot_id, created_at in active_robots:
+                try:
+                    if settle_scheduled(robot_id):
+                        next_run.pop(robot_id, None)
+                        continue
+                except Exception as exc:
+                    self.stderr.write(f"Agendamento {robot_id}: {exc}")
                 if now < next_run.get(robot_id, 0):
                     continue
                 try:
