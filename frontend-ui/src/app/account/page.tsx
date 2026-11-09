@@ -17,8 +17,6 @@ import {
   PieChart,
   History,
   Award,
-  RotateCcw,
-  AlertTriangle,
   Loader2,
   X,
   Sun,
@@ -128,7 +126,6 @@ export default function AccountPage() {
   // Modal states
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showAparênciaModal, setShowAparênciaModal] = useState(false);
-  const [showResetModal, setShowResetModal] = useState(false);
 
   // Security modal state
   const [securityView, setSecurityView] = useState<'overview' | 'password' | '2fa-setup' | '2fa-disable' | 'api-keys' | 'api-key-created'>('overview');
@@ -339,23 +336,6 @@ export default function AccountPage() {
       setSettings(settings);
       updateTradingSettings({ defaultOrderType: settings.preferences.defaultOrderType });
       setError(err instanceof Error ? err.message : "Não foi possível atualizar as configurações");
-    }
-  };
-
-  // Reset account
-  const handleResetAccount = async () => {
-    setShowResetModal(false);
-    setIsSaving(true);
-    try {
-      await userAPI.resetAccount();
-      await fetchUserData();
-      refreshPrices();
-      refreshPortfolio();
-      showSuccess("Conta redefinida com sucesso");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível redefinir a conta");
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -1034,9 +1014,6 @@ export default function AccountPage() {
               <div className="flex flex-col gap-4">
                 {[
                   { key: "priceAlerts" as const, label: "Alertas de preço", desc: "Receba avisos quando os preços atingirem suas metas" },
-                  { key: "tradeConfirmations" as const, label: "Confirmações de operações", desc: "Confirmar antes de executar operações" },
-                  { key: "weeklyReport" as const, label: "Relatório semanal", desc: "Receba um resumo semanal do desempenho" },
-                  { key: "marketNews" as const, label: "Notícias do mercado", desc: "Notícias e atualizações do mercado" },
                 ].map((item) => (
                   <div key={item.key} className="flex items-center justify-between">
                     <div>
@@ -1074,19 +1051,8 @@ export default function AccountPage() {
               </div>
 
               <div className="flex flex-col gap-4">
-                <div>
-                  <span className="text-xs font-medium text-[var(--text-muted)] mb-2 block">
-                    Execução de ordens
-                  </span>
-                  <p className="text-xs text-[var(--text-secondary)]">
-                    All trades execute at the current market price.
-                  </p>
-                </div>
-
                 {[
                   { key: "confirmTrades" as const, label: "Confirmar antes de negociar" },
-                  { key: "showProfitLoss" as const, label: "Show profit/loss on holdings" },
-                  { key: "compactMode" as const, label: "Modo compacto" },
                 ].map((item) => (
                   <div key={item.key} className="flex items-center justify-between">
                     <span className="text-sm text-[var(--text-primary)]">{item.label}</span>
@@ -1137,31 +1103,8 @@ export default function AccountPage() {
 
               </div>
 
-            {/* Zona de risco */}
+            {/* Encerrar sessão */}
             <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] overflow-hidden">
-              <div className="px-5 pt-4 pb-3">
-                <span className="text-[10px] font-bold tracking-[1.5px] uppercase text-[var(--text-dim)]">Zona de risco</span>
-              </div>
-
-              <button
-                onClick={() => setShowResetModal(true)}
-                disabled={isSaving}
-                className="w-full flex items-center gap-4 px-5 py-4 hover:bg-yellow-500/5 transition-colors border-t border-[var(--border-primary)] group disabled:opacity-50"
-              >
-                <div className="w-9 h-9 rounded-lg bg-yellow-500/10 flex items-center justify-center group-hover:bg-yellow-500/20 transition-colors">
-                  <RotateCcw size={16} className="text-yellow-500" />
-                </div>
-                <div className="flex-1 text-left">
-                  <span className="text-sm font-medium text-[var(--text-primary)] block">
-                    {isSaving ? "Redefinindo..." : "Redefinir conta"}
-                  </span>
-                  <span className="text-[11px] text-[var(--text-dim)]">
-                    Clear all trades, holdings, and alerts
-                  </span>
-                </div>
-                <ChevronRight size={16} className="text-[var(--text-dim)] group-hover:text-yellow-500 transition-colors" />
-              </button>
-
               <button
                 onClick={handleSignOut}
                 className="w-full flex items-center gap-4 px-5 py-4 hover:bg-[var(--accent-red)]/5 transition-colors border-t border-[var(--border-primary)] group"
@@ -1636,62 +1579,6 @@ export default function AccountPage() {
         </div>
       </Modal>
 
-      {/* Redefinir conta Confirmation Modal */}
-      {showResetModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowResetModal(false)} />
-          <div className="relative bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] w-full max-w-md mx-4 shadow-2xl">
-            <div className="p-6 text-center">
-              <div className="w-14 h-14 rounded-full bg-yellow-500/10 flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle size={28} className="text-yellow-500" />
-              </div>
-              <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">Redefinir conta?</h3>
-              <p className="text-sm text-[var(--text-muted)] mb-5">
-                This action cannot be undone. The following will be permanently deleted:
-              </p>
-              <div className="bg-[var(--bg-primary)] rounded-lg p-4 mb-5 text-left space-y-2">
-                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                  <span className="text-yellow-500">&#8226;</span> All trade history will be erased
-                </div>
-                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                  <span className="text-yellow-500">&#8226;</span> All holdings will be removed
-                </div>
-                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                  <span className="text-yellow-500">&#8226;</span> Watchlist and price alerts will be cleared
-                </div>
-                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                  <span className="text-yellow-500">&#8226;</span> All achievements and XP will be reset
-                </div>
-                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                  <span className="text-yellow-500">&#8226;</span> Pending limit orders will be cancelled
-                </div>
-                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                  <span className="text-yellow-500">&#8226;</span> Buying power will reset to initial balance
-                </div>
-              </div>
-              <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-lg px-4 py-3 mb-5">
-                <p className="text-xs text-yellow-500 font-medium">
-                  You can only reset your account once every 30 days.
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowResetModal(false)}
-                  className="flex-1 px-4 py-2.5 rounded-lg border border-[var(--border-primary)] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-muted)] transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleResetAccount}
-                  className="flex-1 px-4 py-2.5 rounded-lg bg-yellow-500 text-black text-sm font-medium hover:bg-yellow-400 transition-colors"
-                >
-                  Redefinir conta
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
