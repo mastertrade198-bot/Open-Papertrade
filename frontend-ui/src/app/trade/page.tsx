@@ -32,7 +32,7 @@ import type { IndicatorId, ChartMode, Drawing } from "@/components/chart/types";
 import type { TimeRange } from "@/lib/api";
 
 import { usePortfolio } from "@/context/PortfolioContext";
-import { formatCurrency, formatPercent, formatTime, getMarketStatus, getMarketStatusLocal, MarketStatus } from "@/lib/utils";
+import { formatCurrency, formatPercent, formatTime, getMarketStatus, getMarketStatusLocal, isCryptoSymbol, MarketStatus } from "@/lib/utils";
 import { stockAPI, userAPI, StockQuote, SearchResult, SimulatedPosition, CatalogAsset } from "@/lib/api";
 import { subscribeCryptoPrices } from "@/lib/cryptoStream";
 
@@ -337,7 +337,7 @@ function TradePageContent() {
 
   useEffect(() => {
     // Crypto is handled synchronously — no API call needed
-    if (selectedSymbol.toUpperCase().includes('-USD')) {
+    if (isCryptoSymbol(selectedSymbol)) {
       setMarketStatus(getMarketStatusLocal(market, selectedSymbol));
       return;
     }
