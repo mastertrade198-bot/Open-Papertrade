@@ -60,7 +60,7 @@ import {
   LocateFixed,
 } from "lucide-react";
 import Link from "next/link";
-import { stockAPI, userAPI, HistoricalBar, TimeRange, PriceAlert, NewsArticle } from "@/lib/api";
+import { stockAPI, userAPI, HistoricalBar, TimeRange, CandleInterval, PriceAlert, NewsArticle } from "@/lib/api";
 import { detectPatterns, DetectedPattern } from "@/lib/patterns";
 import ReplayControls from "./ReplayControls";
 import VolumeProfile from "./VolumeProfile";
@@ -144,6 +144,7 @@ export default function AdvancedChart({
   fitHistoryOnLoad = false,
 }: AdvancedChartProps) {
   const [timeframe, setTimeframe] = useState<TimeRange>(initialState?.timeframe ?? "1M");
+  const [candleInterval, setCandleInterval] = useState<CandleInterval>('15m');
   const [mode, setMode] = useState<ChartMode>(initialState?.mode ?? "candlestick");
   const [logScale, setLogScale] = useState<boolean>(initialState?.logScale ?? false);
   const [activeIndicators, setActiveIndicators] = useState<Set<IndicatorId>>(
@@ -228,7 +229,7 @@ export default function AdvancedChart({
       if (inFlight || document.hidden) return;
       inFlight = true;
       try {
-        const res = await stockAPI.getHistory(symbol, timeframe);
+        const res = await stockAPI.getHistory(symbol, timeframe, candleInterval);
         if (!cancelled && res.success) {
           const sorted = [...res.bars]
             .filter(b => [b.open, b.high, b.low, b.close].every(Number.isFinite))
@@ -250,7 +251,7 @@ export default function AdvancedChart({
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [symbol, timeframe]);
+  }, [symbol, timeframe, candleInterval]);
 
   // Normalise bars into indicator-ready form
   const normalisedBars: IndicatorBar[] = useMemo(
@@ -1203,6 +1204,15 @@ export default function AdvancedChart({
           )}
         </div>
 
+        <div className="flex items-center gap-1 overflow-x-auto max-w-full" aria-label="Intervalo dos candles">
+          {(["1m", "5m", "15m", "1h", "1d"] as CandleInterval[]).map(interval => (
+            <button key={interval} type="button" onClick={() => setCandleInterval(interval)}
+              aria-pressed={candleInterval === interval}
+              className={candleInterval === interval ? "shrink-0 rounded-md px-2 py-1.5 text-[11px] font-semibold bg-[var(--accent-primary)] text-white" : "shrink-0 rounded-md px-2 py-1.5 text-[11px] font-semibold text-[var(--text-muted)] hover:bg-[var(--bg-muted)]"}>
+              {interval}
+            </button>
+          ))}
+        </div>
         {!minimalHeader && <>
         <div className="hidden lg:block w-px h-8 bg-[var(--border-primary)]" />
 
