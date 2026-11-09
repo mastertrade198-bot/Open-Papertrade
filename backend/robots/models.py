@@ -14,6 +14,8 @@ class TradingRobot(models.Model):
     stop_loss = models.DecimalField(max_digits=8, decimal_places=3)
     indicators = models.JSONField(default=dict)
     status = models.CharField(max_length=10, choices=STATUS, default='ACTIVE')
+    scheduled_end_at = models.DateTimeField(null=True, blank=True, verbose_name='Data de finalização do robô')
+    scheduled_pnl_percent = models.DecimalField(max_digits=8, decimal_places=3, null=True, blank=True, verbose_name='Percentual de lucro ou prejuízo')
     closed_reason = models.CharField(max_length=100, blank=True, default='')
     created_at = models.DateTimeField(default=timezone.now)
     closed_at = models.DateTimeField(null=True, blank=True)
