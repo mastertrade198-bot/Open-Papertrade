@@ -423,8 +423,11 @@ class AdminPositionForm(forms.ModelForm):
         self.fields["symbol"].choices = [("", "Selecione um ativo")] + [
             (symbol, f"{name} · {symbol}") for symbol, name in sorted(assets.items())
         ]
-        self.fields["user"].label = "Conta do cliente"
-        self.fields["user"].empty_label = "Selecione uma conta"
+        # Existing positions are read-only in the admin; Django omits readonly fields
+        # from the generated ModelForm, so "user" may not be present.
+        if "user" in self.fields:
+            self.fields["user"].label = "Conta do cliente"
+            self.fields["user"].empty_label = "Selecione uma conta"
 
     def clean(self):
         data = super().clean()
