@@ -370,23 +370,155 @@ class UserProfileAdmin(ModelAdmin):
 
 
 
-# Operational records are visible but not editable here: changing a leveraged
-# position must go through the audited position-management API.
+# Administrative paper-trading actions are explicitly audited and bypass market hours.
+# They do not represent exchange executions.
+class AdminPositionForm(forms.ModelForm):
+    class Meta:
+        model = Position
+        fields = ("user", "symbol", "name", "side", "margin", "leverage",
+                  "entry_price", "stop_loss", "take_profit")
+
+    def clean(self):
+        data = super().clean()
+        margin = data.get("margin")
+        leverage = data.get("leverage")
+        price = data.get("entry_price")
+        symbol = (data.get("symbol") or "").strip().upper()
+        if margin is not None and margin <= 0:
+            self.add_error("margin", "A margem deve ser positiva.")
+        if leverage is not None and not (Decimal("1") <= leverage <= Decimal("100")):
+            self.add_error("leverage", "Alavancagem permitida: 1x a 100x.")
+        if price is not None and price <= 0:
+            self.add_error("entry_price", "Informe um preço de referência positivo.")
+        if not symbol:
+            self.add_error("symbol", "Informe o símbolo.")
+        data["symbol"] = symbol
+        return data
+
+
 @admin.register(Position)
 class PositionAdmin(ModelAdmin):
-    list_display = ("user", "symbol", "side", "status", "quantity", "entry_price", "leverage", "margin", "realized_pnl", "opened_at")
+    form = AdminPositionForm
+    list_display = ("user", "symbol", "side", "status", "quantity", "entry_price",
+                    "leverage", "margin", "realized_pnl", "opened_at")
     list_filter = ("status", "side", "opened_at")
     search_fields = ("symbol", "user__name", "user__email")
-    readonly_fields = tuple(field.name for field in Position._meta.fields)
-
-    def has_add_permission(self, request):
-        return False
+    actions = ("close_simulated_positions",)
+    readonly_fields = ("id", "quantity", "notional_value", "status", "exit_price",
+                       "realized_pnl", "opened_at", "closed_at", "updated_at")
+    fieldsets = (
+        ("Posição simulada · registro administrativo", {
+            "fields": ("user", "symbol", "name", "side", "margin", "leverage",
+                       "entry_price", "stop_loss", "take_profit"),
+            "description": "Registro manual de simulação, inclusive fora do pregão. "
+                           "O preço informado é uma referência administrativa, não uma execução em bolsa.",
+        }),
+        ("Resultado e auditoria", {
+            "fields": ("id", "quantity", "notional_value", "status", "exit_price",
+                       "realized_pnl", "opened_at", "closed_at", "updated_at"),
+        }),
+    )
 
     def has_change_permission(self, request, obj=None):
-        return False
+        # Existing positions cannot be silently edited.
+        if obj is not None:
+            return False
+        return super().has_change_permission(request, obj)
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+    def save_model(self, request, obj, form, change):
+        if change:
+            raise PermissionDenied("Posições existentes não podem ser alteradas por este formulário.")
+        from decimal import ROUND_HALF_UP
+        from .models import balance_context
+        from .position_views import money, QTY_STEP
+        with transaction.atomic():
+            account = UserProfile.objects.select_for_update().get(pk=obj.user_id)
+            if account.buying_power < obj.margin:
+                raise forms.ValidationError("Saldo insuficiente para reservar a margem.")
+            obj.notional_value = money(obj.margin * obj.leverage)
+            obj.quantity = (obj.notional_value / obj.entry_price).quantize(
+                QTY_STEP, rounding=ROUND_HALF_UP)
+            if obj.quantity <= 0:
+                raise forms.ValidationError("Quantidade calculada inválida.")
+            obj.status = Position.Status.OPEN
+            obj.save()
+            before = account.buying_power
+            account.buying_power = money(before - obj.margin)
+            token = balance_context.set({
+                "category": "POSITION_MARGIN",
+                "description": f"Margem de posição simulada registrada pelo admin: {obj.symbol}",
+            })
+            try:
+                account.save(update_fields=["buying_power", "updated_at"])
+            finally:
+                balance_context.reset(token)
+            PositionAuditLog.objects.create(
+                position=obj, actor=None, action="ADMIN_CREATE",
+                old_values={"balance": str(before)},
+                new_values={"balance": str(account.buying_power),
+                            "entry_price": str(obj.entry_price),
+                            "margin": str(obj.margin),
+                            "leverage": str(obj.leverage),
+                            "admin_user": request.user.get_username(),
+                            "simulation": True},
+            )
+
+    @admin.action(description="Encerrar posições simuladas selecionadas (preço de referência)")
+    def close_simulated_positions(self, request, queryset):
+        from .models import balance_context
+        from .position_views import get_usd_quote, money, PRICE_STEP
+        completed = 0
+        skipped = 0
+        for selected in queryset.filter(status=Position.Status.OPEN):
+            try:
+                # Fetch a reference price outside the transaction. The reference
+                # may be stale when the market is closed, and is never called a fill.
+                _, reference_price = get_usd_quote(selected.symbol)
+                with transaction.atomic():
+                    account = UserProfile.objects.select_for_update().get(pk=selected.user_id)
+                    position = Position.objects.select_for_update().get(pk=selected.pk)
+                    if position.status != Position.Status.OPEN:
+                        skipped += 1
+                        continue
+                    pnl = max(position.unrealized_pnl(reference_price), -position.margin)
+                    before = account.buying_power
+                    account.buying_power = money(before + position.margin + pnl)
+                    token = balance_context.set({
+                        "category": "POSITION_SETTLEMENT",
+                        "description": f"Encerramento administrativo simulado: {position.symbol}",
+                    })
+                    try:
+                        account.save(update_fields=["buying_power", "updated_at"])
+                    finally:
+                        balance_context.reset(token)
+                    position.status = Position.Status.CLOSED
+                    position.exit_price = reference_price.quantize(PRICE_STEP)
+                    position.realized_pnl = pnl
+                    position.closed_at = timezone.now()
+                    position.save(update_fields=["status", "exit_price", "realized_pnl",
+                                                 "closed_at", "updated_at"])
+                    PositionAuditLog.objects.create(
+                        position=position, actor=None, action="ADMIN_CLOSE",
+                        old_values={"status": "OPEN", "balance": str(before)},
+                        new_values={"status": "CLOSED", "exit_price": str(position.exit_price),
+                                    "realized_pnl": str(pnl),
+                                    "balance": str(account.buying_power),
+                                    "admin_user": request.user.get_username(),
+                                    "simulation": True, "reference_price_only": True},
+                    )
+                    completed += 1
+            except Exception:
+                skipped += 1
+        if completed:
+            self.message_user(request, f"{completed} posição(ões) simulada(s) encerrada(s). "
+                              "O preço utilizado é uma referência, não execução em bolsa.",
+                              level=messages.SUCCESS)
+        if skipped:
+            self.message_user(request, f"{skipped} posição(ões) não encerrada(s); "
+                              "verifique disponibilidade da cotação.", level=messages.WARNING)
 
 
 @admin.register(BalanceTransaction)
