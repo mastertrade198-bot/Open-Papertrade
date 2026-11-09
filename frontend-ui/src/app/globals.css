@@ -280,3 +280,8 @@ div:has(> .master-topnav) > main {
   .trade-terminal .trade-overview-card > strong { font-size: 14px; }
   .trade-terminal .trade-terminal-heading { align-items: start; }
 }
+
+/* Keep mobile pages and order buttons clear of the fixed navigation. */
+@media (max-width: 1023px) {
+  body:has(.master-mobile-nav) { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+}
