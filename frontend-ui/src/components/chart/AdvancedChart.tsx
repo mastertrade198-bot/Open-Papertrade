@@ -337,6 +337,8 @@ export default function AdvancedChart({
     let main: ISeriesApi<SeriesType>;
     if (mode === "candlestick" || mode === "heikinAshi") {
       main = chart.addSeries(CandlestickSeries, {
+        lastValueVisible: false,
+        priceLineVisible: false,
         upColor: "#22C55E",
         downColor: "#EF4444",
         borderUpColor: "#22C55E",
@@ -345,11 +347,11 @@ export default function AdvancedChart({
         wickDownColor: "#EF4444",
       });
     } else if (mode === "bar") {
-      main = chart.addSeries(BarSeries, { upColor: "#22C55E", downColor: "#EF4444" });
+      main = chart.addSeries(BarSeries, { upColor: "#22C55E", downColor: "#EF4444", lastValueVisible: false, priceLineVisible: false });
     } else if (mode === "line") {
-      main = chart.addSeries(LineSeries, { color: "#FF5C00", lineWidth: 2 });
+      main = chart.addSeries(LineSeries, { color: "#FF5C00", lineWidth: 2, lastValueVisible: false, priceLineVisible: false });
     } else {
-      main = chart.addSeries(AreaSeries, {
+      main = chart.addSeries(AreaSeries, { lastValueVisible: false, priceLineVisible: false,
         topColor: "rgba(255, 92, 0, 0.4)",
         bottomColor: "rgba(255, 92, 0, 0.02)",
         lineColor: "#FF5C00",
@@ -1113,6 +1115,15 @@ export default function AdvancedChart({
     link.click();
   };
 
+  // Display the latest computed indicator value when the cursor is not hovering.
+  const getIndicatorReadout = (id: IndicatorId): number | null => {
+    const hovered = indicatorValues[id];
+    if (hovered !== null && hovered !== undefined) return hovered;
+    const series = indicatorSeriesRef.current.get(id);
+    const last = series?.data()?.at(-1) as { value?: number } | undefined;
+    return typeof last?.value === "number" && Number.isFinite(last.value) ? last.value : null;
+  };
+
   // Group indicators by category for the menu
   const indicatorsByCategory = useMemo(() => {
     const groups: Record<string, IndicatorId[]> = {};
@@ -1354,21 +1365,21 @@ export default function AdvancedChart({
           {Array.from(activeIndicators).map((id) => {
             const meta = INDICATOR_CATALOG[id];
             const available = normalisedBars.length >= meta.minBars;
-            const val = indicatorValues[id];
+            const val = getIndicatorReadout(id);
             return (
               <span
                 key={id}
                 className={`flex items-center gap-1 ${!available ? "opacity-40" : ""}`}
                 title={
                   !available
-                    ? `${meta.label} needs ${meta.minBars} bars (have ${normalisedBars.length})`
+                    ? `${meta.label}: são necessários ${meta.minBars} candles; disponíveis ${normalisedBars.length}`
                     : undefined
                 }
               >
                 <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta.color }} />
-                <span className="text-[var(--text-muted)]">{meta.shortLabel}</span>
+                <span className="text-[var(--text-muted)]" title={meta.label}>{meta.shortLabel}</span>
                 {!available ? (
-                  <span className="text-[var(--accent-red)] text-[9px] font-bold">n/a</span>
+                  <span className="text-[var(--text-muted)] text-[9px] font-medium">Dados insuficientes</span>
                 ) : (
                   val !== null && val !== undefined && (
                     <span className="text-[var(--text-primary)]">{val.toFixed(2)}</span>
