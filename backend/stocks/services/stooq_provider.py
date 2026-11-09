@@ -5,7 +5,7 @@ Not a live executable quote feed. Unsupported for crypto and intraday bars.
 import csv
 import io
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 
 import requests
@@ -33,9 +33,10 @@ def _rows(symbol: str, limit: int = 400) -> list[dict]:
     if not ticker:
         return []
     try:
+        since = (datetime.now(timezone.utc) - timedelta(days=max(limit * 2, 14))).strftime("%Y%m%d")
         response = SESSION.get(
             "https://stooq.com/q/d/l/",
-            params={"s": ticker, "i": "d"},
+            params={"s": ticker, "i": "d", "d1": since},
             timeout=(3, 7),
             headers={"User-Agent": "MasterTradeSimulator/1.0"},
         )
