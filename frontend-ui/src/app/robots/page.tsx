@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import Link from "next/link";
 import Sidebar from "@/components/Sidebar";
 import { API_HOST } from "@/lib/api";
+import { usePortfolio } from "@/context/PortfolioContext";
 
 type Robot = {id:string;displayNumber:number;symbol:string;assetName:string;capital:number;equity:number;pnl:number;pnlPercent:number;status:string;createdAt:string};
 type Asset = {symbol:string;name:string;category?:string;assetType?:string;type?:string};
@@ -23,6 +24,7 @@ const indicatorSettings:Record<string,{field:string;label:string;min:number;max:
 };
 const api = (path:string, options?:RequestInit) => fetch(`${API_HOST}/api/robots/${path}`,{credentials:"include",...options,headers:{"Content-Type":"application/json",...options?.headers}}).then(async r=>{const data=await r.json();if(!r.ok)throw new Error(data.error||"Erro na API");return data;});
 export default function RobotsPage(){
+  const { refreshUserData } = usePortfolio();
   const [robots,setRobots]=useState<Robot[]>([]);
   const [assets,setAssets]=useState<Asset[]>([]);
   const [symbol,setSymbol]=useState("BTC");
@@ -73,7 +75,7 @@ export default function RobotsPage(){
   const signed=(n:number)=>`${n>0?"+":""}${n.toFixed(2)}%`;
   const reload=()=>api("").then(data=>setRobots(data.robots));
   useEffect(()=>{reload().catch(e=>setError(e.message)).finally(()=>setLoading(false));const timer=setInterval(()=>{reload().catch(()=>{});},5000);fetch(`${API_HOST}/api/stocks/catalog/?page=1`,{credentials:"include"}).then(r=>r.json()).then(d=>{if(Array.isArray(d.assets))setAssets(d.assets)}).catch(()=>{});return()=>clearInterval(timer);},[]);
-  const create=async(e:React.FormEvent)=>{e.preventDefault();if(!value.trim()||!Number.isFinite(Number(value))||Number(value)<=0){setError("Informe o valor em USD que deseja reservar para este robô.");return;}if(!Number.isFinite(Number(tp))||!Number.isFinite(Number(sl))||Number(tp)<=0||Number(sl)<=0||selected.length===0||selected.some(key=>{const config=indicatorSettings[key];const n=indicatorParams[key][config.field];return !Number.isInteger(n)||n<config.min||n>config.max;})){setError("Confira os limites e selecione pelo menos um indicador.");return;}setCreating(true);setError("");try{await api("",{method:"POST",body:JSON.stringify({symbol,value,tp,sl,indicators:Object.fromEntries(selected.map(key=>[key,indicatorParams[key]]))})});await reload();setShowForm(false);}catch(e){setError(e instanceof Error?e.message:"Falha ao criar robô")}finally{setCreating(false)}};
+  const create=async(e:React.FormEvent)=>{e.preventDefault();if(!value.trim()||!Number.isFinite(Number(value))||Number(value)<=0){setError("Informe o valor em USD que deseja reservar para este robô.");return;}if(!Number.isFinite(Number(tp))||!Number.isFinite(Number(sl))||Number(tp)<=0||Number(sl)<=0||selected.length===0||selected.some(key=>{const config=indicatorSettings[key];const n=indicatorParams[key][config.field];return !Number.isInteger(n)||n<config.min||n>config.max;})){setError("Confira os limites e selecione pelo menos um indicador.");return;}setCreating(true);setError("");try{await api("",{method:"POST",body:JSON.stringify({symbol,value,tp,sl,indicators:Object.fromEntries(selected.map(key=>[key,indicatorParams[key]]))})});await Promise.all([reload(), refreshUserData()]);setShowForm(false);}catch(e){setError(e instanceof Error?e.message:"Falha ao criar robô")}finally{setCreating(false)}};
   return <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]"><Sidebar/><main className="mx-auto max-w-[1440px] px-4 py-8 lg:px-8">
     <div className="mb-6 flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs uppercase tracking-widest text-[var(--accent-primary)]">Ambiente de demonstração</p><h1 className="text-2xl font-bold">Meus robôs de investimento</h1><p className="text-sm text-[var(--text-secondary)]">Acompanhe estratégias, indicadores e resultados em um único painel.</p></div><button onClick={openForm} className="rounded-lg bg-[var(--accent-primary)] px-5 py-3 text-sm font-bold text-white">+ Iniciar novo robô</button></div>
     {error&&!showForm&&<p role="alert" className="mb-4 rounded-lg border border-red-500/40 p-3 text-sm text-red-400">{error}</p>}
