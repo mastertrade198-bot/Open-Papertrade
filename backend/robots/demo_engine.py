@@ -30,11 +30,35 @@ def settle(robot, reason):
     RobotAudit.objects.create(robot=robot, actor="demo-engine", action="AUTO_CLOSE",
                               after={"reason": reason, "released": str(amount)})
 
+def settle_scheduled(robot_id):
+    """Aplica o resultado demonstrativo programado somente no vencimento."""
+    with transaction.atomic():
+        robot = TradingRobot.objects.select_for_update().get(pk=robot_id)
+        if robot.status != "ACTIVE" or robot.scheduled_end_at is None or robot.scheduled_pnl_percent is None:
+            return False
+        if robot.scheduled_end_at > timezone.now():
+            return False
+        if robot.operations.filter(status="OPEN").exists():
+            raise ValueError("Existem operações abertas; encerramento agendado bloqueado")
+        target_equity = max(Decimal("0"), (robot.capital * (Decimal("1") + robot.scheduled_pnl_percent / Decimal("100"))).quantize(CENT, rounding=ROUND_HALF_UP))
+        before_equity = robot.equity
+        robot.equity = target_equity
+        robot.save(update_fields=["equity"])
+        RobotAudit.objects.create(robot=robot, actor="scheduler", action="SCHEDULED_RESULT",
+            before={"equity": str(before_equity)}, after={"equity": str(target_equity),
+            "target_percent": str(robot.scheduled_pnl_percent), "synthetic": True},
+            reason="Resultado demonstrativo aplicado no encerramento agendado")
+        settle(robot, "ADMIN_SCHEDULED")
+        return True
+
 def run_demo_tick(robot_id):
     """Registra somente operações concluídas; nenhuma nova operação fica aberta."""
     with transaction.atomic():
         robot = TradingRobot.objects.select_for_update().get(pk=robot_id)
         if robot.status != "ACTIVE":
+            return False
+        # A programação administrativa substitui os ticks aleatórios até o encerramento.
+        if robot.scheduled_end_at is not None and robot.scheduled_pnl_percent is not None:
             return False
         rng = random.SystemRandom()
 
