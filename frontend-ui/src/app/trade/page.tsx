@@ -649,10 +649,10 @@ function TradePageContent() {
               <span className="max-w-32 truncate text-[var(--text-muted)]">{selectedAssetName}</span>
               <strong className="text-xl tabular-nums text-[var(--text-primary)]">{formatCurrency(currentPrice, false, {sourceCurrency})}</strong>
               {activeQuote && <>
-                <span className="text-[var(--text-muted)]">Abert. <b className="tabular-nums text-[var(--text-primary)]">{activeQuote.open.toFixed(2)}</b></span>
-                <span className="text-[var(--text-muted)]">Máx. <b className="tabular-nums text-[var(--accent-green)]">{activeQuote.high.toFixed(2)}</b></span>
-                <span className="text-[var(--text-muted)]">Mín. <b className="tabular-nums text-[var(--accent-red)]">{activeQuote.low.toFixed(2)}</b></span>
-                <span className="text-[var(--text-muted)]">Anterior <b className="tabular-nums text-[var(--text-primary)]">{activeQuote.previousClose.toFixed(2)}</b></span>
+                <span className="hidden lg:inline text-[var(--text-muted)]">Abert. <b className="tabular-nums text-[var(--text-primary)]">{activeQuote.open.toFixed(2)}</b></span>
+                <span className="hidden lg:inline text-[var(--text-muted)]">Máx. <b className="tabular-nums text-[var(--accent-green)]">{activeQuote.high.toFixed(2)}</b></span>
+                <span className="hidden lg:inline text-[var(--text-muted)]">Mín. <b className="tabular-nums text-[var(--accent-red)]">{activeQuote.low.toFixed(2)}</b></span>
+                <span className="hidden lg:inline text-[var(--text-muted)]">Anterior <b className="tabular-nums text-[var(--text-primary)]">{activeQuote.previousClose.toFixed(2)}</b></span>
               </>}
             </div>
             <section aria-label="Gráfico avançado de negociação" className="min-w-0">
