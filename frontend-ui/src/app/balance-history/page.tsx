@@ -10,6 +10,27 @@ const date = (s: string) => new Date(s).toLocaleString("pt-BR");
 const withdrawalStatus = (category: string) => category === "WITHDRAWAL_REQUEST" ? "Solicitado" : category === "WITHDRAWAL_APPROVED" ? "Confirmado" : category === "WITHDRAWAL_REFUND" || category === "WITHDRAWAL_REJECTED_LEGACY" ? "Rejeitado" : null;
 const transactionType = (category: string, amount: number) => withdrawalStatus(category) ? "Saque" : amount > 0 ? "Crédito" : amount < 0 ? "Débito" : "Registro";
 
+// Keep the original journal intact; only simplify descriptions shown to customers.
+const friendlyDescription = (description: string, category: string, amount: number) => {
+  const raw = (description || "").trim();
+  const clean = raw
+    .replace(/\\b[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\b/gi, "")
+    .replace(/\\s*[·:–-]\\s*$/g, "")
+    .replace(/\\bsimulad[oa]s?\\b/gi, "")
+    .replace(/\\s{2,}/g, " ")
+    .trim();
+
+  if (/^capital\\s+(?:simulado\\s+)?devolvido/i.test(raw)) return "Devolução de saldo reservado";
+  if (/^capital\\s+(?:simulado\\s+)?reservado/i.test(raw)) return "Reserva de saldo para operação";
+  if (/^participa[cç][aã]o\\s+(?:simulada\\s+)?no projeto/i.test(raw))
+    return clean.replace(/^participa[cç][aã]o\\s+no projeto/i, "Investimento no projeto");
+  if (/^margem reservada/i.test(raw)) return clean.replace(/^margem reservada/i, "Margem utilizada");
+  if (/^altera[cç][aã]o de saldo dispon[ií]vel/i.test(raw))
+    return amount >= 0 ? "Crédito no saldo disponível" : "Débito no saldo disponível";
+  if (category === "WITHDRAWAL_REFUND" || category === "WITHDRAWAL_REJECTED_LEGACY") return "Devolução de saque rejeitado";
+  return clean || (amount >= 0 ? "Crédito na conta" : "Débito na conta");
+};
+
 export default function BalanceHistoryPage() {
   const [transactions, setTransactions] = useState<BalanceTransaction[]>([]);
   const [balance, setBalance] = useState<number | null>(null);
@@ -58,7 +79,7 @@ export default function BalanceHistoryPage() {
                 <td className="px-4 py-3 whitespace-nowrap">{date(t.createdAt)}</td>
                 <td className="px-4 py-3">{transactionType(t.category, t.amount)}</td>
                 <td className="px-4 py-3">{withdrawalStatus(t.category) ? <span className={`inline-flex rounded-md px-2 py-1 text-xs font-semibold ${t.category === "WITHDRAWAL_APPROVED" ? "bg-[var(--accent-green)]/10 text-[var(--accent-green)]" : t.category === "WITHDRAWAL_REFUND" || t.category === "WITHDRAWAL_REJECTED_LEGACY" ? "bg-[var(--accent-red)]/10 text-[var(--accent-red)]" : "bg-[var(--bg-muted)] text-[var(--text-secondary)]"}`}>{withdrawalStatus(t.category)}</span> : <span className="text-[var(--text-muted)]">—</span>}</td>
-                <td className="px-4 py-3">{t.description}</td>
+                <td className="px-4 py-3">{friendlyDescription(t.description, t.category, t.amount)}</td>
                 <td className={`px-4 py-3 font-mono font-semibold ${t.amount >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{t.amount >= 0 ? "+" : ""}{usd(t.amount)}</td>
                 <td className="px-4 py-3 font-mono">{usd(t.balanceBefore)}</td>
                 <td className="px-4 py-3 font-mono">{usd(t.balanceAfter)}</td>
