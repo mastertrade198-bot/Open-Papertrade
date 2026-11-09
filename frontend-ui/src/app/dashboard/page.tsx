@@ -212,7 +212,7 @@ export default function Dashboard() {
               <span className="text-[11px] font-medium text-[var(--text-muted)]">Patrimônio total</span>
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-green)] animate-pulse" />
-                <span className="text-[10px] font-medium text-[var(--accent-green)]">Ao vivo</span>
+                <span className="text-[10px] font-medium text-[var(--accent-green)]">Atualização periódica</span>
               </div>
             </div>
             <span className="font-primary tabular-nums text-xl 2xl:text-[22px] font-semibold text-[var(--text-primary)] tracking-tight">
@@ -286,7 +286,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-1.5">
               <Activity size={14} className="text-[var(--text-muted)]" />
               <span className="text-xs text-[var(--text-muted)]">
-                {holdings.filter((h) => !cryptoSymbolSet.has(h.symbol)).length} ações, {holdings.filter((h) => cryptoSymbolSet.has(h.symbol)).length} cripto
+                {marginPositions.length} alavancadas · {holdings.length} carteira
               </span>
             </div>
           </div>
