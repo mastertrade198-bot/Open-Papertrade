@@ -54,6 +54,10 @@ import {
   Plus,
   Target,
   ArrowRight,
+  Maximize2,
+  Minimize2,
+  PencilRuler,
+  LocateFixed,
 } from "lucide-react";
 import Link from "next/link";
 import { stockAPI, userAPI, HistoricalBar, TimeRange, PriceAlert, NewsArticle } from "@/lib/api";
@@ -151,6 +155,8 @@ export default function AdvancedChart({
   const fittedHistoryKeyRef = useRef<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [showIndicatorMenu, setShowIndicatorMenu] = useState(false);
+  const [mobileDrawingToolsOpen, setMobileDrawingToolsOpen] = useState(false);
+  const [mobileFullscreen, setMobileFullscreen] = useState(false);
   const [hoverOHLC, setHoverOHLC] = useState<{
     open: number;
     high: number;
@@ -318,6 +324,8 @@ export default function AdvancedChart({
         scaleMargins: { top: 0.08, bottom: 0.08 },
         mode: logScale ? 1 : 0,
       },
+      handleScroll: { mouseWheel: true, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false },
+      handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
       timeScale: {
         borderVisible: false,
         secondsVisible: false,
@@ -1077,8 +1085,16 @@ export default function AdvancedChart({
   return (
     <div
       ref={containerRef}
-      className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] overflow-hidden flex flex-col"
+      className={`${mobileFullscreen ? "chart-mobile-fullscreen" : ""} bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] overflow-hidden flex flex-col`}
     >
+      <div className="chart-mobile-controls lg:hidden flex items-center justify-between gap-2 border-b border-[var(--border-primary)] px-2 py-2">
+        <span className="min-w-0 truncate text-xs font-semibold text-[var(--text-primary)]">{symbol} · Gráfico</span>
+        <div className="flex shrink-0 items-center gap-1">
+          <button type="button" onClick={() => chartRef.current?.timeScale().scrollToRealTime()} aria-label="Voltar ao preço atual" className="rounded-lg p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"><LocateFixed size={17}/></button>
+          {!disableDrawings && <button type="button" onClick={() => setMobileDrawingToolsOpen(v => !v)} aria-expanded={mobileDrawingToolsOpen} aria-label="Ferramentas de desenho" className="rounded-lg p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]"><PencilRuler size={17}/></button>}
+          <button type="button" onClick={() => setMobileFullscreen(v => !v)} aria-label={mobileFullscreen ? "Fechar gráfico ampliado" : "Ampliar gráfico"} className="rounded-lg p-2 text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]">{mobileFullscreen ? <Minimize2 size={17}/> : <Maximize2 size={17}/>}</button>
+        </div>
+      </div>
       {/* --- Header: symbol + price + timeframe + chart type + indicators + scale + snapshot --- */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border-primary)] flex-wrap">
         {/* Symbol + price */}
@@ -1319,7 +1335,7 @@ export default function AdvancedChart({
       {/* --- Body: left toolbar + chart area --- */}
       <div className="flex flex-1" style={{ minHeight: chartHeight }}>
         {/* Drawing toolbar (vertical) */}
-        {!disableDrawings && <div className="flex flex-col gap-1 p-1 border-r border-[var(--border-primary)] bg-[var(--bg-card)]" aria-label="Ferramentas de desenho">
+        {!disableDrawings && <div className={`${mobileDrawingToolsOpen ? "flex" : "hidden"} lg:flex flex-col gap-1 p-1 border-r border-[var(--border-primary)] bg-[var(--bg-card)]`} aria-label="Ferramentas de desenho">
           {DRAWING_TOOLS.map(({ id, icon: Icon, label }) => (
             <button
               key={id}
