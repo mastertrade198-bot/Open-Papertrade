@@ -253,6 +253,37 @@ export default function AdvancedChart({
     };
   }, [symbol, timeframe, candleInterval]);
 
+  // Fetch older candles when the viewport reaches the left edge of loaded data.
+  const historyLoadingRef = useRef(false);
+  const historyExhaustedRef = useRef(false);
+  useEffect(() => { historyExhaustedRef.current = false; }, [symbol, timeframe, candleInterval]);
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const scale = chart.timeScale();
+    const handleRange = (range: { from: number; to: number } | null) => {
+      if (!range || range.from > 30 || historyLoadingRef.current || historyExhaustedRef.current) return;
+      const first = bars[0];
+      if (!first || !/^\\d+$/.test(String(first.time))) return;
+      historyLoadingRef.current = true;
+      const earliest = Number(first.time);
+      void stockAPI.getHistory(symbol, timeframe, candleInterval, earliest)
+        .then(response => {
+          if (!response.success) return;
+          const older = response.bars.filter(bar => Number(bar.time) < earliest);
+          if (!older.length) { historyExhaustedRef.current = true; return; }
+          setBars(current => {
+            const combined = [...older, ...current].sort((a, b) => Number(a.time) - Number(b.time));
+            return combined.filter((bar, i) => i === 0 || bar.time !== combined[i - 1].time);
+          });
+        })
+        .catch(() => {})
+        .finally(() => { historyLoadingRef.current = false; });
+    };
+    scale.subscribeVisibleLogicalRangeChange(handleRange);
+    return () => scale.unsubscribeVisibleLogicalRangeChange(handleRange);
+  }, [bars, symbol, timeframe, candleInterval, mode, chartHeight]);
+
   // Normalise bars into indicator-ready form
   const normalisedBars: IndicatorBar[] = useMemo(
     () =>
