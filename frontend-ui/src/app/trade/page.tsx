@@ -181,8 +181,9 @@ function TradePageContent() {
     // Refresh the selected asset and currently displayed market list first.
     symbols.add(selectedSymbol);
     for (const symbol of favoriteSymbols) symbols.add(symbol);
+    for (const position of positions) if (position.status === "OPEN") symbols.add(position.symbol);
     return [...symbols];
-  }, [selectedSymbol, favoriteSymbols]);
+  }, [selectedSymbol, favoriteSymbols, positions]);
   // Streamed crypto quotes take precedence over slower REST responses.
   const cryptoStreamLastTick = useRef<Record<string, number>>({});
   const isRecentCryptoTick = (symbol: string) =>
@@ -230,7 +231,9 @@ function TradePageContent() {
 
   // Market list and selected trading ticket have their own quote state;
   // portfolio streaming alone cannot update this page.
-  const cryptoStreamSymbols = [selectedSymbol].filter(symbol => /^(BTC|ETH|SOL|XRP|BNB|ADA|DOGE|AVAX|LINK|SHIB|DOT|LTC|BCH|UNI|AAVE|ATOM|NEAR|ICP|FIL|ETC|XLM|ALGO|HBAR|PEPE)$/i.test(symbol)).sort().join(",");
+  const cryptoStreamSymbols = [...new Set([selectedSymbol, ...positions.filter(p => p.status === "OPEN").map(p => p.symbol)])]
+    .filter(symbol => /^(BTC|ETH|SOL|XRP|BNB|ADA|DOGE|AVAX|LINK|SHIB|DOT|LTC|BCH|UNI|AAVE|ATOM|NEAR|ICP|FIL|ETC|XLM|ALGO|HBAR|PEPE)$/i.test(symbol))
+    .sort().join(",");
   useEffect(() => {
     if (!cryptoStreamSymbols) return;
     return subscribeCryptoPrices(cryptoStreamSymbols.split(","), ticks => {
@@ -296,6 +299,15 @@ function TradePageContent() {
 
   const [closingPositionId, setClosingPositionId] = useState<string | null>(null);
   const [positionsTab, setPositionsTab] = useState<"OPEN" | "CLOSED">("OPEN");
+
+  const getPositionMarketData = (position: SimulatedPosition) => {
+    if (position.status !== "OPEN") return { price: position.exitPrice, pnl: position.realizedPnl };
+    const quote = marketQuotes[position.symbol.toUpperCase()];
+    const price = quote && Number.isFinite(quote.price) && quote.price > 0 ? quote.price : position.marketPrice;
+    if (price === undefined || price === null || !Number.isFinite(price)) return { price: null, pnl: null };
+    const rawPnl = (price - position.entryPrice) * position.quantity * (position.side === "LONG" ? 1 : -1);
+    return { price, pnl: Math.round(rawPnl * 100) / 100 };
+  };
 
   const closeSimulatedPosition = async (id: string) => {
     const position = positions.find(p => p.id === id);
@@ -825,7 +837,7 @@ function TradePageContent() {
                   </thead>
                   <tbody>
                     {positions.filter(p => p.status === positionsTab).map(p => {
-                      const pnl = p.status === "OPEN" ? p.unrealizedPnl : p.realizedPnl;
+                      const { price: positionMarketPrice, pnl } = getPositionMarketData(p);
                       return (
                         <tr key={p.id} className="border-t border-[var(--border-primary)] text-[var(--text-primary)]">
                           <td className="px-3 py-3"><span className="block font-semibold">{p.symbol}</span><span className="block max-w-40 truncate text-[10px] font-normal text-[var(--text-muted)]" title={getAssetFullName(p.symbol)}>{getAssetFullName(p.symbol)}</span></td>
@@ -834,7 +846,7 @@ function TradePageContent() {
                           <td className="px-3 py-3 font-mono">${p.entryPrice.toFixed(2)}</td>
                           <td className="px-3 py-3">{p.leverage}x</td>
                           <td className="px-3 py-3 font-mono">${p.margin.toFixed(2)}</td>
-                          <td className="px-3 py-3 font-mono">{p.marketPrice === undefined ? (p.exitPrice === null ? "—" : `${p.exitPrice.toFixed(2)}`) : `${p.marketPrice.toFixed(2)}`}</td>
+                          <td className="px-3 py-3 font-mono">{positionMarketPrice == null ? "—" : `${positionMarketPrice.toFixed(2)}`}</td>
                           <td className={`px-3 py-3 font-mono ${pnl === undefined || pnl === null ? "" : pnl >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{pnl === undefined || pnl === null ? "—" : `${pnl.toFixed(2)}`}</td>
                           <td className="px-3 py-3">
                             {p.status === "OPEN" ? <button type="button" disabled={closingPositionId !== null || !getMarketStatusLocal("US", p.symbol).isOpen} title={!getMarketStatusLocal("US", p.symbol).isOpen ? "Mercado fechado — encerramento indisponível" : "Encerrar posição"} onClick={() => void closeSimulatedPosition(p.id)} className="rounded border border-[var(--border-primary)] px-2 py-1 hover:bg-[var(--bg-muted)] disabled:opacity-50">{closingPositionId === p.id ? "Encerrando…" : "Encerrar"}</button> : <span className="text-[var(--text-muted)]">Encerrada</span>}
