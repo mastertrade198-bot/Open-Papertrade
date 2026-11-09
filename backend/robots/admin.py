@@ -7,7 +7,7 @@ from django.utils.html import format_html
 from .models import TradingRobot, RobotOperation, RobotAudit
 
 class EasyScheduleWidget(forms.SplitDateTimeWidget):
-    """Calendário nativo e seleção direta de horário, sem relógio circular."""
+    """Calendário nativo e campo de horário digitável."""
 
     def __init__(self, attrs=None):
         super().__init__(
@@ -20,14 +20,15 @@ class EasyScheduleWidget(forms.SplitDateTimeWidget):
                 'style': 'width:190px;max-width:100%;min-height:44px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:10px;',
             },
         )
-        self.widgets[1] = forms.Select(
-            choices=[('', 'Selecione a hora')] + [
-                (f'{hour:02d}:{minute:02d}', f'{hour:02d}:{minute:02d}')
-                for hour in range(24) for minute in (0, 15, 30, 45)
-            ],
+        self.widgets[1] = forms.TextInput(
             attrs={
-                'aria-label': 'Hora de finalização',
-                'style': 'width:170px;max-width:100%;min-height:44px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:10px;',
+                'type': 'text',
+                'placeholder': 'HH:MM',
+                'inputmode': 'numeric',
+                'maxlength': '5',
+                'autocomplete': 'off',
+                'aria-label': 'Hora de finalização no formato 24 horas',
+                'style': 'width:130px;max-width:100%;min-height:44px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:10px;',
             },
         )
 
@@ -39,7 +40,7 @@ class RobotScheduleForm(forms.ModelForm):
         input_date_formats=['%Y-%m-%d'],
         input_time_formats=['%H:%M'],
         widget=EasyScheduleWidget,
-        help_text='Escolha a data no calendário e o horário na lista (intervalos de 15 minutos).',
+        help_text='Escolha a data no calendário e digite a hora no formato 24h (ex.: 18:30).',
     )
     scheduled_pnl_percent = forms.DecimalField(
         label='Lucro ou prejuízo (%)',
