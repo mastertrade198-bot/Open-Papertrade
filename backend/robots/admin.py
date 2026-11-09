@@ -105,8 +105,8 @@ class RobotConfigurationFilter(admin.SimpleListFilter):
 @admin.register(TradingRobot)
 class TradingRobotAdmin(ModelAdmin):
     form = RobotScheduleForm
-    list_display = ('robot_label', 'configuration_badge', 'user', 'symbol', 'status_badge', 'capital', 'created_at')
-    list_display_links = ('robot_label',)
+    list_display = ('user', 'configuration_badge', 'configured_percent', 'status_badge', 'invested_capital', 'created_at')
+    list_display_links = ('user',)
     list_filter = (RobotConfigurationFilter, 'status')
     list_per_page = 20
     ordering = ('-created_at', '-pk')
@@ -159,12 +159,24 @@ class TradingRobotAdmin(ModelAdmin):
         ).count()
         return f'Robô #{number:04d} · {obj.asset_name}'
 
+    @admin.display(description='Percentual configurado', ordering='scheduled_pnl_percent')
+    def configured_percent(self, obj):
+        if obj.scheduled_pnl_percent is None or obj.scheduled_end_at is None:
+            return '—'
+        percent = obj.scheduled_pnl_percent
+        color = '#16734a' if percent > 0 else '#b42318' if percent < 0 else '#667085'
+        return format_html('<span style="font-weight:600;color:{}">{}%</span>', color, percent)
+
     @admin.display(description='Configuração')
     def configuration_badge(self, obj):
         configured = obj.scheduled_end_at is not None and obj.scheduled_pnl_percent is not None
         label = 'Configurado' if configured else 'Não configurado'
         color = '#16734a' if configured else '#9a6700'
         return format_html('<span style="font-weight:600;color:{}">{}</span>', color, label)
+
+    @admin.display(description='Valor investido', ordering='capital')
+    def invested_capital(self, obj):
+        return obj.capital
 
     @admin.display(description='Situação', ordering='status')
     def status_badge(self, obj):
