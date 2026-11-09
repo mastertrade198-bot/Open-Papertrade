@@ -31,6 +31,7 @@ import type { TimeRange } from "@/lib/api";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { formatCurrency, formatPercent, formatTime, getMarketStatus, getMarketStatusLocal, MarketStatus } from "@/lib/utils";
 import { stockAPI, userAPI, StockQuote, SearchResult, SimulatedPosition, CatalogAsset } from "@/lib/api";
+import { subscribeCryptoPrices } from "@/lib/cryptoStream";
 
 export default function TradePage() {
   return (
@@ -205,6 +206,43 @@ function TradePageContent() {
     }, 60000);
     return () => window.clearInterval(timer);
   }, [refreshMarketQuotes]);
+
+  // Market list and selected trading ticket have their own quote state;
+  // portfolio streaming alone cannot update this page.
+  const cryptoStreamSymbols = marketSymbols.filter(symbol => /^(BTC|ETH|SOL|XRP|BNB|ADA|DOGE|AVAX|LINK|SHIB|DOT|LTC|BCH|UNI|AAVE|ATOM|NEAR|ICP|FIL|ETC|XLM|ALGO|HBAR|PEPE)$/i.test(symbol)).sort().join(",");
+  useEffect(() => {
+    if (!cryptoStreamSymbols) return;
+    return subscribeCryptoPrices(cryptoStreamSymbols.split(","), ticks => {
+      setMarketQuotes(prev => {
+        const next = { ...prev };
+        for (const tick of ticks) {
+          const old = next[tick.symbol];
+          next[tick.symbol] = {
+            symbol: tick.symbol, price: tick.price, change: tick.change,
+            changePercent: tick.changePercent, currency: tick.currency,
+            provider: tick.provider, timestamp: new Date().toISOString(),
+            high: old?.high ?? tick.price, low: old?.low ?? tick.price,
+            open: old?.open ?? tick.price, previousClose: old?.previousClose ?? tick.price,
+            volume: old?.volume ?? null, name: old?.name ?? tick.symbol,
+          };
+        }
+        return next;
+      });
+      setSelectedQuote(prev => {
+        const tick = ticks.find(q => q.symbol === selectedSymbol);
+        if (!tick) return prev;
+        return {
+          symbol: tick.symbol, price: tick.price, change: tick.change,
+          changePercent: tick.changePercent, currency: tick.currency,
+          provider: tick.provider, timestamp: new Date().toISOString(),
+          high: prev?.high ?? tick.price, low: prev?.low ?? tick.price,
+          open: prev?.open ?? tick.price, previousClose: prev?.previousClose ?? tick.price,
+          volume: prev?.volume ?? null, name: prev?.name ?? tick.symbol,
+        };
+      });
+      setMarketQuotesUpdatedAt(Date.now());
+    });
+  }, [cryptoStreamSymbols, selectedSymbol]);
 
   useEffect(() => { void refreshCatalog(); }, [refreshCatalog]);
 
