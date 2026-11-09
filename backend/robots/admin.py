@@ -2,6 +2,8 @@ from django import forms
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 from django.db import transaction
+from django.db.models import F, Window
+from django.db.models.functions import RowNumber
 from django.utils import timezone
 from django.utils.html import format_html
 from .models import TradingRobot, RobotOperation, RobotAudit
@@ -81,7 +83,7 @@ class TradingRobotAdmin(ModelAdmin):
     list_display_links = ('robot_label',)
     list_filter = ('status',)
     list_per_page = 20
-    ordering = ('-created_at',)
+    ordering = ('created_at', 'pk')
     show_full_result_count = False
     search_fields = ('symbol', 'asset_name', 'user__email')
     actions = None
@@ -91,7 +93,7 @@ class TradingRobotAdmin(ModelAdmin):
             'fields': (('scheduled_end_at', 'scheduled_pnl_percent'),),
         }),
         ('Identificação e situação', {
-            'fields': ('id', 'user', 'asset_name', 'symbol', 'status', 'capital', 'equity'),
+            'fields': ('user', 'asset_name', 'symbol', 'status', 'capital', 'equity'),
             'classes': ('collapse',),
         }),
         ('Configurações originais', {
@@ -103,12 +105,21 @@ class TradingRobotAdmin(ModelAdmin):
             'classes': ('collapse',),
         }),
     )
-    readonly_fields = ('id', 'user', 'symbol', 'asset_name', 'capital', 'equity', 'status',
+    readonly_fields = ('user', 'symbol', 'asset_name', 'capital', 'equity', 'status',
                        'take_profit', 'stop_loss', 'indicators', 'created_at', 'closed_at', 'closed_reason')
+
+    def get_queryset(self, request):
+        # Número global de apresentação, ordenado pela criação; UUID permanece interno.
+        return super().get_queryset(request).annotate(
+            admin_sequence=Window(
+                expression=RowNumber(),
+                order_by=[F('created_at').asc(), F('pk').asc()],
+            )
+        )
 
     @admin.display(description='Robô')
     def robot_label(self, obj):
-        return f'{obj.asset_name} · {str(obj.pk)[:8]}'
+        return f'Robô #{obj.admin_sequence:04d} · {obj.asset_name}'
 
     @admin.display(description='Situação', ordering='status')
     def status_badge(self, obj):
