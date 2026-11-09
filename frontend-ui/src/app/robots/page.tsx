@@ -6,7 +6,8 @@ import Sidebar from "@/components/Sidebar";
 import { API_HOST } from "@/lib/api";
 
 type Robot = {id:string;displayNumber:number;symbol:string;assetName:string;capital:number;equity:number;pnl:number;pnlPercent:number;status:string;createdAt:string};
-type Asset = {symbol:string;name:string};
+type Asset = {symbol:string;name:string;category?:string;assetType?:string;type?:string};
+const categoryFor = (asset:Asset) => { const type=(asset.category||asset.assetType||asset.type||"").toUpperCase(); if(/CRYPTO|COIN/.test(type)||["BTC","ETH","SOL","XRP","ADA","DOGE"].includes(asset.symbol.toUpperCase()))return "Criptomoedas"; if(/ETF|FUND/.test(type))return "ETFs"; if(/FOREX|CURRENCY|FX/.test(type))return "Moedas"; if(/INDEX|INDICE/.test(type))return "Índices"; if(/COMMODITY|METAL/.test(type))return "Commodities";return "Ações";};
 const presets:Record<string,Record<string,number>> = {
   ema:{fast:21,slow:50},macd:{fast:12,slow:26,signal:9},
   rsi:{period:14,overbought:70,oversold:30},bollinger:{period:20,deviation:2},
@@ -25,6 +26,8 @@ export default function RobotsPage(){
   const [robots,setRobots]=useState<Robot[]>([]);
   const [assets,setAssets]=useState<Asset[]>([]);
   const [symbol,setSymbol]=useState("BTC");
+  const [assetSearch,setAssetSearch]=useState("");
+  const [assetCategory,setAssetCategory]=useState("Todas");
   const [value,setValue]=useState("");
   const [tp,setTp]=useState("5");
   const [sl,setSl]=useState("3");
@@ -59,6 +62,10 @@ export default function RobotsPage(){
   const [search,setSearch]=useState("");
   const [statusFilter,setStatusFilter]=useState("ALL");
   const visibleRobots=robots.filter(r=>(statusFilter==="ALL"||r.status===statusFilter)&&`${r.assetName} ${r.symbol}`.toLocaleLowerCase("pt-BR").includes(search.trim().toLocaleLowerCase("pt-BR")));
+  const selectableAssets=[...new Map([{symbol:"BTC",name:"Bitcoin",category:"crypto"},{symbol:"ETH",name:"Ethereum",category:"crypto"},...assets].map(a=>[a.symbol.toUpperCase(),a])).values()];
+  const assetCategories=["Todas",...Array.from(new Set(selectableAssets.map(categoryFor)))];
+  const filteredAssets=selectableAssets.filter(a=>(assetCategory==="Todas"||categoryFor(a)===assetCategory)&&`${a.name} ${a.symbol}`.toLocaleLowerCase("pt-BR").includes(assetSearch.trim().toLocaleLowerCase("pt-BR"))).sort((a,b)=>a.name.localeCompare(b.name,"pt-BR"));
+  const chosenAsset=selectableAssets.find(a=>a.symbol===symbol);
   const activeCount=robots.filter(r=>r.status==="ACTIVE").length;
   const invested=robots.reduce((sum,r)=>sum+r.capital,0);
   const totalPnl=robots.reduce((sum,r)=>sum+r.pnl,0);
@@ -83,8 +90,22 @@ export default function RobotsPage(){
       <div className="space-y-5">
         <section aria-labelledby="robot-asset-heading">
           <h3 id="robot-asset-heading" className="mb-2 text-sm font-semibold">Ativo</h3>
-          <label htmlFor="robot-asset" className="mb-1 block text-xs text-[var(--text-secondary)]">Mercado que o robô acompanhará</label>
-          <select id="robot-asset" value={symbol} onChange={e=>setSymbol(e.target.value)} className="w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] px-4 py-3 text-sm">{[...new Map([{symbol:"BTC",name:"Bitcoin"},{symbol:"ETH",name:"Ethereum"},...assets].map(a=>[a.symbol,a])).values()].map(a=><option key={a.symbol} value={a.symbol}>{a.name} ({a.symbol})</option>)}</select>
+          <p className="mb-3 text-xs text-[var(--text-secondary)]">Escolha pelo nome ou pesquise o ativo desejado.</p>
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_160px]">
+            <label className="text-xs text-[var(--text-secondary)]">Pesquisar ativo
+              <input type="search" value={assetSearch} onChange={e=>setAssetSearch(e.target.value)} placeholder="Ex.: Bitcoin, Apple, BTC..." className="mt-1 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2.5 text-sm text-[var(--text-primary)]" />
+            </label>
+            <label className="text-xs text-[var(--text-secondary)]">Categoria
+              <select value={assetCategory} onChange={e=>setAssetCategory(e.target.value)} className="mt-1 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] px-3 py-2.5 text-sm text-[var(--text-primary)]">{assetCategories.map(c=><option key={c} value={c}>{c}</option>)}</select>
+            </label>
+          </div>
+          <div role="listbox" aria-label="Ativos disponíveis" className="mt-3 max-h-48 overflow-y-auto rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)]">
+            {filteredAssets.length===0?<p className="px-3 py-4 text-xs text-[var(--text-secondary)]">Nenhum ativo encontrado. Experimente outro nome ou categoria.</p>:
+              filteredAssets.map(a=><button key={a.symbol} type="button" role="option" aria-selected={symbol===a.symbol} onClick={()=>setSymbol(a.symbol)} className={`flex w-full items-center justify-between gap-3 border-b border-[var(--border-primary)] px-3 py-2.5 text-left text-sm last:border-0 hover:bg-[var(--bg-muted)] ${symbol===a.symbol?"bg-[var(--accent-primary)]/10":""}`}>
+                <span className="min-w-0 truncate font-medium">{a.name&&a.name.toUpperCase()!==a.symbol.toUpperCase()?a.name:a.symbol}</span><span className="shrink-0 text-xs text-[var(--text-secondary)]">{a.symbol}{symbol===a.symbol?" ✓":""}</span>
+              </button>)}
+          </div>
+          <p className="mt-2 text-xs text-[var(--text-secondary)]">Selecionado: <strong className="text-[var(--text-primary)]">{chosenAsset?.name||symbol} ({symbol})</strong></p>
         </section>
         <section aria-labelledby="robot-investment-heading" className="rounded-xl border border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/5 p-4 sm:p-5">
           <h3 id="robot-investment-heading" className="text-sm font-semibold">Valor do investimento</h3>
