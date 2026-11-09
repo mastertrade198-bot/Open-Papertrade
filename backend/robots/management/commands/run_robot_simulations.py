@@ -16,7 +16,6 @@ from robots.models import TradingRobot, RobotOperation, RobotAudit
 
 CENT = Decimal("0.01")
 PRICE = Decimal("100.00000000")
-MAX_STEP_PERCENT = Decimal("0.03")
 
 
 def slots(start, end):
@@ -43,12 +42,6 @@ def tick(robot_id, now):
         count = robot.operations.count()
         due = sum(when <= now for when in timeline)
         target = (robot.capital * robot.scheduled_pnl_percent / Decimal("100")).quantize(CENT, rounding=ROUND_HALF_UP)
-        maximum = (robot.capital * MAX_STEP_PERCENT / Decimal("100")).quantize(CENT, rounding=ROUND_HALF_UP)
-        if maximum <= 0:
-            return 0
-        if abs(target) > maximum * len(timeline):
-            # Invalid configurations are never silently made to look achieved.
-            return 0
         created = 0
         while count < due:
             when = timeline[count]
@@ -57,21 +50,14 @@ def tick(robot_id, now):
             if remaining_count == 1:
                 change = remaining
             else:
-                # Small, deterministic synthetic variation around the remaining target.
+                # Distribute the remaining administrator-defined scenario across remaining ticks.
+                # Small seeded variation adds visual diversity without changing the final target.
                 base = remaining / Decimal(remaining_count)
-                jitter = Decimal(str(random.Random(f"{robot.pk}:{count}").uniform(-0.002, 0.002)))
-                change = (base + robot.capital * jitter / Decimal("100")).quantize(CENT, rounding=ROUND_HALF_UP)
-                limit = maximum
-                change = max(-limit, min(limit, change))
-                future_capacity = maximum * (remaining_count - 1)
-                change = max(remaining - future_capacity, min(remaining + future_capacity, change))
-                # Keep every intermediate balance within the configured TP/SL.
+                jitter = Decimal(str(random.Random(f"{robot.pk}:{count}").uniform(-0.15, 0.15)))
+                change = (base * (Decimal("1") + jitter)).quantize(CENT, rounding=ROUND_HALF_UP)
                 lower = (robot.capital * (Decimal("1") - robot.stop_loss / Decimal("100")) - robot.equity).quantize(CENT)
                 upper = (robot.capital * (Decimal("1") + robot.take_profit / Decimal("100")) - robot.equity).quantize(CENT)
                 change = max(lower, min(upper, change))
-                change = change.quantize(CENT, rounding=ROUND_HALF_UP)
-            if abs(change) > maximum:
-                raise ValueError("Micro-operação excede o limite programado")
             new_equity = robot.equity + change
             min_equity = robot.capital * (Decimal("1") - robot.stop_loss / Decimal("100"))
             max_equity = robot.capital * (Decimal("1") + robot.take_profit / Decimal("100"))
