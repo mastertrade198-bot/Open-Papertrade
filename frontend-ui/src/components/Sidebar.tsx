@@ -33,6 +33,7 @@ export default function Sidebar() {
   const { logout } = useAuth();
   const [accountOpen, setAccountOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileTradeOpen, setMobileTradeOpen] = useState(false);
   const handleLogout = async () => {
     await logout();
     setAccountOpen(false);
@@ -108,19 +109,43 @@ export default function Sidebar() {
           <Icon size={21}/><span>{label}</span>
         </Link>
       ))}
-      <Link href="/trade" aria-current={pathname.startsWith("/trade") ? "page" : undefined}
+      <button type="button" onClick={() => { setMobileMenuOpen(false); setMobileTradeOpen(open => !open); }}
+        aria-expanded={mobileTradeOpen} aria-controls="master-mobile-trade"
         className="relative -mt-4 flex min-w-0 flex-col items-center gap-1 rounded-xl bg-[var(--accent-primary)] px-1 py-3 text-[10px] font-bold text-white shadow-lg shadow-black/15">
         <ArrowLeftRight size={22}/><span>Negociar</span>
-      </Link>
+      </button>
       <Link href="/portfolio" aria-current={pathname.startsWith("/portfolio") ? "page" : undefined}
         className={`flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-semibold ${pathname.startsWith("/portfolio") ? "text-[var(--accent-primary)]" : "text-[var(--text-secondary)]"}`}>
         <Wallet size={21}/><span>Carteira</span>
       </Link>
-      <button type="button" onClick={() => setMobileMenuOpen(open => !open)} aria-expanded={mobileMenuOpen} aria-controls="master-mobile-menu"
+      <button type="button" onClick={() => { setMobileTradeOpen(false); setMobileMenuOpen(open => !open); }} aria-expanded={mobileMenuOpen} aria-controls="master-mobile-menu"
         className={`flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-semibold ${mobileMenuOpen ? "text-[var(--accent-primary)]" : "text-[var(--text-secondary)]"}`}>
         <Menu size={21}/><span>Menu</span>
       </button>
     </nav>
+    {mobileTradeOpen && (
+      <div className="fixed inset-0 z-[105] bg-black/50 lg:hidden" onClick={() => setMobileTradeOpen(false)}>
+        <section id="master-mobile-trade" aria-label="Escolher modo de negociação" onClick={event => event.stopPropagation()}
+          className="absolute inset-x-3 bottom-[calc(82px+env(safe-area-inset-bottom))] rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-3 shadow-2xl">
+          <div className="mb-2 flex items-center justify-between px-2 py-1">
+            <strong className="text-sm text-[var(--text-primary)]">Como deseja negociar?</strong>
+            <button type="button" onClick={() => setMobileTradeOpen(false)} aria-label="Fechar opções de negociação" className="rounded-lg p-2 text-[var(--text-secondary)]"><X size={18}/></button>
+          </div>
+          <Link href="/trade" onClick={() => setMobileTradeOpen(false)}
+            className="flex items-center gap-3 rounded-xl px-3 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
+            <ArrowLeftRight size={21} className="text-[var(--accent-primary)]"/>
+            <span className="flex-1"><strong className="block text-sm">Negociar manual</strong><span className="text-xs text-[var(--text-muted)]">Abra e gerencie suas próprias operações</span></span>
+            <ChevronRight size={17} className="text-[var(--text-muted)]"/>
+          </Link>
+          <Link href="/robots" onClick={() => setMobileTradeOpen(false)}
+            className="flex items-center gap-3 rounded-xl px-3 py-3 text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
+            <Bot size={21} className="text-[var(--accent-primary)]"/>
+            <span className="flex-1"><strong className="block text-sm">Negociar com robô</strong><span className="text-xs text-[var(--text-muted)]">Acesse a área de robôs de negociação</span></span>
+            <ChevronRight size={17} className="text-[var(--text-muted)]"/>
+          </Link>
+        </section>
+      </div>
+    )}
     {mobileMenuOpen && (
       <div className="fixed inset-0 z-[105] bg-black/50 lg:hidden" onClick={() => setMobileMenuOpen(false)}>
         <section id="master-mobile-menu" aria-label="Mais opções" onClick={event => event.stopPropagation()}
