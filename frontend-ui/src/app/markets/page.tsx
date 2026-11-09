@@ -3,7 +3,7 @@
 import { useMemo, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Search, Star, ArrowUpRight, TrendingUp, TrendingDown, RefreshCw } from "lucide-react";
+import { Search, Star, ArrowUpRight, TrendingUp, TrendingDown, RefreshCw, Bell, X } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import PageHeader from "@/components/PageHeader";
 import { usePortfolio } from "@/context/PortfolioContext";
@@ -17,11 +17,14 @@ export default function MarketsPage() {
 
 function MarketsContent() {
   const params = useSearchParams();
-  const { stocks, crypto, watchlist, addToWatchlist, removeFromWatchlist, refreshPrices, isLoading, lastUpdated } = usePortfolio();
+  const { stocks, crypto, watchlist, alerts, addAlert, removeAlert, toggleWatchlistStar, addToWatchlist, removeFromWatchlist, refreshPrices, isLoading, lastUpdated } = usePortfolio();
   const [filter, setFilter] = useState<Filter>(params.get("tab") === "favorites" ? "favorites" : "all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"name" | "change" | "price">("name");
   const [busy, setBusy] = useState<string | null>(null);
+  const [alertSymbol, setAlertSymbol] = useState<string | null>(null);
+  const [alertPrice, setAlertPrice] = useState("");
+  const [alertCondition, setAlertCondition] = useState<"above" | "below">("above");
 
   const favoriteSet = useMemo(() => new Set(watchlist.map(item => item.symbol.toUpperCase())), [watchlist]);
   const assets = useMemo(() => {
@@ -80,14 +83,16 @@ function MarketsContent() {
                 <td className="px-4 py-3"><div className="font-semibold text-[var(--text-primary)]">{asset.name || asset.symbol}</div><div className="mt-0.5 text-[var(--text-muted)]">{asset.symbol}</div></td>
                 <td className="px-4 py-3 text-right font-semibold tabular-nums text-[var(--text-primary)]">{asset.price > 0 ? formatCurrency(asset.price, false, { sourceCurrency: asset.currency || "USD" }) : "Indisponível"}</td>
                 <td className={`px-4 py-3 text-right font-semibold tabular-nums ${asset.changePercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{asset.price > 0 ? formatPercent(asset.changePercent) : "—"}</td>
-                <td className="px-4 py-3"><div className="flex items-center justify-end gap-2"><button type="button" disabled={busy === asset.symbol} aria-label={favoriteSet.has(asset.symbol.toUpperCase()) ? "Remover dos favoritos" : "Adicionar aos favoritos"} title={favoriteSet.has(asset.symbol.toUpperCase()) ? "Remover dos favoritos" : "Adicionar aos favoritos"} onClick={() => void toggle(asset.symbol, asset.name)} className="rounded-lg border border-[var(--border-primary)] p-2 text-[var(--accent-primary)] disabled:opacity-50"><Star size={15} fill={favoriteSet.has(asset.symbol.toUpperCase()) ? "currentColor" : "none"}/></button><Link href={`/trade?symbol=${encodeURIComponent(asset.symbol)}`} className="inline-flex items-center gap-1 rounded-lg bg-[var(--accent-primary)] px-3 py-2 font-semibold text-white">Negociar <ArrowUpRight size={13}/></Link></div></td>
+                <td className="px-4 py-3"><div className="flex items-center justify-end gap-2"><button type="button" disabled={busy === asset.symbol} aria-label={favoriteSet.has(asset.symbol.toUpperCase()) ? "Remover dos favoritos" : "Adicionar aos favoritos"} title={favoriteSet.has(asset.symbol.toUpperCase()) ? "Remover dos favoritos" : "Adicionar aos favoritos"} onClick={() => void toggle(asset.symbol, asset.name)} className="rounded-lg border border-[var(--border-primary)] p-2 text-[var(--accent-primary)] disabled:opacity-50"><Star size={15} fill={favoriteSet.has(asset.symbol.toUpperCase()) ? "currentColor" : "none"}/></button>{favoriteSet.has(asset.symbol.toUpperCase()) && <button type="button" title="Criar alerta" aria-label={`Criar alerta para ${asset.symbol}`} onClick={() => { setAlertSymbol(asset.symbol); setAlertPrice(asset.price > 0 ? String(asset.price) : ""); }} className="rounded-lg border border-[var(--border-primary)] p-2 text-[var(--text-secondary)]"><Bell size={15}/></button>}{favoriteSet.has(asset.symbol.toUpperCase()) && <button type="button" title="Marcar destaque" aria-label={`Destacar ${asset.symbol}`} onClick={() => void toggleWatchlistStar(asset.symbol)} className="rounded-lg border border-[var(--border-primary)] px-2 py-1 text-xs text-[var(--text-secondary)]">Destaque</button>}<Link href={`/trade?symbol=${encodeURIComponent(asset.symbol)}`} className="inline-flex items-center gap-1 rounded-lg bg-[var(--accent-primary)] px-3 py-2 font-semibold text-white">Negociar <ArrowUpRight size={13}/></Link></div></td>
               </tr>)}</tbody>
             </table>
             {assets.length === 0 && <p className="p-10 text-center text-sm text-[var(--text-muted)]">Nenhum ativo encontrado para os filtros selecionados.</p>}
           </div>
         </section>
+        {filter === "favorites" && alerts.length > 0 && <section className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-4"><h2 className="mb-3 text-sm font-semibold text-[var(--text-primary)]">Alertas de preço</h2><div className="space-y-2">{alerts.map(alert => <div key={alert.id} className="flex items-center justify-between gap-3 border-b border-[var(--border-primary)] py-2 text-xs"><span className="text-[var(--text-secondary)]">{alert.symbol} · {alert.condition === "above" ? "Acima de" : "Abaixo de"} {formatCurrency(alert.targetPrice, false, { sourceCurrency: "USD" })}</span><button type="button" onClick={() => void removeAlert(alert.id)} title="Excluir alerta" aria-label="Excluir alerta" className="text-[var(--text-muted)]"><X size={15}/></button></div>)}</div></section>}
         <p className="text-xs text-[var(--text-muted)]">Cotações sujeitas a atraso conforme o provedor. {lastUpdated ? `Última atualização da lista: ${lastUpdated.toLocaleTimeString("pt-BR")}.` : ""} Dados destinados ao ambiente de simulação.</p>
       </main>
+      {alertSymbol && <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4"><form onSubmit={event => { event.preventDefault(); const price = Number(alertPrice); if (Number.isFinite(price) && price > 0) { void addAlert(alertSymbol, alertCondition, price); setAlertSymbol(null); } }} className="w-full max-w-sm space-y-4 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5"><div className="flex items-center justify-between"><h2 className="font-semibold text-[var(--text-primary)]">Criar alerta · {alertSymbol}</h2><button type="button" onClick={() => setAlertSymbol(null)} aria-label="Fechar"><X size={18}/></button></div><label className="block text-xs text-[var(--text-secondary)]">Condição<select value={alertCondition} onChange={event => setAlertCondition(event.target.value as "above" | "below")} className="mt-2 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] p-3 text-sm"><option value="above">Acima de</option><option value="below">Abaixo de</option></select></label><label className="block text-xs text-[var(--text-secondary)]">Preço-alvo (USD)<input type="number" min="0.000001" step="any" required value={alertPrice} onChange={event => setAlertPrice(event.target.value)} className="mt-2 w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-primary)] p-3 text-sm"/></label><button type="submit" disabled={!(Number(alertPrice) > 0)} className="w-full rounded-lg bg-[var(--accent-primary)] p-3 text-sm font-semibold text-white disabled:opacity-50">Criar alerta</button></form></div>}
     </div>
   );
 }
