@@ -24,7 +24,7 @@ import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
 import LeveragedTradeHistory from "@/components/LeveragedTradeHistory";
 import { usePortfolio } from "@/context/PortfolioContext";
-import { stockAPI, StockQuote } from "@/lib/api";
+import { stockAPI, userAPI, StockQuote, type SimulatedPosition } from "@/lib/api";
 import { formatCurrency, formatPercent, formatDateTime } from "@/lib/utils";
 
 export default function Dashboard() {
@@ -53,6 +53,42 @@ export default function Dashboard() {
   } = usePortfolio();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [marginPositions, setMarginPositions] = useState<SimulatedPosition[]>([]);
+  const [marginLedger, setMarginLedger] = useState<number | null>(null);
+  const [marginLoadError, setMarginLoadError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const loadPositions = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        const result = await userAPI.getPositions();
+        if (!active) return;
+        setMarginPositions(result.positions.filter(position => position.status === "OPEN"));
+        setMarginLedger(result.buyingPower);
+        setMarginLoadError(false);
+      } catch (error) {
+        if (active) setMarginLoadError(true);
+        console.error("Failed to refresh dashboard positions:", error);
+      }
+    };
+    void loadPositions();
+    const timer = window.setInterval(() => void loadPositions(), 15000);
+    const onFocus = () => { void loadPositions(); };
+    window.addEventListener("focus", onFocus);
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener("focus", onFocus); };
+  }, []);
+
+  const marginCommitted = marginPositions.reduce((sum, position) => sum + (Number(position.margin) || 0), 0);
+  const marginPnl = marginPositions.reduce((sum, position) => sum + (Number(position.unrealizedPnl) || 0), 0);
+  // The margin ledger already excludes committed margin; restore it only once in equity.
+  const dashboardBuyingPower = marginLedger ?? buyingPower;
+  const dashboardEquity = dashboardBuyingPower + marginCommitted + marginPnl + totalPortfolioValue;
+  const dashboardReturns = totalReturns + marginPnl;
+  const dashboardReturnBase = totalInvested + marginCommitted;
+  const dashboardReturnPercent = dashboardReturnBase > 0 ? dashboardReturns / dashboardReturnBase * 100 : 0;
+  const dashboardPositionCount = holdings.length + marginPositions.length;
+
   const [indices, setIndices] = useState<StockQuote[]>([]);
   const [tickerQuotes, setTickerQuotes] = useState<StockQuote[]>([]);
   const tickerSymbols = ["BRL=X", "GC=F", "CL=F", "AAPL", "MSFT", "NVDA", "AMZN", "TSLA", "ETH-USD"];
@@ -138,7 +174,7 @@ export default function Dashboard() {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await Promise.all([refreshUserData(), refreshPrices()]);
+    await Promise.all([refreshUserData(), refreshPrices(), userAPI.getPositions().then(result => { setMarginPositions(result.positions.filter(position => position.status === "OPEN")); setMarginLedger(result.buyingPower); setMarginLoadError(false); }).catch(() => setMarginLoadError(true))]);
     setIsRefreshing(false);
   };
 
@@ -180,16 +216,16 @@ export default function Dashboard() {
               </div>
             </div>
             <span className="font-primary tabular-nums text-xl 2xl:text-[22px] font-semibold text-[var(--text-primary)] tracking-tight">
-              {formatCurrency(totalPortfolioValue, false)}
+              {formatCurrency(dashboardEquity, false, { convertFromUSD: false })}
             </span>
             <div className="flex items-center gap-1.5">
-              {dayGain >= 0 ? (
+              {dashboardReturns >= 0 ? (
                 <ArrowUpRight size={14} className="text-[var(--accent-green)]" />
               ) : (
                 <ArrowDownRight size={14} className="text-[var(--accent-red)]" />
               )}
-              <span className={`text-xs font-medium ${dayGain >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                {dayGain >= 0 ? "+" : ""}{formatCurrency(dayGain, false)} ({formatPercent(dayGainPercent)}) hoje
+              <span className={`text-xs font-medium ${dashboardReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
+                {dashboardReturns >= 0 ? "+" : ""}{formatCurrency(dashboardReturns, false, { convertFromUSD: false })} ({formatPercent(dayGainPercent)}) hoje
               </span>
             </div>
           </div>
@@ -198,17 +234,17 @@ export default function Dashboard() {
           {settings.showProfitLoss ? (
             <div className="group bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-primary)] border-b-[3px] border-b-[#dce8f7] flex flex-col justify-between min-w-0 gap-3 shadow-[0_6px_22px_rgba(15,35,60,0.045)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
               <span className="text-[11px] font-medium text-[var(--text-muted)]">Retorno total</span>
-              <span className={`font-primary tabular-nums text-xl 2xl:text-[22px] font-semibold tracking-tight ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                {totalReturns >= 0 ? "+" : ""}{formatCurrency(totalReturns, false)}
+              <span className={`font-primary tabular-nums text-xl 2xl:text-[22px] font-semibold tracking-tight ${dashboardReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
+                {dashboardReturns >= 0 ? "+" : ""}{formatCurrency(dashboardReturns, false, { convertFromUSD: false })}
               </span>
               <div className="flex items-center gap-1.5">
-                {totalReturns >= 0 ? (
+                {dashboardReturns >= 0 ? (
                   <TrendingUp size={14} className="text-[var(--accent-green)]" />
                 ) : (
                   <TrendingDown size={14} className="text-[var(--accent-red)]" />
                 )}
-                <span className={`text-xs font-medium ${totalReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                  {formatPercent(returnsPercent)} desde o início
+                <span className={`text-xs font-medium ${dashboardReturns >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
+                  {formatPercent(dashboardReturnPercent)} desde o início
                 </span>
               </div>
             </div>
@@ -231,7 +267,7 @@ export default function Dashboard() {
           <div className="group bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-primary)] border-b-[3px] border-b-[#dce8f7] flex flex-col justify-between min-w-0 gap-3 shadow-[0_6px_22px_rgba(15,35,60,0.045)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
             <span className="text-[11px] font-medium text-[var(--text-muted)]">Saldo disponível</span>
             <span className="font-primary tabular-nums text-[23px] 2xl:text-[26px] font-bold text-[#245cdb] dark:text-[#91b3ff] tracking-tight">
-              {formatCurrency(buyingPower, false, { convertFromUSD: false })}
+              {formatCurrency(dashboardBuyingPower, false, { convertFromUSD: false })}
             </span>
             <div className="flex items-center gap-1.5">
               <Wallet size={14} className="text-[var(--text-muted)]" />
@@ -245,7 +281,7 @@ export default function Dashboard() {
           <div className="group bg-[var(--bg-card)] rounded-2xl p-4 border border-[var(--border-primary)] border-b-[3px] border-b-[#dce8f7] flex flex-col justify-between min-w-0 gap-3 shadow-[0_6px_22px_rgba(15,35,60,0.045)] transition-all duration-200 hover:bg-[var(--bg-hover)] hover:border-[var(--accent-primary)] hover:shadow-[0_0_22px_rgba(50,107,255,0.12)]">
             <span className="text-[11px] font-medium text-[var(--text-muted)]">Posições abertas</span>
             <span className="font-primary tabular-nums text-xl 2xl:text-[22px] font-semibold text-[var(--accent-primary)] tracking-tight">
-              {holdings.length}
+              {dashboardPositionCount}
             </span>
             <div className="flex items-center gap-1.5">
               <Activity size={14} className="text-[var(--text-muted)]" />
