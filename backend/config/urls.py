@@ -103,6 +103,7 @@ urlpatterns = [
     path('api/stocks/', include('stocks.urls', namespace='stocks')),
     path('api/users/', include('users.urls', namespace='users')),
     path('api/robots/', include('robots.urls')),
+    path('api/projects/', include('projects.urls')),
     path('api/filings/', include('filings.urls', namespace='filings')),
     path('api/auth/signup/', SignupView.as_view(), name='auth-signup'),
     path('api/auth/login/', LoginView.as_view(), name='auth-login'),
