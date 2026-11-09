@@ -5,7 +5,7 @@ import AdvancedChart from "@/components/chart/AdvancedChart";
 import Link from "next/link";
 import {Activity, ArrowLeft, Clock3, TrendingUp} from "lucide-react";
 import {API_HOST} from "@/lib/api";
-type Op={id:string;side:string;status:string;pnl:number;pnlPercent:number;openedAt:string;entryPrice:number;exitPrice:number|null};
+type Op={id:string;side:string;status:string;pnl:number;pnlPercent:number;openedAt:string;closedAt:string|null;entryPrice:number;exitPrice:number|null};
 type Pagination={page:number;pageSize:number;totalPages:number;totalOperations:number;hasPrevious:boolean;hasNext:boolean};
 type Robot={id:string;displayNumber:number;symbol:string;assetName:string;capital:number;equity:number;pnl:number;pnlPercent:number;tp:number;sl:number;status:string;operations:Op[];pagination:Pagination;indicators:Record<string,unknown>};
 export default function RobotDetail({params}:{params:Promise<{id:string}>}){
@@ -16,6 +16,7 @@ export default function RobotDetail({params}:{params:Promise<{id:string}>}){
 
  const money=(n:number)=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"USD"}).format(n);
  const positive=(robot?.pnl??0)>=0;
+ const operationDate=(value:string|null)=>{if(!value)return "—";const date=new Date(value);return Number.isNaN(date.getTime())?"—":new Intl.DateTimeFormat("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(date);};
  return <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]"><Sidebar/><main className="mx-auto max-w-[1600px] px-4 py-5 lg:px-8">
  <Link href="/robots" className="inline-flex items-center gap-2 text-sm text-[var(--accent-primary)]"><ArrowLeft size={15}/> Todos os robôs</Link>
  {error&&<p role="alert" className="my-4 text-red-400">{error}</p>}
@@ -39,7 +40,7 @@ export default function RobotDetail({params}:{params:Promise<{id:string}>}){
  </div>
  <aside className="min-w-0 overflow-hidden rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)]">
  <div className="border-b border-[var(--border-primary)] px-5 py-4"><h2 className="text-base font-semibold">Operações concluídas</h2><p className="mt-1 text-xs text-[var(--text-secondary)]">{robot.pagination?.totalOperations??robot.operations.length} operações registradas</p></div>
- <div className="overflow-x-auto px-5"><table className="w-full text-left text-sm"><thead><tr className="text-[var(--text-secondary)]"><th className="py-3">Ativo</th><th>Resultado</th><th className="text-right">P/L</th></tr></thead><tbody>{robot.operations.map(op=><tr key={op.id} className="border-t border-[var(--border-primary)]"><td className="py-4 font-medium">{robot.symbol}<span className="block text-[10px] font-normal text-[var(--text-secondary)]">{op.status}</span></td><td className={op.pnl>=0?"text-emerald-500":"text-red-500"}>{op.pnlPercent.toFixed(2)}%</td><td className={`text-right tabular-nums ${op.pnl>=0?"text-emerald-500":"text-red-500"}`}>{money(op.pnl)}</td></tr>)}</tbody></table>
+ <div className="overflow-x-auto px-5"><table className="w-full text-left text-sm"><thead><tr className="text-[var(--text-secondary)]"><th className="py-3">Ativo</th><th className="px-2">Data e hora</th><th>Resultado</th><th className="text-right">P/L</th></tr></thead><tbody>{robot.operations.map(op=><tr key={op.id} className="border-t border-[var(--border-primary)]"><td className="py-4 font-medium">{robot.symbol}<span className="block text-[10px] font-normal text-[var(--text-secondary)]">{op.status}</span></td><td className="px-2 text-xs tabular-nums whitespace-nowrap text-[var(--text-secondary)]" title="Data e hora do encerramento">{operationDate(op.closedAt)}</td><td className={op.pnl>=0?"text-emerald-500":"text-red-500"}>{op.pnlPercent.toFixed(2)}%</td><td className={`text-right tabular-nums ${op.pnl>=0?"text-emerald-500":"text-red-500"}`}>{money(op.pnl)}</td></tr>)}</tbody></table>
  {robot.operations.length===0&&<p className="py-8 text-center text-xs text-[var(--text-secondary)]">Nenhuma operação concluída ainda.</p>}</div>
  {robot.pagination&&robot.pagination.totalPages>1&&<div className="flex items-center justify-between gap-2 border-t border-[var(--border-primary)] px-4 py-3 text-xs"><span className="text-[var(--text-secondary)]">{robot.pagination.page} / {robot.pagination.totalPages}</span><div className="flex gap-2"><button type="button" disabled={!robot.pagination.hasPrevious} onClick={()=>setPage(p=>Math.max(1,p-1))} className="rounded-md border border-[var(--border-primary)] px-3 py-2 disabled:opacity-40">Anterior</button><button type="button" disabled={!robot.pagination.hasNext} onClick={()=>setPage(p=>p+1)} className="rounded-md border border-[var(--border-primary)] px-3 py-2 disabled:opacity-40">Próxima</button></div></div>}
  </aside></section>
