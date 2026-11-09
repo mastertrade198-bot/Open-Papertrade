@@ -1,8 +1,9 @@
 """Settle completed *simulated* robot positions into the test account ledger."""
 from django.db import transaction
-from django.db.models import F
+from decimal import Decimal
+from django.db.models import F, Sum
 from users.models import UserProfile, BalanceTransaction
-from .models import RobotAudit
+from .models import RobotAudit, RobotOperation
 
 
 def settle_robot(robot):
@@ -16,7 +17,8 @@ def settle_robot(robot):
         return False
     if RobotAudit.objects.filter(robot=robot, action="ROBOT_SETTLEMENT").exists():
         return False
-    amount = robot.equity
+    manual_pnl = robot.operations.filter(source='MANUAL', status='CLOSED').aggregate(total=Sum('pnl'))['total'] or Decimal('0.00')
+    amount = robot.equity + manual_pnl
     if amount < 0:
         raise ValueError("Cannot settle negative robot equity")
     # Lock user ledger row and create a single credit plus audit atomically.
@@ -32,7 +34,7 @@ def settle_robot(robot):
     RobotAudit.objects.create(
         robot=robot, actor="simulation_worker", action="ROBOT_SETTLEMENT",
         before={"available_balance": str(before)},
-        after={"available_balance": str(after), "returned_equity": str(amount), "simulated": True},
+        after={"available_balance": str(after), "returned_equity": str(amount), "manual_pnl": str(manual_pnl), "simulated": True},
         reason="Crédito automático do patrimônio simulado no encerramento",
     )
     return True
