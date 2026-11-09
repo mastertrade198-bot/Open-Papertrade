@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from .models import UserProfile, Position, PositionAuditLog
 from .balance_journal import balance_context
 from .views import get_user
+from .market_hours import is_market_open
 from stocks.services import get_stock_service
 
 
@@ -46,6 +47,17 @@ def get_usd_quote(symbol):
         raise ValueError("A cotação retornada é inválida.")
 
     return quote, price
+
+
+def require_open_market(symbol):
+    """Enforce trading hours on the server, including direct API requests."""
+    # Indian equities are not accepted by get_usd_quote; USD stocks use US hours.
+    state = is_market_open("US", symbol)
+    if not state["is_open"]:
+        raise ValueError(
+            "Mercado fechado para este ativo. Não é possível abrir ou encerrar "
+            "posições fora do horário regular. Criptomoedas operam 24 horas por dia."
+        )
 
 
 def parse_positive(data, key, decimal_places):
@@ -121,6 +133,7 @@ class PositionsView(APIView):
             if not Decimal("1") <= leverage <= MAX_LEVERAGE:
                 raise ValueError("A alavancagem deve estar entre 1x e 100x.")
 
+            require_open_market(symbol)
             quote, price = get_usd_quote(symbol)
 
             # Margin is the source of truth. Quantity is derived, not submitted.
@@ -220,6 +233,7 @@ class ClosePositionView(APIView):
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
+                require_open_market(position.symbol)
                 _, exit_price = get_usd_quote(position.symbol)
                 pnl = position.unrealized_pnl(exit_price)
 
