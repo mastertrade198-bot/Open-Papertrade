@@ -303,7 +303,7 @@ export default function AdvancedChart({
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
         textColor: "rgba(255, 255, 255, 0.55)",
-        fontFamily: "'DM Mono', monospace",
+        fontFamily: "'Inter', system-ui, sans-serif",
         fontSize: 11,
         panes: {
           separatorColor: "rgba(255, 255, 255, 0.08)",
