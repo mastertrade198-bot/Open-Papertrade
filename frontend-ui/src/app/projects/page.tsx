@@ -9,6 +9,7 @@ import { ArrowRight, CalendarDays, CheckCircle2, Clock3, ImageIcon, RefreshCw, S
 type Project = { id: string; name: string; category: string; categoryLabel: string; asset: string; description: string; imageUrl: string; durationDays: number; expectedReturnPercent: number; minimumAmount: number; isActive: boolean };
 type Participation = { id: string; projectId: string; projectName: string; category: string; categoryLabel: string; principal: number; percent: number; simulatedValue: number; status: string; startedAt: string };
 const CATEGORIES = [["ALL", "Todos"], ["REAL_ESTATE", "Fundos Imobiliários"], ["FIXED_INCOME", "Renda Fixa"], ["STOCKS", "Ações"], ["ETF", "ETF"]] as const;
+const hasValidCents = (value: number) => Number.isFinite(value) && Math.abs(value * 100 - Math.round(value * 100)) < 1e-6;
 const money = (value: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
 const BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -65,13 +66,13 @@ export default function ProjectsPage() {
   const active = participations.filter(p => p.status === "ACTIVE");
   const invested = active.reduce((sum, p) => sum + p.principal, 0);
   const previewAmount = selected ? Number(amounts[selected.id] || 0) : 0;
-  const validAmount = selected && Number.isFinite(previewAmount) && previewAmount >= selected.minimumAmount && Number.isInteger(previewAmount * 100 + 1e-7);
+  const validAmount = selected && Number.isFinite(previewAmount) && previewAmount >= selected.minimumAmount && hasValidCents(previewAmount);
   const previewGain = selected && validAmount ? previewAmount * selected.expectedReturnPercent / 100 : 0;
 
   const join = async (project: Project) => {
     const raw = amounts[project.id] || "";
     const amount = Number(raw);
-    if (!Number.isFinite(amount) || amount < project.minimumAmount || !Number.isInteger(amount * 100 + 1e-7)) {
+    if (!Number.isFinite(amount) || amount < project.minimumAmount || !hasValidCents(amount)) {
       setError("Informe um valor válido, com até duas casas decimais e acima do mínimo."); return;
     }
     if (!window.confirm(`Confirmar aplicação de ${money(amount)} no projeto ${project.name}? O valor será reservado do saldo da sua conta.`)) return;
