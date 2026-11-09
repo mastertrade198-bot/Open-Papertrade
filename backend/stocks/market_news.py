@@ -20,18 +20,18 @@ from rest_framework.views import APIView
 logger = logging.getLogger(__name__)
 
 SEARCHES = {
-    'all': '(mercado financeiro OR bolsa de valores OR economia OR investimentos) when:7d',
-    'stocks': '(ações OR bolsa de valores OR resultados de empresas) when:7d',
-    'crypto': '(bitcoin OR ethereum OR criptomoedas) when:7d',
-    'etfs': '(ETF OR fundos de índice) when:14d',
-    'economy': '(inflação OR banco central OR taxa de juros OR economia) when:7d',
+    'all': 'mercado financeiro',
+    'stocks': 'bolsa de valores ações',
+    'crypto': 'bitcoin criptomoedas',
+    'etfs': 'ETF fundos de índice',
+    'economy': 'economia inflação juros',
 }
 MAX_BYTES = 1_000_000
 
 
 def _fetch_feed(url):
     request = Request(url, headers={'User-Agent': 'MasterTradeRSS/1.0 (news headlines reader)', 'Accept': 'application/rss+xml, application/xml, text/xml'})
-    with urlopen(request, timeout=6) as response:
+    with urlopen(request, timeout=8) as response:
         data = response.read(MAX_BYTES + 1)
     if len(data) > MAX_BYTES:
         raise ValueError('RSS feed too large')
@@ -57,7 +57,7 @@ def _articles(root, default_source):
     result = []
     for item in root.findall('.//item')[:25]:
         title = (item.findtext('title') or '').strip()
-        link = (item.findtext('link') or '').strip()
+        link = (item.findtext('link') or '').strip()\n        if not link:\n            guid = item.find('guid')\n            if guid is not None and guid.text and guid.text.startswith('https://'):\n                link = guid.text.strip()
         parsed = urlparse(link)
         if not title or parsed.scheme != 'https' or not parsed.hostname:
             continue
@@ -82,14 +82,15 @@ class MarketNewsView(APIView):
         category = request.query_params.get('category', 'all').lower()
         if category not in SEARCHES:
             return Response({'error': 'Categoria inválida.'}, status=400)
-        key = 'marketnews:rss:ptbr:v3:' + category
+        key = 'marketnews:rss:ptbr:v4:' + category
         cached = cache.get(key)
         if cached is not None:
             return Response(cached)
 
-        query = quote(SEARCHES[category] + ' lang:pt', safe='')
+        query = quote(SEARCHES[category], safe='')
         feeds = [
             ('Google News', 'https://news.google.com/rss/search?q=' + query + '&hl=pt-BR&gl=BR&ceid=BR:pt'),
+            ('Google News Brasil', 'https://news.google.com/rss/search?q=' + quote('economia investimentos', safe='') + '&hl=pt-BR&gl=BR&ceid=BR:pt'),
         ]
 
         articles = []
@@ -97,9 +98,9 @@ class MarketNewsView(APIView):
         for source, url in feeds:
             try:
                 articles.extend(_articles(_fetch_feed(url), source))
-            except (HTTPError, URLError, TimeoutError, OSError, ValueError, ET.ParseError):
+            except (HTTPError, URLError, TimeoutError, OSError, ValueError, ET.ParseError) as exc:
                 failures += 1
-                logger.warning('RSS feed unavailable: %s', source)
+                logger.warning('RSS feed unavailable: %s (%s)', source, type(exc).__name__)
 
         seen = set()
         unique = []
@@ -118,7 +119,7 @@ class MarketNewsView(APIView):
             return Response({**stale, 'stale': True})
         result = {
             'articles': [], 'configured': True,
-            'message': 'Não foi possível carregar manchetes RSS agora. Tente novamente mais tarde.' if failures else 'Nenhuma notícia disponível.',
+            'message': 'As fontes de notícias estão temporariamente indisponíveis. Verifique a conexão do backend e tente novamente.' if failures == len(feeds) else 'Nenhuma manchete encontrada nas fontes consultadas.',
         }
         cache.set(key, result, 120)
         return Response(result)
