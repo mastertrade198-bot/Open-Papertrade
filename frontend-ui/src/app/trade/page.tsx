@@ -163,9 +163,11 @@ function TradePageContent() {
     const symbols = new Set<string>();
     // Refresh the selected asset and currently displayed market list first.
     symbols.add(selectedSymbol);
-    for (const asset of visibleMarketAssets) symbols.add(asset.symbol);
+    for (const asset of visibleMarketAssets) {
+      if (marketCategory === "Favoritos" && favoriteSymbols.includes(asset.symbol)) symbols.add(asset.symbol);
+    }
     return [...symbols];
-  }, [selectedSymbol, visibleMarketAssets]);
+  }, [selectedSymbol, visibleMarketAssets, marketCategory, favoriteSymbols]);
   const marketQuotesInFlight = useRef(false);
   const refreshMarketQuotes = useCallback(async () => {
     if (!marketSymbols.length || marketQuotesInFlight.current) return;
@@ -209,7 +211,7 @@ function TradePageContent() {
 
   // Market list and selected trading ticket have their own quote state;
   // portfolio streaming alone cannot update this page.
-  const cryptoStreamSymbols = marketSymbols.filter(symbol => /^(BTC|ETH|SOL|XRP|BNB|ADA|DOGE|AVAX|LINK|SHIB|DOT|LTC|BCH|UNI|AAVE|ATOM|NEAR|ICP|FIL|ETC|XLM|ALGO|HBAR|PEPE)$/i.test(symbol)).sort().join(",");
+  const cryptoStreamSymbols = [selectedSymbol].filter(symbol => /^(BTC|ETH|SOL|XRP|BNB|ADA|DOGE|AVAX|LINK|SHIB|DOT|LTC|BCH|UNI|AAVE|ATOM|NEAR|ICP|FIL|ETC|XLM|ALGO|HBAR|PEPE)$/i.test(symbol)).sort().join(",");
   useEffect(() => {
     if (!cryptoStreamSymbols) return;
     return subscribeCryptoPrices(cryptoStreamSymbols.split(","), ticks => {
@@ -550,19 +552,19 @@ function TradePageContent() {
                 {searchQuery && <button type="button" onClick={() => setSearchQuery("")} aria-label="Limpar busca"><X size={13}/></button>}
               </label>
             </div>
-            <div className="flex gap-1 overflow-x-auto px-2 py-2 border-b border-[var(--border-primary)]" role="tablist" aria-label="Categorias de ativos">
+            <div className="grid grid-cols-2 gap-1.5 p-2 border-b border-[var(--border-primary)]" role="tablist" aria-label="Categorias de ativos">
               {["Favoritos", "Todos", ...assetCategories.map(category => category.name)].map(category => (
-                <button key={category} type="button" role="tab" aria-selected={marketCategory === category} onClick={() => setMarketCategory(category)} className={`shrink-0 rounded px-2 py-1.5 text-[11px] font-semibold transition-colors ${marketCategory === category ? "bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]" : "text-[var(--text-muted)] hover:bg-[var(--bg-muted)]"}`}>{category}</button>
+                <button key={category} type="button" role="tab" aria-selected={marketCategory === category} onClick={() => setMarketCategory(category)} className={`min-w-0 truncate rounded-md px-2 py-2 text-[11px] font-semibold text-left transition-colors ${marketCategory === category ? "bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]" : "text-[var(--text-muted)] hover:bg-[var(--bg-muted)]"}`}>{category}</button>
               ))}
             </div>
-            <div className="grid grid-cols-[minmax(0,1fr)_68px_82px] gap-2 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"><span>Nome / Símbolo</span><span className="text-right">Preço</span><span className="text-right">Variação</span></div>
+            <div className="flex items-center justify-between gap-2 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-muted)]"><span>Nome / Símbolo</span>{marketCategory === "Favoritos" && <span>Preço / Variação</span>}</div>
             <div className="max-h-[560px] overflow-y-auto flex-1">
               {visibleMarketAssets.map(asset => {
-                const item = marketQuotes[asset.symbol.toUpperCase()] || getStockBySymbol(asset.symbol);
+                const item = marketCategory === "Favoritos" ? (marketQuotes[asset.symbol.toUpperCase()] || getStockBySymbol(asset.symbol)) : undefined;
                 const change = item?.changePercent;
                 return <div key={asset.symbol} className={`flex items-center border-b border-[var(--border-primary)]/40 hover:bg-[var(--bg-hover)] transition-colors ${selectedSymbol === asset.symbol ? "bg-[var(--accent-primary)]/10 border-l-2 border-l-[var(--accent-primary)]" : ""}`}><button type="button" onClick={() => toggleFavorite(asset.symbol)} title={favoriteSymbols.includes(asset.symbol) ? "Remover dos favoritos" : "Adicionar aos favoritos"} aria-label={`Favoritar ${asset.symbol}`} className="shrink-0 pl-2 py-3 text-[var(--accent-primary)]"><Star size={15} fill={favoriteSymbols.includes(asset.symbol) ? "currentColor" : "none"}/></button><button type="button" onClick={() => selectStock({symbol:asset.symbol,name:asset.name,provider:"catalog"})} aria-pressed={selectedSymbol === asset.symbol} className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2 py-2.5 text-left">
                   <span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold text-[var(--text-primary)]" title={asset.name}>{asset.name && asset.name !== asset.symbol ? asset.name : (item?.name || asset.symbol)}</span><span className="block text-[10px] font-medium text-[var(--text-muted)]">{asset.displaySymbol || asset.symbol}</span></span>
-                  <span className="w-[68px] shrink-0 text-right text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">{item && Number.isFinite(item.price) ? Number(item.price).toFixed(2) : "—"}</span><span className={`w-[82px] shrink-0 text-right text-[11px] tabular-nums ${typeof change === "number" && change >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{typeof change === "number" && Number.isFinite(change) ? `${change > 0 ? "+" : ""}${change.toFixed(2)}%` : "—"}</span>
+                  {marketCategory === "Favoritos" && <span className="w-[68px] shrink-0 text-right text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">{item && Number.isFinite(item.price) ? Number(item.price).toFixed(2) : "—"}</span>}{marketCategory === "Favoritos" && <span className={`w-[82px] shrink-0 text-right text-[11px] tabular-nums ${typeof change === "number" && change >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{typeof change === "number" && Number.isFinite(change) ? `${change > 0 ? "+" : ""}${change.toFixed(2)}%` : "—"}</span>}
                 </button></div>;
               })}
               {visibleMarketAssets.length === 0 && <p className="px-3 py-6 text-center text-xs text-[var(--text-muted)]">{catalogLoading ? "Carregando ativos..." : "Nenhum ativo encontrado nesta categoria."}</p>}
@@ -584,7 +586,7 @@ function TradePageContent() {
               </>}
             </div>
             <section aria-label="Gráfico avançado de negociação" className="min-w-0">
-              {chartLayout !== undefined ? <AdvancedChart key={selectedSymbol} symbol={selectedSymbol} symbolName={selectedAssetName} initialState={chartLayout} onStateChange={saveChartLayout} height={480} /> : <div className="h-[480px] rounded bg-[var(--bg-card)]" />}
+              {chartLayout !== undefined ? <AdvancedChart key={selectedSymbol} symbol={selectedSymbol} symbolName={selectedAssetName} initialState={chartLayout} onStateChange={saveChartLayout} height={480} livePrice={currentPrice} /> : <div className="h-[480px] rounded bg-[var(--bg-card)]" />}
             </section>
           </div>
 
