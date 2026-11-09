@@ -38,14 +38,14 @@ class EasyScheduleWidget(forms.SplitDateTimeWidget):
 
 
 class RobotScheduleForm(forms.ModelForm):
-    close_now = forms.BooleanField(label='Finalizar agora pelo resultado atual (simulação)', required=False, help_text='Ao salvar, encerra com o patrimônio atual e devolve o saldo simulado à carteira.')
+    close_now = forms.BooleanField(label='Encerrar com o resultado atual', required=False, help_text='Ao salvar, encerra e devolve o patrimônio simulado à carteira.')
     scheduled_end_at = forms.SplitDateTimeField(
         label='Finalização programada',
         required=False,
         input_date_formats=['%Y-%m-%d'],
         input_time_formats=['%H:%M'],
         widget=EasyScheduleWidget,
-        help_text='Escolha a data no calendário e digite a hora no formato 24h (ex.: 18:30).',
+        help_text='Data e hora do encerramento (24h).',
     )
     scheduled_pnl_percent = forms.DecimalField(
         label='Lucro ou prejuízo (%)',
@@ -58,7 +58,7 @@ class RobotScheduleForm(forms.ModelForm):
             'placeholder': 'Ex.: 5.00 ou -3.00',
             'style': 'width:100%;max-width:440px;min-height:44px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;background:transparent;',
         }),
-        help_text='Use um número positivo para lucro ou negativo para prejuízo.',
+        help_text='Positivo = lucro; negativo = prejuízo.',
     )
 
     class Meta:
@@ -116,21 +116,28 @@ class TradingRobotAdmin(ModelAdmin):
     search_fields = ('symbol', 'asset_name', 'user__email')
     actions = None
     fieldsets = (
-        ('Informações do robô', {
-            'fields': (('asset_display', 'invested_amount'), ('current_pnl', 'current_equity'), 'status_summary'),
+        (None, {
+            'fields': (
+                ('robot_number', 'user'),
+                ('asset_display', 'status_summary'),
+                ('invested_amount', 'current_equity', 'current_pnl'),
+            ),
         }),
-        ('Configurar finalização', {
-            'description': 'Escolha a data no calendário, digite a hora (HH:MM) e informe o percentual de lucro ou prejuízo. O robô executará microoperações sintéticas até o encerramento, respeitando os limites e o resultado programado. Simulação demonstrativa.',
-            'fields': ('scheduled_end_at', 'scheduled_pnl_percent'),
+        ('Programação do resultado simulado', {
+            'fields': (
+                ('scheduled_end_at', 'scheduled_pnl_percent'),
+            ),
         }),
-        ('Encerramento imediato', {'description': 'Encerre com o lucro ou prejuízo atual. O saldo devolvido é simulado.', 'fields': ('close_now',)}),
-        ('Parâmetros originais', {
-            'fields': ('take_profit', 'stop_loss', 'indicators'),
-            'classes': ('collapse',),
+        ('Finalizar agora', {
+            'fields': ('close_now',),
         }),
-        ('Histórico e encerramento', {
-            'fields': ('created_at', 'closed_at', 'closed_reason'),
-            'classes': ('collapse',),
+        ('Dados adicionais', {
+            'fields': (
+                ('take_profit', 'stop_loss'),
+                'created_at',
+                ('closed_at', 'closed_reason'),
+                'indicators',
+            ),
         }),
     )
     readonly_fields = ('asset_display', 'invested_amount', 'current_pnl', 'current_equity', 'robot_number', 'status_summary', 'user', 'symbol', 'asset_name',
