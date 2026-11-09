@@ -31,7 +31,7 @@ class Participation(models.Model):
     project = models.ForeignKey(Project, on_delete=models.PROTECT, related_name='participations')
     user = models.ForeignKey('users.UserProfile', on_delete=models.PROTECT, related_name='project_participations')
     principal = models.DecimalField('Capital fictício reservado', max_digits=18, decimal_places=2)
-    current_percent = models.DecimalField('Resultado simulado (%)', max_digits=9, decimal_places=3, default=0)
+    current_percent = models.DecimalField('Ajuste individual sobre a curva (%)', max_digits=9, decimal_places=3, default=0)
     started_at = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=12, choices=[('ACTIVE', 'Ativa'), ('CLOSED', 'Encerrada')], default='ACTIVE')
     updated_at = models.DateTimeField(auto_now=True)
