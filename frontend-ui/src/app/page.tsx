@@ -140,7 +140,7 @@ export default function Home() {
                 { label: "Gestão de Risco", href: "/documents/gestao-de-risco-master-trade.html" },
                 { label: "AML", href: "/documents/aml-master-trade.html" },
                 { label: "KYC", href: "/documents/kyc-master-trade.html" },
-              ].map(policy => <a key={policy.label} href={policy.href} target="_blank" rel="noopener noreferrer" title={`Abrir minuta: ${policy.label}`} className="transition-colors hover:text-white">{policy.label}</a>)}
+              ].map(policy => <a key={policy.label} href={policy.href} target="_blank" rel="noopener noreferrer" title={`Abrir minuta: ${policy.label}`} className="font-medium text-[#64D9C2] transition-colors hover:text-white">{policy.label}</a>)}
             </div>
             <span className="text-[10px] text-[#7890A6] sm:ml-auto sm:whitespace-nowrap">Minutas para revisão</span>
           </div>
