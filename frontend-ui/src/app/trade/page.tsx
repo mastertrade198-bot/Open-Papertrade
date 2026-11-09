@@ -657,7 +657,7 @@ function TradePageContent() {
               </>}
             </div>
             <section aria-label="Gráfico avançado de negociação" className="min-w-0">
-              {chartLayout !== undefined ? <AdvancedChart key={selectedSymbol} symbol={selectedSymbol} symbolName={selectedAssetName} initialState={chartLayout} onStateChange={saveChartLayout} height={480} livePrice={currentPrice} fitHistoryOnLoad /> : <div className="h-[480px] rounded bg-[var(--bg-card)]" />}
+              {chartLayout !== undefined ? <AdvancedChart key={selectedSymbol} symbol={selectedSymbol} symbolName={selectedAssetName} initialState={chartLayout} onStateChange={saveChartLayout} height={480} livePrice={marketStatus.isOpen ? currentPrice : undefined} fitHistoryOnLoad /> : <div className="h-[480px] rounded bg-[var(--bg-card)]" />}
             </section>
           </div>
 
