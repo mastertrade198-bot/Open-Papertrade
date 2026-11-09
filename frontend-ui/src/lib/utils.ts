@@ -234,7 +234,9 @@ const MARKET_SCHEDULES: Record<string, {
 };
 
 export function isCryptoSymbol(symbol: string): boolean {
-  return symbol.toUpperCase().includes('-USD');
+  const normalized = symbol.trim().toUpperCase();
+  const base = normalized.replace(/-(USD|USDT)$/, "");
+  return /-(USD|USDT)$/.test(normalized) || /^(BTC|ETH|SOL|XRP|BNB|ADA|DOGE|AVAX|LINK|SHIB|DOT|LTC|BCH|UNI|AAVE|ATOM|NEAR|ICP|FIL|ETC|XLM|ALGO|HBAR|PEPE)$/.test(base);
 }
 
 /**
