@@ -547,7 +547,7 @@ function TradePageContent() {
         </button>
         {/* Main Trade Area */}
         <div className="trade-workspace-grid grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[265px_minmax(0,1fr)_295px] gap-0 items-stretch min-w-0 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card-inner)] overflow-hidden">
-          <aside id="mobile-trade-assets" aria-label="Lista de mercados" className={`${mobileAssetsOpen ? "flex" : "hidden"} lg:flex min-w-0 border-b lg:border-b-0 lg:border-r border-[var(--border-primary)] bg-[var(--bg-card-inner)] flex flex-col">
+          <aside id="mobile-trade-assets" aria-label="Lista de mercados" className={`${mobileAssetsOpen ? "flex" : "hidden"} lg:flex min-w-0 border-b lg:border-b-0 lg:border-r border-[var(--border-primary)] bg-[var(--bg-card-inner)] flex-col`}>
             <div className="p-3 border-b border-[var(--border-primary)]">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-[var(--text-primary)]">Mercados</h2>
