@@ -9,6 +9,8 @@ from django.utils import timezone
 class Project(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField('Nome do projeto', max_length=160)
+    CATEGORY_CHOICES = [('REAL_ESTATE', 'Fundos Imobiliários'), ('FIXED_INCOME', 'Renda Fixa'), ('STOCKS', 'Ações'), ('ETF', 'ETF')]
+    category = models.CharField('Categoria', max_length=20, choices=CATEGORY_CHOICES, default='FIXED_INCOME')
     asset = models.CharField('Ativo / setor', max_length=120)
     description = models.TextField('Descrição', blank=True)
     duration_days = models.PositiveIntegerField('Prazo (dias)', validators=[MinValueValidator(1)])
