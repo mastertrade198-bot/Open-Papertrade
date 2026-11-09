@@ -423,7 +423,7 @@ function TradePageContent() {
     setMarginInput((Math.floor(marginBalance * percent * 100) / 100).toFixed(2));
   };
 
-  const getButtonText = () => orderType === "BUY" ? "Compra" : "Venda";
+  const getButtonText = () => orderType === "BUY" ? "Comprar" : "Vender";
 
   return (
     <div className="trade-terminal flex h-full bg-[var(--bg-primary)]">
