@@ -1,5 +1,6 @@
 from decimal import Decimal
 from django import forms
+from django.core.exceptions import ValidationError
 from django.contrib import admin
 from django.db import transaction
 from django.utils import timezone
@@ -7,8 +8,21 @@ from unfold.admin import ModelAdmin
 from .models import Project, Participation, ParticipationPoint, ParticipationAudit
 
 
+class ProjectAdminForm(forms.ModelForm):
+    class Meta:
+        model = Project
+        fields = '__all__'
+
+    def clean_image_url(self):
+        url = self.cleaned_data.get('image_url', '')
+        if url and not url.startswith('https://'):
+            raise ValidationError('Utilize uma URL HTTPS pública para a imagem de capa.')
+        return url
+
+
 @admin.register(Project)
 class ProjectAdmin(ModelAdmin):
+    form = ProjectAdminForm
     list_display = ('name', 'category', 'asset', 'duration_days', 'expected_return_percent', 'is_active')
     list_filter = ('category', 'is_active')
     search_fields = ('name', 'asset')
