@@ -5,6 +5,13 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 export const API_HOST = API_BASE_URL.replace(/\/api\/?$/, '');
 
+// Shared per-tab quote cache. All market screens reuse the same successful
+// symbol results, and overlapping requests are coalesced into one network call.
+const sharedQuoteCache = new Map<string, { result: StockServiceResult; expires: number }>();
+const pendingQuoteRequests = new Map<string, Promise<StockServiceResult | null>>();
+const QUOTE_CACHE_MS = 45_000;
+const QUOTE_NEGATIVE_CACHE_MS = 10_000;
+
 export interface StockQuote {
   symbol: string;
   price: number;
@@ -411,18 +418,74 @@ class StockAPI {
    * Get a single stock quote
    */
   async getQuote(symbol: string, skipCache = false): Promise<StockServiceResult> {
-    const params = skipCache ? '?skip_cache=true' : '';
-    return this.fetch<StockServiceResult>(`/stocks/quote/${symbol.toUpperCase()}/${params}`);
+    const normalized = symbol.trim().toUpperCase();
+    const response = await this.getQuotes([normalized], skipCache);
+    return response.quotes[normalized] ?? {
+      data: null, success: false, primaryUsed: false, cached: false,
+      errors: [{ provider: "market", errorType: "no_data", message: "Quote unavailable" }],
+    };
   }
 
-  /**
-   * Get multiple stock quotes
-   */
   async getQuotes(symbols: string[], skipCache = false): Promise<BulkQuotesResponse> {
-    return this.fetch<BulkQuotesResponse>('/stocks/quotes/', {
-      method: 'POST',
-      body: JSON.stringify({ symbols, skipCache }),
-    });
+    const unique = [...new Set(symbols.map(s => s.trim().toUpperCase()).filter(Boolean))];
+    if (!unique.length) return { quotes: {}, total: 0, successful: 0 };
+    const now = Date.now();
+    const quotes: Record<string, StockServiceResult> = {};
+    const missing: string[] = [];
+    const pending: Array<Promise<void>> = [];
+
+    for (const symbol of unique) {
+      const cached = sharedQuoteCache.get(symbol);
+      if (!skipCache && cached && cached.expires > now) {
+        quotes[symbol] = { ...cached.result, cached: true };
+        continue;
+      }
+      const inFlight = pendingQuoteRequests.get(symbol);
+      if (inFlight) {
+        pending.push(inFlight.then(result => { if (result) quotes[symbol] = result; }));
+      } else {
+        missing.push(symbol);
+      }
+    }
+
+    if (missing.length) {
+      // Register promises before awaiting the HTTP call, so concurrent
+      // components/pages can join instead of issuing duplicate requests.
+      let resolveBatch!: (value: Record<string, StockServiceResult>) => void;
+      const batchReady = new Promise<Record<string, StockServiceResult>>(resolve => { resolveBatch = resolve; });
+      for (const symbol of missing) {
+        const promise = batchReady.then(batch => batch[symbol] ?? null);
+        pendingQuoteRequests.set(symbol, promise);
+        pending.push(promise.then(result => { if (result) quotes[symbol] = result; }));
+      }
+      try {
+        const response = await this.fetch<BulkQuotesResponse>('/stocks/quotes/', {
+          method: 'POST',
+          body: JSON.stringify({ symbols: missing, skipCache }),
+        });
+        const received: Record<string, StockServiceResult> = {};
+        for (const symbol of missing) {
+          const result = response.quotes?.[symbol];
+          if (!result) continue;
+          received[symbol] = result;
+          sharedQuoteCache.set(symbol, {
+            result, expires: Date.now() + (result.success && result.data ? QUOTE_CACHE_MS : QUOTE_NEGATIVE_CACHE_MS),
+          });
+        }
+        resolveBatch(received);
+      } catch (error) {
+        resolveBatch({});
+        throw error;
+      } finally {
+        for (const symbol of missing) pendingQuoteRequests.delete(symbol);
+      }
+    }
+    await Promise.all(pending);
+    return {
+      quotes,
+      total: unique.length,
+      successful: Object.values(quotes).filter(result => result.success && result.data).length,
+    };
   }
 
   /**
