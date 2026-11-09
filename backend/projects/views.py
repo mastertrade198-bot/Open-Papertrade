@@ -14,7 +14,7 @@ from .models import Project, Participation, ParticipationPoint
 def serialize_project(project):
     return dict(id=str(project.pk), name=project.name, asset=project.asset,
                 category=project.category, categoryLabel=project.get_category_display(),
-                description=project.description, durationDays=project.duration_days,
+                description=project.description, imageUrl=project.image_url if project.image_url.startswith('https://') else '', durationDays=project.duration_days,
                 expectedReturnPercent=float(project.expected_return_percent),
                 minimumAmount=float(project.minimum_amount), isActive=project.is_active)
 
