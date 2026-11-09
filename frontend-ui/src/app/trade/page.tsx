@@ -345,7 +345,7 @@ function TradePageContent() {
 
 // Use selected quote price or fall back to context
   const assetNameBySymbol = useMemo(() => new Map(availableAssets.map(asset => [asset.symbol.toUpperCase(), asset.name])), [availableAssets]);
-  const getAssetFullName = (symbol: string) => { const name = assetNameBySymbol.get(symbol.toUpperCase()) || getStockBySymbol(symbol)?.name || (selectedQuote?.symbol === symbol ? selectedQuote.name : undefined); return resolveCryptoName(symbol, name); };
+  const getAssetFullName = (symbol: string) => { const name = assetNameBySymbol.get(symbol.toUpperCase()) || getStockBySymbol(symbol)?.name || (selectedQuote?.symbol === symbol ? selectedQuote.name : undefined); return resolveCryptoName(symbol, name ?? undefined); };
   const selectedAssetName = getAssetFullName(selectedSymbol);
 
   const activeQuote = marketQuotes[selectedSymbol.toUpperCase()] ?? (selectedQuote?.symbol?.toUpperCase() === selectedSymbol.toUpperCase() ? selectedQuote : null);
