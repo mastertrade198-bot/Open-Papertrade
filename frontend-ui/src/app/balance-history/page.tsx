@@ -14,20 +14,23 @@ const transactionType = (category: string, amount: number) => withdrawalStatus(c
 const friendlyDescription = (description: string, category: string, amount: number) => {
   const raw = (description || "").trim();
   const clean = raw
-    .replace(/\\b[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\\b/gi, "")
-    .replace(/\\s*[·:–-]\\s*$/g, "")
-    .replace(/\\bsimulad[oa]s?\\b/gi, "")
-    .replace(/\\s{2,}/g, " ")
+    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b/gi, "")
+    .replace(/\s*[·:–-]\s*$/g, "")
+    .replace(/\bsimulad[oa]s?\b/gi, "")
+    .replace(/\s{2,}/g, " ")
     .trim();
 
-  if (/^capital\\s+(?:simulado\\s+)?devolvido/i.test(raw)) return "Devolução de saldo reservado";
-  if (/^capital\\s+(?:simulado\\s+)?reservado/i.test(raw)) return "Reserva de saldo para operação";
-  if (/^participa[cç][aã]o\\s+(?:simulada\\s+)?no projeto/i.test(raw))
-    return clean.replace(/^participa[cç][aã]o\\s+no projeto/i, "Investimento no projeto");
+  if (category === "ROBOT_RESERVE" || /^capital\s+(?:simulado\s+)?reservado/i.test(raw))
+    return "Valor reservado para robô";
+  if (category === "ROBOT_REFUND" || /^capital\s+(?:simulado\s+)?devolvido/i.test(raw))
+    return "Devolução de valor reservado";
+  if (category === "WITHDRAWAL_REFUND" || category === "WITHDRAWAL_REJECTED_LEGACY")
+    return "Devolução de saque rejeitado";
+  if (/^participa[cç][aã]o\s+(?:simulada\s+)?no projeto/i.test(raw))
+    return clean.replace(/^participa[cç][aã]o\s+no projeto/i, "Investimento no projeto");
   if (/^margem reservada/i.test(raw)) return clean.replace(/^margem reservada/i, "Margem utilizada");
   if (/^altera[cç][aã]o de saldo dispon[ií]vel/i.test(raw))
     return amount >= 0 ? "Crédito no saldo disponível" : "Débito no saldo disponível";
-  if (category === "WITHDRAWAL_REFUND" || category === "WITHDRAWAL_REJECTED_LEGACY") return "Devolução de saque rejeitado";
   return clean || (amount >= 0 ? "Crédito na conta" : "Débito na conta");
 };
 
