@@ -501,7 +501,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const interval = setInterval(() => { if (document.visibilityState === "visible" && navigator.onLine) void refreshPrices(); }, 60000); // cached REST fallback
+    const interval = setInterval(() => { if (document.visibilityState === "visible" && navigator.onLine) void refreshPrices(); }, 300000); // five-minute shared backend snapshot; trading quotes remain independent
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMaintenance, holdings.length, watchlist.length]); // Re-evaluate when data presence changes
