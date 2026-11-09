@@ -1,29 +1,79 @@
 {% extends "admin/base_site.html" %}
 {% block content %}
-<div class="max-w-7xl">
-  <h1 class="text-2xl font-semibold mb-6">Visão geral da Master Trade</h1>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-    <div class="border rounded-lg p-5"><div class="text-sm opacity-70">Quantidade de usuários</div><div class="text-3xl font-bold mt-2">{{ total_clients }}</div></div>
-    <div class="border rounded-lg p-5"><div class="text-sm opacity-70">Quantidade de operações</div><div class="text-3xl font-bold mt-2">{{ total_positions }}</div></div>
-    <div class="border rounded-lg p-5"><div class="text-sm opacity-70">Operações abertas</div><div class="text-3xl font-bold mt-2">{{ open_positions }}</div></div>
-    <div class="border rounded-lg p-5"><div class="text-sm opacity-70">Operações fechadas</div><div class="text-3xl font-bold mt-2">{{ closed_positions }}</div></div>
-    <div class="border rounded-lg p-5"><div class="text-sm opacity-70">Saldo disponível simulado (total)</div><div class="text-3xl font-bold mt-2">{{ total_balance|floatformat:2 }}</div></div>
-    <div class="border rounded-lg p-5"><div class="text-sm opacity-70">Movimentações financeiras</div><div class="text-3xl font-bold mt-2">{{ total_financial_entries }}</div></div>
+<style>
+.mt-dash{max-width:1450px;margin:0 auto;color:var(--body-fg,inherit)}
+.mt-dash *{box-sizing:border-box}
+.mt-dash-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px}
+.mt-dash-head h1{font-size:26px;font-weight:750;letter-spacing:-.035em;margin:0}
+.mt-dash-head p{margin:5px 0 0;color:#64748b;font-size:13px}
+.mt-kicker{font-size:11px;font-weight:750;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin:25px 0 11px}
+.mt-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.mt-card{min-width:0;border:1px solid #dbe4ee;border-radius:14px;background:#fff;padding:19px;box-shadow:0 2px 8px rgba(18,42,75,.025)}
+.mt-card .mt-label{font-size:12px;color:#52657c;font-weight:600;line-height:1.45}
+.mt-card .mt-number{font-size:clamp(20px,2.2vw,29px);font-weight:760;letter-spacing:-.035em;margin:10px 0 6px;color:#14243b;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.mt-card .mt-note{font-size:11px;color:#718096;line-height:1.5}
+.mt-card.mt-accent{border-top:3px solid #2563eb}
+.mt-card.mt-green{border-top:3px solid #059669}
+.mt-card.mt-amber{border-top:3px solid #d97706}
+.mt-actions{display:flex;flex-wrap:wrap;gap:9px}
+.mt-actions a{display:inline-flex;align-items:center;min-height:36px;padding:8px 13px;border-radius:9px;background:#eaf1ff;color:#1d4ed8;font-size:12px;font-weight:700;text-decoration:none}
+.mt-actions a:hover{background:#dce9ff}
+.mt-footer{margin-top:24px;border:1px solid #dbe4ee;border-radius:14px;padding:18px;background:#fff}
+.mt-footer h2{font-size:15px;font-weight:700;margin:0 0 12px}
+.mt-history{list-style:none;margin:0;padding:0}
+.mt-history li{padding:9px 0;border-bottom:1px solid #edf1f6;font-size:12px;overflow-wrap:anywhere}
+.mt-history li:last-child{border:0}
+.mt-history a{color:#2563eb;text-decoration:none}
+.mt-history small{display:block;color:#64748b;margin-top:3px}
+.dark .mt-card,.dark .mt-footer{background:#172536;border-color:#334155}
+.dark .mt-card .mt-number{color:#f8fafc}
+.dark .mt-card .mt-label,.dark .mt-dash-head p,.dark .mt-kicker{color:#cbd5e1}
+.dark .mt-card .mt-note{color:#94a3b8}
+.dark .mt-actions a{background:#1e3a5f;color:#bfdbfe}
+@media(max-width:1100px){.mt-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:550px){.mt-grid{gap:9px}.mt-card{padding:13px;border-radius:11px}.mt-card .mt-number{font-size:20px}.mt-dash-head h1{font-size:22px}}
+</style>
+<div class="mt-dash">
+  <header class="mt-dash-head">
+    <div><h1>Visão geral da Master Trade</h1><p>Indicadores da plataforma · valores financeiros identificados por origem</p></div>
+    <div class="mt-actions">
+      <a href="{% url 'admin:users_userprofile_changelist' %}">Usuários</a>
+      <a href="{% url 'admin:withdrawals_withdrawalrequest_changelist' %}">Saques</a>
+      <a href="{% url 'admin:robots_tradingrobot_changelist' %}">Robôs</a>
+    </div>
+  </header>
+  <h2 class="mt-kicker">Usuários e contas</h2>
+  <div class="mt-grid">
+    <div class="mt-card mt-accent"><div class="mt-label">Usuários cadastrados</div><div class="mt-number">{{ total_clients }}</div><div class="mt-note">Total de contas</div></div>
+    <div class="mt-card"><div class="mt-label">Novos usuários no mês</div><div class="mt-number">{{ new_clients_month }}</div><div class="mt-note">Cadastros desde o início do mês</div></div>
+    <div class="mt-card"><div class="mt-label">Novos usuários em 7 dias</div><div class="mt-number">{{ new_clients_week }}</div><div class="mt-note">Últimos sete dias</div></div>
+    <div class="mt-card"><div class="mt-label">Saldo disponível simulado</div><div class="mt-number">US$ {{ total_balance|floatformat:2 }}</div><div class="mt-note">Soma dos saldos disponíveis das contas</div></div>
   </div>
-  <section class="border rounded-lg p-5">
-    <h2 class="text-xl font-semibold mb-4">Recent Actions</h2>
+  <h2 class="mt-kicker">Depósitos e saques</h2>
+  <div class="mt-grid">
+    <div class="mt-card mt-green"><div class="mt-label">Depósitos USDT confirmados</div><div class="mt-number">{{ confirmed_deposits_amount|floatformat:2 }} USDT</div><div class="mt-note">{{ confirmed_deposits_count }} registros confirmados na rede</div></div>
+    <div class="mt-card"><div class="mt-label">Créditos administrativos simulados</div><div class="mt-number">US$ {{ simulated_deposits_amount|floatformat:2 }}</div><div class="mt-note">{{ simulated_deposits_count }} lançamentos · não são depósitos bancários</div></div>
+    <div class="mt-card mt-amber"><div class="mt-label">Saques pendentes</div><div class="mt-number">{{ withdrawals_pending }}</div><div class="mt-note">US$ {{ withdrawals_pending_amount|floatformat:2 }} solicitados</div></div>
+    <div class="mt-card"><div class="mt-label">Saques aprovados</div><div class="mt-number">US$ {{ withdrawals_approved_amount|floatformat:2 }}</div><div class="mt-note">Soma das solicitações aprovadas · não comprova transferência externa</div></div>
+  </div>
+  <h2 class="mt-kicker">Operações e automações</h2>
+  <div class="mt-grid">
+    <div class="mt-card"><div class="mt-label">Operações registradas</div><div class="mt-number">{{ total_positions }}</div><div class="mt-note">{{ open_positions }} abertas · {{ closed_positions }} encerradas</div></div>
+    <div class="mt-card mt-accent"><div class="mt-label">Robôs cadastrados</div><div class="mt-number">{{ robots_total }}</div><div class="mt-note">Total de robôs simulados</div></div>
+    <div class="mt-card mt-green"><div class="mt-label">Robôs programados e ativos</div><div class="mt-number">{{ robots_running }}</div><div class="mt-note">Com alvo e prazo configurados</div></div>
+    <div class="mt-card mt-amber"><div class="mt-label">Aguardando programação</div><div class="mt-number">{{ robots_awaiting }}</div><div class="mt-note">Robôs ativos sem cenário completo</div></div>
+  </div>
+  <section class="mt-footer">
+    <h2>Atividade administrativa recente</h2>
     {% if recent_actions %}
-      <ul class="divide-y">
-      {% for entry in recent_actions %}
-        <li class="py-3">
-          <div class="font-medium">{% if entry.get_admin_url %}<a href="{{ entry.get_admin_url }}" class="text-primary-600 hover:underline">{{ entry.object_repr }}</a>{% else %}{{ entry.object_repr }}{% endif %}</div>
-          <div class="text-sm opacity-70">{{ entry.user.get_username }} · {{ entry.action_time|date:"d/m/Y H:i" }} · {{ entry.content_type }}</div>
-        </li>
-      {% endfor %}
-      </ul>
-    {% else %}
-      <p class="opacity-70">Nenhuma atividade administrativa recente.</p>
-    {% endif %}
+    <ul class="mt-history">
+    {% for entry in recent_actions %}
+      <li>{% if entry.get_admin_url %}<a href="{{ entry.get_admin_url }}">{{ entry.object_repr|truncatechars:75 }}</a>{% else %}{{ entry.object_repr|truncatechars:75 }}{% endif %}
+        <small>{{ entry.user.get_username }} · {{ entry.action_time|date:"d/m/Y H:i" }} · {{ entry.content_type }}</small>
+      </li>
+    {% endfor %}
+    </ul>
+    {% else %}<p>Nenhuma alteração administrativa recente.</p>{% endif %}
   </section>
 </div>
 {% endblock %}
