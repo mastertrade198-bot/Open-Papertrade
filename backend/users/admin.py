@@ -37,13 +37,14 @@ def _fmt(amount, currency='USD'):
 
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(ModelAdmin):
-    list_display = ['__str__', 'display_maintenance', 'display_email_status', 'display_smtp_host', 'display_buying_power']
+    list_display = ['__str__', 'display_maintenance', 'display_email_status', 'display_buying_power']
     fieldsets = [
         ("Maintenance Mode", {
             "fields": ["maintenance_mode", "maintenance_message", "contact_email", "contact_github", "contact_twitter", "contact_discord"],
             "description": "Enable maintenance mode to take the site offline. All users will see a maintenance page. Contact links are displayed on the maintenance page.",
         }),
         ("Email Verification", {
+            "classes": ("collapse",),
             "fields": ["email_verification_enabled"],
             "description": "Toggle whether new users must verify their email address before logging in.",
         }),
@@ -52,10 +53,12 @@ class SiteSettingsAdmin(ModelAdmin):
             "description": "Configure starting balance for newly registered users. Set per-currency amounts or a fallback default.",
         }),
         ("Exchange Rates", {
+            "classes": ("collapse",),
             "fields": ["exchange_rates"],
             "description": 'Fallback exchange rates vs USD used when live API is unavailable. Format: {"EUR": 0.84, "INR": 90.55, "GBP": 0.73, "JPY": 152.70, "CAD": 1.36, "AUD": 1.41, "CHF": 0.77, "CNY": 6.91, "SGD": 1.26}. Leave empty to use hardcoded defaults.',
         }),
         ("SMTP Configuration", {
+            "classes": ("collapse",),
             "fields": [
                 "smtp_host", "smtp_port", "smtp_username", "smtp_password",
                 "smtp_use_tls", "smtp_use_ssl", "smtp_from_email", "smtp_from_name",
@@ -63,6 +66,7 @@ class SiteSettingsAdmin(ModelAdmin):
             "description": "Configure your SMTP server for sending emails. Common providers: Gmail (smtp.gmail.com:587), SendGrid (smtp.sendgrid.net:587), Mailgun, Amazon SES.",
         }),
         ("Frontend", {
+            "classes": ("collapse",),
             "fields": ["frontend_url"],
             "description": "The base URL of the frontend app, used for building email verification links.",
         }),
@@ -157,11 +161,11 @@ class UserProfileAdmin(ModelAdmin):
     readonly_fields = ['id', 'created_at', 'updated_at', 'password_changed_at', 'is_2fa_enabled']
     fieldsets = [
         ("Profile", {"fields": ["id", "name", "username", "email", "cpf", "date_of_birth", "phone", "avatar_url"]}),
-        ("Email Verification", {"fields": ["is_email_verified"]}),
+        ("Email Verification", {"classes": ("collapse",), "fields": ["is_email_verified"]}),
         ("Account", {"fields": ["buying_power", "initial_balance", "plan"]}),
-        ("Admin", {"fields": ["is_admin"]}),
-        ("Security", {"fields": ["password_changed_at", "is_2fa_enabled"]}),
-        ("Timestamps", {"fields": ["created_at", "updated_at"]}),
+        ("Admin", {"classes": ("collapse",), "fields": ["is_admin"]}),
+        ("Security", {"classes": ("collapse",), "fields": ["password_changed_at", "is_2fa_enabled"]}),
+        ("Timestamps", {"classes": ("collapse",), "fields": ["created_at", "updated_at"]}),
     ]
 
     def get_readonly_fields(self, request, obj=None):
