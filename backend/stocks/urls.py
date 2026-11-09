@@ -4,10 +4,12 @@ URL routes for stock API endpoints.
 
 from django.urls import path
 from . import views
+from .market_news import MarketNewsView
 
 app_name = 'stocks'
 
 urlpatterns = [
+    path('market-news/', MarketNewsView.as_view(), name='market-news'),
     # Single quote
     path('quote/<str:symbol>/', views.StockQuoteView.as_view(), name='quote'),
 
