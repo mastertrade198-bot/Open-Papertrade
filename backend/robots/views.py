@@ -36,7 +36,7 @@ def serialize(robot, details=False, page=1):
         paginator = Paginator(operations, 10)
         current_page = paginator.get_page(page)
         data['operations'] = [{
-            'id': str(op.pk), 'side': op.side, 'entryPrice': float(op.entry_price),
+            'id': str(op.pk), 'side': op.side, 'source': op.source, 'accounted': op.source != 'MANUAL', 'entryPrice': float(op.entry_price),
             'exitPrice': float(op.exit_price) if op.exit_price is not None else None,
             'quantity': float(op.quantity), 'capital': float(op.allocated_capital),
             'pnl': float(op.pnl), 'pnlPercent': float(op.pnl / op.allocated_capital * 100) if op.allocated_capital else 0,
