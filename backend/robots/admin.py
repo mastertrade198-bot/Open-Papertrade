@@ -1,3 +1,5 @@
+from datetime import timedelta
+from decimal import Decimal
 from django import forms
 from django.contrib import admin
 from unfold.admin import ModelAdmin
@@ -71,6 +73,18 @@ class RobotScheduleForm(forms.ModelForm):
             raise forms.ValidationError('O prejuízo não pode superar 100% do capital.')
         if when is not None and when <= timezone.now():
             raise forms.ValidationError('A data de finalização deve estar no futuro.')
+        if self.instance.pk and self.instance.operations.exists() and (when != self.instance.scheduled_end_at or percent != self.instance.scheduled_pnl_percent):
+            raise forms.ValidationError('Não é possível modificar um cenário que já possui operações registradas.')
+        if when is not None and percent is not None:
+            start = self.instance.simulation_started_at if self.instance.pk and self.instance.simulation_started_at else timezone.now()
+            if when < start + timedelta(minutes=10):
+                raise forms.ValidationError('A simulação deve durar pelo menos 10 minutos para executar as três primeiras operações.')
+            from robots.management.commands.run_robot_simulations import slots
+            count = len(slots(start, when))
+            if abs(percent) > Decimal('0.03') * count:
+                raise forms.ValidationError(f'O resultado escolhido exige mais do que {count} microoperações de até 0,03%. Amplie o prazo ou reduza o resultado.')
+            if percent > self.instance.take_profit or percent < -self.instance.stop_loss:
+                raise forms.ValidationError('O resultado final precisa respeitar o take profit e o stop loss do robô.')
         if self.instance.pk and self.instance.status == 'CLOSED' and (when is not None or percent is not None):
             raise forms.ValidationError('Não é possível programar um robô encerrado.')
         return data
@@ -175,7 +189,13 @@ class TradingRobotAdmin(ModelAdmin):
             before = {'scheduled_end_at': previous.scheduled_end_at.isoformat() if previous.scheduled_end_at else None,
                       'scheduled_pnl_percent': str(previous.scheduled_pnl_percent) if previous.scheduled_pnl_percent is not None else None}
             # Persist only the two authorized fields, not stale fields from the form.
+            started_at = previous.simulation_started_at
+            if obj.scheduled_end_at is not None and obj.scheduled_pnl_percent is not None and started_at is None:
+                started_at = timezone.now()
+            if obj.scheduled_end_at is None:
+                started_at = None
             TradingRobot.objects.filter(pk=obj.pk).update(
+                simulation_started_at=started_at,
                 scheduled_end_at=obj.scheduled_end_at,
                 scheduled_pnl_percent=obj.scheduled_pnl_percent)
             after = {'scheduled_end_at': obj.scheduled_end_at.isoformat() if obj.scheduled_end_at else None,
