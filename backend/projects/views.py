@@ -68,8 +68,37 @@ class MyProjectsView(APIView):
 
 
 class JoinProjectView(APIView):
+    """Reserve funds from the same account balance used by trading.
+
+    Until production funding is reconciled, this is the existing test ledger.
+    """
     def post(self, request, project_id):
-        get_user(request)
-        return Response({
-            'detail': 'Aplicações com capital real indisponíveis até integração de custódia, saldo real e confirmação de liquidação. O saldo de demonstração não será utilizado.'
-        }, status=503)
+        user = get_user(request)
+        try:
+            amount = Decimal(str(request.data.get('amount', '')))
+            if not amount.is_finite() or amount.as_tuple().exponent < -2:
+                raise InvalidOperation
+        except (InvalidOperation, ValueError, TypeError):
+            raise ValidationError({'amount': 'Informe um valor válido com até duas casas decimais.'})
+        with transaction.atomic():
+            project = get_object_or_404(Project.objects.select_for_update(), pk=project_id)
+            if not project.is_active:
+                raise ValidationError({'project': 'Projeto indisponível para participação.'})
+            if amount <= 0 or amount < project.minimum_amount:
+                raise ValidationError({'amount': 'Valor abaixo do mínimo.'})
+            updated = UserProfile.objects.filter(pk=user.pk, buying_power__gte=amount).update(
+                buying_power=F('buying_power') - amount
+            )
+            if updated != 1:
+                raise ValidationError({'amount': 'Saldo disponível insuficiente.'})
+            participation = Participation.objects.create(project=project, user=user, principal=amount)
+            ParticipationPoint.objects.create(participation=participation, percent=Decimal('0'))
+            from users.models import BalanceTransaction
+            after = UserProfile.objects.get(pk=user.pk).buying_power
+            BalanceTransaction.objects.create(
+                user=user, amount=-amount, balance_before=after + amount,
+                balance_after=after, category='PROJECT_ALLOCATION',
+                description=f'Aplicação em projeto: {project.name}'[:255],
+            )
+        item = Participation.objects.select_related('project').prefetch_related('points', 'audit_events').get(pk=participation.pk)
+        return Response({'participation': serialize_participation(item)}, status=201)
