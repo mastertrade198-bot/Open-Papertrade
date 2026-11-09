@@ -12,6 +12,7 @@ class ProjectAdmin(ModelAdmin):
     list_display = ('name', 'category', 'asset', 'duration_days', 'expected_return_percent', 'is_active')
     list_filter = ('category', 'is_active')
     search_fields = ('name', 'asset')
+    fields = ('name', 'category', 'asset', 'description', 'image_url', 'duration_days', 'expected_return_percent', 'minimum_amount', 'is_active')
 
 
 class ParticipationAdminForm(forms.ModelForm):
