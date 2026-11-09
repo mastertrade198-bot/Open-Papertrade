@@ -42,11 +42,11 @@ export default function Sidebar() {
 
   return (
     <>
-    <header className="master-topnav relative z-[100] min-h-[66px] border-b border-[var(--border-primary)] bg-[var(--bg-sidebar)]/95 backdrop-blur-xl">
-      <div className="mx-auto flex min-h-[66px] w-full max-w-[1440px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 lg:px-6">
-        <Link href="/dashboard" className="flex shrink-0 items-center gap-2.5 hover:opacity-90" aria-label="Master Trade — Painel">
-          <img src="/logo.png" alt="" width={26} height={26} className="rounded-lg" />
-          <span className="whitespace-nowrap text-[12px] font-extrabold tracking-[.07em] text-[var(--text-primary)]">
+    <header className="master-topnav relative z-[100] min-h-[54px] lg:min-h-[66px] border-b border-[var(--border-primary)] bg-[var(--bg-sidebar)]/95 backdrop-blur-xl">
+      <div className="mx-auto flex min-h-[54px] lg:min-h-[66px] w-full max-w-[1440px] flex-nowrap items-center justify-between gap-2 px-3 py-2 lg:flex-wrap lg:gap-x-3 lg:gap-y-2 lg:px-6 lg:py-3">
+        <Link href="/dashboard" className="flex min-w-0 shrink items-center gap-1.5 hover:opacity-90 lg:shrink-0 lg:gap-2.5" aria-label="Master Trade — Painel">
+          <img src="/logo.png" alt="" width={26} height={26} className="h-6 w-6 shrink-0 rounded-lg lg:h-[26px] lg:w-[26px]" />
+          <span className="whitespace-nowrap text-[10px] sm:text-[12px] font-extrabold tracking-[.04em] lg:tracking-[.07em] text-[var(--text-primary)]">
             MASTER <span className="text-[var(--accent-primary)]">TRADE</span>
           </span>
         </Link>
@@ -62,27 +62,27 @@ export default function Sidebar() {
             );
           })}
         </nav>
-        <div className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
-          <div className="flex items-center gap-1.5 rounded-lg border border-[var(--border-primary)] px-2.5 py-1.5" aria-label="Saldo disponível em USD">
-            <Wallet size={15} className="shrink-0 text-[var(--text-muted)]" />
+        <div className="ml-auto flex min-w-0 shrink-0 items-center gap-1 lg:gap-1.5">
+          <div className="flex min-w-0 items-center gap-1 rounded-lg border border-[var(--border-primary)] px-1.5 py-1 lg:gap-1.5 lg:px-2.5 lg:py-1.5" aria-label="Saldo disponível em USD">
+            <Wallet size={15} className="hidden shrink-0 text-[var(--text-muted)] lg:block" />
             <span className="hidden text-[10px] text-[var(--text-muted)] xl:inline">Saldo</span>
-            <span className="whitespace-nowrap font-mono text-[12px] font-semibold text-[var(--text-primary)] tabular-nums">
+            <span className="whitespace-nowrap font-mono text-[10px] sm:text-[12px] font-semibold text-[var(--text-primary)] tabular-nums">
               {balanceVisible ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(buyingPower) : "••••••"}
             </span>
             <button type="button" onClick={() => setBalanceVisible(v => !v)}
               aria-label={balanceVisible ? "Ocultar saldo" : "Mostrar saldo"}
               title={balanceVisible ? "Ocultar saldo" : "Mostrar saldo"}
-              className="rounded p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+              className="rounded p-0.5 lg:p-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]">
               {balanceVisible ? <Eye size={15} /> : <EyeOff size={15} />}
             </button>
           </div>
-          <button type="button" onClick={() => void handleRefresh()} disabled={refreshing || isLoading} aria-label="Atualizar cotações" title="Atualizar cotações" className="rounded-lg border border-[var(--border-primary)] p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50"><RefreshCw size={15} className={refreshing || isLoading ? "animate-spin" : ""} /></button>
+          <button type="button" onClick={() => void handleRefresh()} disabled={refreshing || isLoading} aria-label="Atualizar cotações" title="Atualizar cotações" className="hidden lg:block rounded-lg border border-[var(--border-primary)] p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-50"><RefreshCw size={15} className={refreshing || isLoading ? "animate-spin" : ""} /></button>
           <div className="relative">
             <button type="button" onClick={() => setAccountOpen(v => !v)} aria-expanded={accountOpen}
-              className="flex items-center gap-2 rounded-lg border border-[var(--border-primary)] px-2 py-1.5 text-[var(--text-primary)] hover:bg-[var(--bg-hover)]">
+              className="flex items-center gap-1 rounded-lg border border-[var(--border-primary)] p-1 text-[var(--text-primary)] hover:bg-[var(--bg-hover)] lg:gap-2 lg:px-2 lg:py-1.5">
               {user.avatarUrl ? <img src={user.avatarUrl.startsWith("http") ? user.avatarUrl : `${API_HOST}${user.avatarUrl}`} alt="" className="h-7 w-7 rounded-full object-cover" /> : <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--accent-primary)] text-xs font-bold text-white">{user.initials || <UserRound size={14} />}</span>}
               <span className="hidden max-w-[105px] truncate text-xs font-semibold sm:block">{user.name}</span>
-              <ChevronDown size={13} className="text-[var(--text-muted)]" />
+              <ChevronDown size={13} className="hidden text-[var(--text-muted)] lg:block" />
             </button>
             {accountOpen && <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-2 shadow-2xl">
               <Link href="/account" onClick={() => setAccountOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"><Settings size={15} /> Minha conta</Link>
