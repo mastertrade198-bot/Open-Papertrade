@@ -30,7 +30,7 @@ MAX_BYTES = 1_000_000
 
 
 def _fetch_feed(url):
-    request = Request(url, headers={'User-Agent': 'MasterTradeRSS/1.0 (news headlines reader)', 'Accept': 'application/rss+xml, application/xml, text/xml'})
+    request = Request(url, headers={'User-Agent': 'Mozilla/5.0 (compatible; MasterTradeNews/1.0)', 'Accept': 'application/rss+xml, application/xml, text/xml'})
     with urlopen(request, timeout=8) as response:
         data = response.read(MAX_BYTES + 1)
     if len(data) > MAX_BYTES:
@@ -57,7 +57,11 @@ def _articles(root, default_source):
     result = []
     for item in root.findall('.//item')[:25]:
         title = (item.findtext('title') or '').strip()
-        link = (item.findtext('link') or '').strip()\n        if not link:\n            guid = item.find('guid')\n            if guid is not None and guid.text and guid.text.startswith('https://'):\n                link = guid.text.strip()
+        link = (item.findtext('link') or '').strip()
+        if not link:
+            guid = item.find('guid')
+            if guid is not None and guid.text and guid.text.startswith('https://'):
+                link = guid.text.strip()
         parsed = urlparse(link)
         if not title or parsed.scheme != 'https' or not parsed.hostname:
             continue
@@ -82,7 +86,7 @@ class MarketNewsView(APIView):
         category = request.query_params.get('category', 'all').lower()
         if category not in SEARCHES:
             return Response({'error': 'Categoria inválida.'}, status=400)
-        key = 'marketnews:rss:ptbr:v4:' + category
+        key = 'marketnews:rss:ptbr:v5:' + category
         cached = cache.get(key)
         if cached is not None:
             return Response(cached)
@@ -100,7 +104,7 @@ class MarketNewsView(APIView):
                 articles.extend(_articles(_fetch_feed(url), source))
             except (HTTPError, URLError, TimeoutError, OSError, ValueError, ET.ParseError) as exc:
                 failures += 1
-                logger.warning('RSS feed unavailable: %s (%s)', source, type(exc).__name__)
+                logger.warning('RSS feed unavailable: %s (%s: %s)', source, type(exc).__name__, str(exc)[:180])
 
         seen = set()
         unique = []
