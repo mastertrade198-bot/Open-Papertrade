@@ -125,6 +125,9 @@ class TradingRobotAdmin(ModelAdmin):
                 ('take_profit', 'stop_loss'),
             ),
         }),
+        ('Operação manual simulada', {
+            'fields': ('add_manual_operation_action',),
+        }),
         ('Programação do resultado simulado', {
             'fields': (('scheduled_end_at', 'scheduled_pnl_percent'),),
         }),
@@ -139,7 +142,7 @@ class TradingRobotAdmin(ModelAdmin):
             ),
         }),
     )
-    readonly_fields = ('asset_display', 'invested_amount', 'current_pnl', 'current_equity', 'robot_number', 'status_summary', 'close_robot_action', 'user', 'symbol', 'asset_name',
+    readonly_fields = ('asset_display', 'invested_amount', 'current_pnl', 'current_equity', 'robot_number', 'status_summary', 'close_robot_action', 'add_manual_operation_action', 'user', 'symbol', 'asset_name',
                        'capital', 'equity', 'take_profit', 'stop_loss', 'indicators',
                        'created_at', 'closed_at', 'closed_reason')
 
@@ -149,6 +152,22 @@ class TradingRobotAdmin(ModelAdmin):
                  name='robots_tradingrobot_finalizar'),
         ]
         return custom + super().get_urls()
+
+    @admin.display(description='Adicionar lucro ou prejuízo manual')
+    def add_manual_operation_action(self, obj):
+        if not obj or not obj.pk:
+            return '—'
+        if obj.status != 'ACTIVE':
+            return 'Disponível apenas para robôs ativos'
+        url = reverse('admin:robots_robotoperation_add') + '?robot=' + str(obj.pk)
+        return format_html(
+            '<a href="{}" style="display:inline-block;padding:10px 16px;'
+            'background:#166534;color:#fff;border-radius:8px;'
+            'font-weight:600;text-decoration:none">+ Adicionar operação manual</a>'
+            '<p style="margin-top:8px;font-size:12px;color:#64748b">'
+            'O lucro ou prejuízo será somado ao resultado total simulado, sem modificar a meta automática.</p>',
+            url,
+        )
 
     @admin.display(description='Finalizar agora')
     def close_robot_action(self, obj):
@@ -327,6 +346,13 @@ class ManualRobotOperationForm(forms.ModelForm):
 
 @admin.register(RobotOperation)
 class RobotOperationAdmin(ModelAdmin):
+    def get_changeform_initial_data(self, request):
+        initial = super().get_changeform_initial_data(request)
+        robot_id = request.GET.get('robot')
+        if robot_id and TradingRobot.objects.filter(pk=robot_id, status='ACTIVE').exists():
+            initial['robot'] = robot_id
+        return initial
+
     form = ManualRobotOperationForm
     list_display = ('robot', 'source', 'side', 'status', 'pnl', 'opened_at')
     list_filter = ('source', 'status')
