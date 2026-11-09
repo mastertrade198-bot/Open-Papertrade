@@ -60,6 +60,7 @@ export interface SearchResult {
 }
 
 export type TimeRange = '1D' | '1W' | '1M' | '6M' | '1Y' | '5Y';
+export type CandleInterval = '1m' | '5m' | '15m' | '1h' | '1d';
 
 export interface HistoricalBar {
   time: string;
@@ -547,8 +548,11 @@ class StockAPI {
   /**
    * Get historical OHLC data for a symbol
    */
-  async getHistory(symbol: string, range: TimeRange = '1M'): Promise<HistoricalDataResponse> {
-    return this.fetch<HistoricalDataResponse>(`/stocks/history/${symbol.toUpperCase()}/?range=${range}`);
+  async getHistory(symbol: string, range: TimeRange = '1M', interval?: CandleInterval, before?: number): Promise<HistoricalDataResponse> {
+    const query = new URLSearchParams({ range });
+    if (interval) query.set('interval', interval);
+    if (before) query.set('before', String(before));
+    return this.fetch<HistoricalDataResponse>(`/stocks/history/${symbol.toUpperCase()}/?${query.toString()}`);
   }
 
   /**
