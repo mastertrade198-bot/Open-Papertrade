@@ -6,6 +6,34 @@ from django.utils.html import format_html
 from .models import TradingRobot, RobotOperation, RobotAudit
 
 class RobotScheduleForm(forms.ModelForm):
+    scheduled_end_at = forms.DateTimeField(
+        label='Data e hora de finalização',
+        required=False,
+        input_formats=['%Y-%m-%dT%H:%M', '%Y-%m-%dT%H:%M:%S'],
+        widget=forms.DateTimeInput(
+            format='%Y-%m-%dT%H:%M',
+            attrs={
+                'type': 'datetime-local',
+                'step': '60',
+                'style': 'display:block;width:100%;max-width:340px;min-height:40px;padding:8px 12px;box-sizing:border-box;',
+            },
+        ),
+        help_text='Selecione a data e o horário de encerramento.',
+    )
+    scheduled_pnl_percent = forms.DecimalField(
+        label='Lucro ou prejuízo (%)',
+        required=False,
+        max_digits=8,
+        decimal_places=3,
+        min_value=-100,
+        widget=forms.NumberInput(attrs={
+            'step': '0.01',
+            'placeholder': 'Ex.: 5,00 ou -3,00',
+            'style': 'display:block;width:100%;max-width:340px;min-height:40px;padding:8px 12px;box-sizing:border-box;',
+        }),
+        help_text='Use um número positivo para lucro ou negativo para prejuízo.',
+    )
+
     class Meta:
         model = TradingRobot
         fields = ('scheduled_end_at', 'scheduled_pnl_percent')
