@@ -609,60 +609,7 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Recent Transactions */}
-            <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] flex flex-col overflow-hidden flex-1">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
-                <div className="flex items-center gap-2">
-                  <Clock size={16} className="text-[var(--accent-primary)]" />
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">Atividade recente</span>
-                </div>
-                <Link href="/history" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline flex items-center gap-1">
-                  Ver todos <ChevronRight size={12} />
-                </Link>
-              </div>
 
-              {transactions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center px-4 flex-1">
-                  <Target size={24} className="text-[var(--text-dim)] mb-2" />
-                  <span className="text-xs text-[var(--text-muted)]">Nenhuma transação ainda</span>
-                  <Link href="/trade" className="text-[11px] text-[var(--accent-primary)] mt-1 hover:underline">
-                    Start trading
-                  </Link>
-                </div>
-              ) : (
-                <div className="divide-y divide-[var(--border-primary)] overflow-auto">
-                  {transactions.slice(0, 5).map((tx) => (
-                    <div key={tx.id} className={`flex items-center justify-between px-5 ${settings.compactMode ? "py-2" : "py-3"}`}>
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${tx.type === "BUY" ? "bg-[var(--accent-green)]/20" : "bg-[var(--accent-red)]/20"}`}>
-                          {tx.type === "BUY" ? (
-                            <ArrowUpRight size={14} className="text-[var(--accent-green)]" />
-                          ) : (
-                            <ArrowDownRight size={14} className="text-[var(--accent-red)]" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="text-xs font-medium text-[var(--text-primary)]">
-                            {tx.type === "BUY" ? "COMPRA" : "VENDA"} {tx.symbol}
-                          </div>
-                          <div className="text-[10px] text-[var(--text-dim)]">
-                            {tx.shares} unidades a {formatCurrency(tx.price, false)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className={`font-primary tabular-nums text-xs font-medium ${tx.type === "BUY" ? "text-[var(--accent-green)]" : "text-[var(--text-muted)]"}`}>
-                          {tx.type === "BUY" ? "-" : "+"}{formatCurrency(tx.total, false)}
-                        </div>
-                        <div className="text-[10px] text-[var(--text-dim)]">
-                          {new Date(tx.date).toLocaleString("pt-BR")}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </div>
 
