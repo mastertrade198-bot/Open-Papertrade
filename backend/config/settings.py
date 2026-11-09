@@ -243,30 +243,50 @@ UNFOLD = {
                 "title": "VISÃO GERAL",
                 "separator": True,
                 "items": [
-                    {"title": "Visão geral", "icon": "dashboard", "link": reverse_lazy("admin:index")},
-                    {"title": "Usuários e saldos", "icon": "groups", "link": reverse_lazy("admin:users_userprofile_changelist")},
+                    {"title": "Painel principal", "icon": "dashboard", "link": reverse_lazy("admin:index")},
+                    {"title": "Clientes e contas", "icon": "groups", "link": reverse_lazy("admin:users_userprofile_changelist")},
                 ],
             },
             {
-                "title": "OPERAÇÕES SIMULADAS",
+                "title": "NEGOCIAÇÃO",
                 "separator": True,
                 "items": [
-                    {"title": "Gestão de robôs", "icon": "smart_toy", "link": reverse_lazy("admin:robots_tradingrobot_changelist")},
+                    {"title": "Posições abertas e encerradas", "icon": "candlestick_chart", "link": reverse_lazy("admin:users_position_changelist")},
+                    {"title": "Auditoria de operações", "icon": "history", "link": reverse_lazy("admin:users_positionauditlog_changelist")},
+                ],
+            },
+            {
+                "title": "ROBÔS",
+                "separator": True,
+                "items": [
+                    {"title": "Gerenciar robôs", "icon": "smart_toy", "link": reverse_lazy("admin:robots_tradingrobot_changelist")},
+                ],
+            },
+            {
+                "title": "PROJETOS",
+                "separator": True,
+                "items": [
                     {"title": "Projetos disponíveis", "icon": "account_tree", "link": reverse_lazy("admin:projects_project_changelist")},
-                    {"title": "Aplicações em projetos", "icon": "trending_up", "link": reverse_lazy("admin:projects_participation_changelist")},
-                    {"title": "Histórico de projetos", "icon": "fact_check", "link": reverse_lazy("admin:projects_participationaudit_changelist")},
-                    {"title": "Posições de negociação", "icon": "candlestick_chart", "link": reverse_lazy("admin:users_position_changelist")},
-                    {"title": "Movimentações financeiras", "icon": "account_balance_wallet", "link": reverse_lazy("admin:users_balancetransaction_changelist")},
-                    {"title": "Histórico de alterações", "icon": "history", "link": reverse_lazy("admin:users_positionauditlog_changelist")},
+                    {"title": "Participações dos clientes", "icon": "trending_up", "link": reverse_lazy("admin:projects_participation_changelist")},
+                    {"title": "Auditoria de projetos", "icon": "fact_check", "link": reverse_lazy("admin:projects_participationaudit_changelist")},
+                ],
+            },
+            {
+                "title": "FINANCEIRO",
+                "separator": True,
+                "items": [
+                    {"title": "Depósitos administrativos", "icon": "add_card", "link": reverse_lazy("admin:withdrawals_admindeposit_changelist")},
                     {"title": "Solicitações de saque", "icon": "payments", "link": reverse_lazy("admin:withdrawals_withdrawalrequest_changelist")},
+                    {"title": "Extrato de movimentações", "icon": "account_balance_wallet", "link": reverse_lazy("admin:users_balancetransaction_changelist")},
+                    {"title": "Depósitos USDT confirmados", "icon": "currency_bitcoin", "link": reverse_lazy("admin:users_polygonusdtdeposit_changelist")},
                 ],
             },
             {
                 "title": "SISTEMA",
                 "separator": True,
                 "items": [
-                    {"title": "Preferências da plataforma", "icon": "settings", "link": reverse_lazy("admin:users_sitesettings_changelist")},
-                    {"title": "Acesso administrativo", "icon": "admin_panel_settings", "link": reverse_lazy("admin:auth_user_changelist")},
+                    {"title": "Configurações da plataforma", "icon": "settings", "link": reverse_lazy("admin:users_sitesettings_changelist")},
+                    {"title": "Administradores", "icon": "admin_panel_settings", "link": reverse_lazy("admin:auth_user_changelist")},
                 ],
             },
         ],
