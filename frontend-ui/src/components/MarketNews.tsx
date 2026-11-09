@@ -47,7 +47,7 @@ export default function MarketNews({ compact = false }: { compact?: boolean }) {
       error ? <p role="alert" className="p-6 text-sm text-[var(--text-muted)]">{error}</p> :
       !data?.articles.length ? <div className="p-6 text-sm text-[var(--text-muted)]">{data?.message || "Nenhuma notícia disponível para esta categoria."}</div> :
       <div className={`grid gap-px bg-[var(--border-primary)] ${compact ? "grid-cols-1" : "md:grid-cols-2"}`}>
-        {data.articles.slice(0, 8).map(article => <a key={article.id} href={article.url} target="_blank" rel="noopener noreferrer" className="group flex min-w-0 flex-col gap-2 bg-[var(--bg-card)] p-4 transition-colors hover:bg-[var(--bg-secondary)] sm:p-5">
+        {data.articles.slice(0, 4).map(article => <a key={article.id} href={article.url} target="_blank" rel="noopener noreferrer" className="group flex min-w-0 flex-col gap-2 bg-[var(--bg-card)] p-4 transition-colors hover:bg-[var(--bg-secondary)] sm:p-5">
           <div className="flex items-center justify-between gap-2"><span className="truncate text-[11px] font-bold uppercase text-[var(--accent-primary)]">{article.source}</span><ArrowUpRight size={14} className="shrink-0 text-[var(--text-muted)]"/></div>
           <h3 className="line-clamp-2 text-sm font-semibold leading-relaxed text-[var(--text-primary)] group-hover:underline">{article.title}</h3>
           {article.description && <p className="line-clamp-2 text-xs leading-relaxed text-[var(--text-muted)]">{article.description}</p>}
