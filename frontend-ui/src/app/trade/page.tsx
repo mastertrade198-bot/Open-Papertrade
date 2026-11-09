@@ -176,7 +176,6 @@ function TradePageContent() {
 
   const [marketQuotes, setMarketQuotes] = useState<Record<string, StockQuote>>({});
   const [marketQuotesLoading, setMarketQuotesLoading] = useState(false);
-  const [marketQuotesUpdatedAt, setMarketQuotesUpdatedAt] = useState<number | null>(null);
   const marketSymbols = useMemo(() => {
     const symbols = new Set<string>();
     // Refresh the selected asset and currently displayed market list first.
@@ -193,7 +192,6 @@ function TradePageContent() {
     if (!marketSymbols.length || marketQuotesInFlight.current) return;
     marketQuotesInFlight.current = true;
     setMarketQuotesLoading(true);
-    let received = false;
     try {
       const batches: string[][] = [];
       for (let i = 0; i < marketSymbols.length; i += 12) batches.push(marketSymbols.slice(i, i + 12));
@@ -209,7 +207,6 @@ function TradePageContent() {
               }
             }
             if (Object.keys(next).length) {
-              received = true;
               setMarketQuotes(previous => {
                 const filtered = Object.fromEntries(Object.entries(next).filter(([symbol]) => !isRecentCryptoTick(symbol)));
                 return Object.keys(filtered).length ? { ...previous, ...filtered } : previous;
@@ -218,7 +215,6 @@ function TradePageContent() {
           } catch (error) { console.warn("Market quote batch failed", error); }
         }));
       }
-      if (received) setMarketQuotesUpdatedAt(Date.now());
     } finally {
       marketQuotesInFlight.current = false;
       setMarketQuotesLoading(false);
@@ -266,7 +262,6 @@ function TradePageContent() {
           volume: prev?.volume ?? null, name: prev?.name ?? tick.symbol,
         };
       });
-      setMarketQuotesUpdatedAt(Date.now());
     });
   }, [cryptoStreamSymbols, selectedSymbol]);
 
