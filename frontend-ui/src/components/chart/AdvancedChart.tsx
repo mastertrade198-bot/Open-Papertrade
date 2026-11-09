@@ -1098,7 +1098,7 @@ export default function AdvancedChart({
       {/* --- Header: symbol + price + timeframe + chart type + indicators + scale + snapshot --- */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border-primary)] flex-wrap">
         {/* Symbol + price */}
-        <div className="flex items-center gap-2 min-w-[150px]">
+        <div className="hidden lg:flex items-center gap-2 min-w-[150px]">
           <div>
             <div className="font-mono text-sm font-semibold text-[var(--text-primary)]">{symbol}</div>
             {symbolName && (
@@ -1124,7 +1124,7 @@ export default function AdvancedChart({
         </div>
 
         {!minimalHeader && <>
-        <div className="w-px h-8 bg-[var(--border-primary)]" />
+        <div className="hidden lg:block w-px h-8 bg-[var(--border-primary)]" />
 
         {/* Timeframe */}
         <div className="flex gap-0.5 bg-[var(--bg-muted)] rounded-md p-0.5">
