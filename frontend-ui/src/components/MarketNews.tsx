@@ -37,7 +37,7 @@ export default function MarketNews({ compact = false }: { compact?: boolean }) {
   }, [category, reload]);
   return <section className="overflow-hidden rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)]">
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-primary)] px-4 py-4 sm:px-5">
-      <div className="flex items-center gap-2"><Newspaper size={18} className="text-[var(--accent-primary)]"/><div><h2 className="text-sm font-bold">Notícias do mercado</h2><p className="text-xs text-[var(--text-muted)]">Manchetes de veículos externos via agregador</p></div></div>
+      <div className="flex items-center gap-2"><Newspaper size={18} className="text-[var(--accent-primary)]"/><div><h2 className="text-sm font-bold">Notícias do mercado</h2><p className="text-xs text-[var(--text-muted)]">Manchetes via RSS público · sem chave de API</p></div></div>
       <button type="button" onClick={() => setReload(v => v + 1)} disabled={loading} className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-primary)] px-3 py-2 text-xs font-semibold disabled:opacity-50"><RefreshCw size={13} className={loading ? "animate-spin" : ""}/> Atualizar</button>
     </div>
     <div className="flex flex-wrap gap-2 border-b border-[var(--border-primary)] px-4 py-3 sm:px-5" aria-label="Categorias de notícias">
@@ -45,7 +45,7 @@ export default function MarketNews({ compact = false }: { compact?: boolean }) {
     </div>
     {loading ? <p className="p-6 text-sm text-[var(--text-muted)]">Carregando notícias...</p> :
       error ? <p role="alert" className="p-6 text-sm text-[var(--text-muted)]">{error}</p> :
-      !data?.articles.length ? <div className="p-6 text-sm text-[var(--text-muted)]">{data?.message || "Nenhuma notícia disponível para esta categoria."}{!data?.configured && <p className="mt-2 text-xs">Configure MARKETAUX_API_TOKEN no backend para ativar as notícias reais.</p>}</div> :
+      !data?.articles.length ? <div className="p-6 text-sm text-[var(--text-muted)]">{data?.message || "Nenhuma notícia disponível para esta categoria."}</div> :
       <div className={`grid gap-px bg-[var(--border-primary)] ${compact ? "grid-cols-1" : "md:grid-cols-2"}`}>
         {data.articles.slice(0, 8).map(article => <a key={article.id} href={article.url} target="_blank" rel="noopener noreferrer" className="group flex min-w-0 flex-col gap-2 bg-[var(--bg-card)] p-4 transition-colors hover:bg-[var(--bg-secondary)] sm:p-5">
           <div className="flex items-center justify-between gap-2"><span className="truncate text-[11px] font-bold uppercase text-[var(--accent-primary)]">{article.source}</span><ArrowUpRight size={14} className="shrink-0 text-[var(--text-muted)]"/></div>
