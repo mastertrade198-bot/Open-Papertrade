@@ -1,5 +1,5 @@
-import { resolveAssetDisplayName } from "@/lib/assetDisplayName";
 "use client";
+import { resolveAssetDisplayName } from "@/lib/assetDisplayName";
 
 import { useState, useMemo, useEffect, useCallback, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
