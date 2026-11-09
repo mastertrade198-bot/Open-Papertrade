@@ -13,6 +13,7 @@ from .models import Project, Participation, ParticipationPoint
 
 def serialize_project(project):
     return dict(id=str(project.pk), name=project.name, asset=project.asset,
+                category=project.category, categoryLabel=project.get_category_display(),
                 description=project.description, durationDays=project.duration_days,
                 expectedReturnPercent=float(project.expected_return_percent),
                 minimumAmount=float(project.minimum_amount), isActive=project.is_active)
@@ -47,6 +48,7 @@ def serialize_participation(item):
                 offset = event.new_percent
         curve.append(dict(at=instant.isoformat(), percent=float(item.project.expected_return_percent * progress + offset)))
     return dict(id=str(item.pk), projectId=str(item.project_id), projectName=item.project.name,
+                category=item.project.category, categoryLabel=item.project.get_category_display(),
                 principal=float(item.principal), percent=float(effective),
                 simulatedValue=float(simulated_value), status=item.status,
                 startedAt=item.started_at.isoformat(), points=curve)
