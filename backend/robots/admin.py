@@ -82,7 +82,7 @@ class TradingRobotAdmin(ModelAdmin):
     list_display_links = ('robot_label',)
     list_filter = ('status',)
     list_per_page = 20
-    ordering = ('created_at', 'pk')
+    ordering = ('-created_at', '-pk')
     show_full_result_count = False
     search_fields = ('symbol', 'asset_name', 'user__email')
     actions = None
