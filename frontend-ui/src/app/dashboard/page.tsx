@@ -153,17 +153,6 @@ export default function Dashboard() {
     return () => { active = false; window.clearInterval(interval); };
   }, []);
 
-  // Top holdings by value
-  const topHoldings = [...holdings]
-    .map((h) => ({
-      ...h,
-      value: h.shares * h.currentPrice,
-      gain: (h.currentPrice - h.avgCost) * h.shares,
-      gainPercent: h.avgCost > 0 ? ((h.currentPrice - h.avgCost) / h.avgCost) * 100 : 0,
-    }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 4);
-
   // Best and worst performers
   const performers = [...holdings]
     .map((h) => ({
@@ -363,68 +352,6 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5">
           {/* Left Column - Holdings & Performance */}
           <div className="lg:col-span-2 min-w-0 flex flex-col gap-4">
-            {/* Top Holdings */}
-            <div className="bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] flex flex-col overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-primary)]">
-                <div className="flex items-center gap-2">
-                  <BarChart3 size={16} className="text-[var(--accent-primary)]" />
-                  <span className="text-sm font-semibold text-[var(--text-primary)]">Principais ativos</span>
-                </div>
-                <Link href="/portfolio" className="text-[11px] font-medium text-[var(--accent-primary)] hover:underline flex items-center gap-1">
-                  Ver todos <ChevronRight size={12} />
-                </Link>
-              </div>
-
-              {holdings.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-9 px-4 text-center bg-[radial-gradient(ellipse_at_center,rgba(50,107,255,0.055),transparent_65%)]">
-                  <PieChart size={32} className="text-[#326bff] mb-3" />
-                  <span className="text-base font-semibold text-[var(--text-primary)] mb-1">Nenhum ativo na carteira tradicional</span>
-                  <span className="text-xs text-[var(--text-dim)]">Comece a negociar para montar sua carteira</span>
-                  <Link
-                    href="/trade"
-                    className="mt-3 px-4 py-2.5 rounded-lg bg-[var(--accent-primary)] text-xs font-semibold text-white hover:brightness-110 transition-all"
-                  >
-                    Faça sua primeira operação
-                  </Link>
-                </div>
-              ) : (
-                <div className="divide-y divide-[var(--border-primary)]">
-                  {topHoldings.map((holding) => (
-                    <div
-                      key={holding.symbol}
-                      onClick={() => router.push(`/trade?symbol=${holding.symbol}`)}
-                      className={`flex items-center justify-between px-5 ${settings.compactMode ? "py-2.5" : "py-4"} hover:bg-[var(--bg-muted)] cursor-pointer transition-colors`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-lg bg-[var(--bg-muted)] flex items-center justify-center font-primary tabular-nums text-sm font-bold text-[var(--text-primary)]">
-                          {holding.symbol.slice(0, 2)}
-                        </div>
-                        <div>
-                          <div className="font-primary tabular-nums text-sm font-semibold text-[var(--text-primary)]">{holding.symbol}</div>
-                          <div className="text-xs text-[var(--text-muted)]">{holding.shares} shares</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-primary tabular-nums text-sm font-semibold text-[var(--text-primary)]">
-                          {formatCurrency(holding.value, false, { sourceCurrency: holding.currency || "USD" })}
-                        </div>
-                        {settings.showProfitLoss ? (
-                          <div className={`text-xs font-medium flex items-center justify-end gap-1 ${holding.gainPercent >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>
-                            {holding.gainPercent >= 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                            {formatPercent(holding.gainPercent)}
-                          </div>
-                        ) : (
-                          <div className="text-xs text-[var(--text-muted)]">
-                            {formatCurrency(holding.currentPrice, false, { sourceCurrency: holding.currency || "USD" })}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
             {/* Active simulated projects */}
             <section className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] overflow-hidden">
               <div className="flex items-center justify-between border-b border-[var(--border-primary)] px-5 py-4">
