@@ -121,6 +121,7 @@ interface AdvancedChartProps {
   height?: number;
   disableDrawings?: boolean;
   minimalHeader?: boolean;
+  fitHistoryOnLoad?: boolean;
 }
 
 const COMPARE_COLORS = ["#06B6D4", "#F59E0B", "#A855F7", "#10B981", "#EC4899"];
@@ -134,6 +135,7 @@ export default function AdvancedChart({
   height = 640,
   disableDrawings = false,
   minimalHeader = false,
+  fitHistoryOnLoad = false,
 }: AdvancedChartProps) {
   const [timeframe, setTimeframe] = useState<TimeRange>(initialState?.timeframe ?? "1M");
   const [mode, setMode] = useState<ChartMode>(initialState?.mode ?? "candlestick");
@@ -144,6 +146,7 @@ export default function AdvancedChart({
   const [drawings, setDrawings] = useState<Drawing[]>(initialState?.drawings ?? []);
   const [activeTool, setActiveTool] = useState<DrawingTool>("cursor");
   const [bars, setBars] = useState<HistoricalBar[]>([]);
+  const fittedHistoryKeyRef = useRef<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [showIndicatorMenu, setShowIndicatorMenu] = useState(false);
   const [hoverOHLC, setHoverOHLC] = useState<{
@@ -206,11 +209,15 @@ export default function AdvancedChart({
   useEffect(() => {
     let cancelled = false;
     setBars([]);
+    fittedHistoryKeyRef.current = '';
     setIsLoading(true);
     stockAPI
       .getHistory(symbol, timeframe)
       .then((res) => {
-        if (!cancelled && res.success) setBars(res.bars);
+        if (!cancelled && res.success) {
+          const sorted = [...res.bars].filter(b => [b.open, b.high, b.low, b.close].every(Number.isFinite)).sort((a,b) => String(a.time).localeCompare(String(b.time)));
+          setBars(sorted.filter((b,i) => i === 0 || String(b.time) !== String(sorted[i-1].time)));
+        }
       })
       .catch(() => {})
       .finally(() => {
@@ -436,7 +443,11 @@ export default function AdvancedChart({
     }
 
     chart.applyOptions({ timeScale: { timeVisible: isIntraday, secondsVisible: false } });
-  }, [displayBars, mode, formatTime, isIntraday]);
+    if (fitHistoryOnLoad && !replayActive && !fittedHistoryKeyRef.current) {
+      chart.timeScale().fitContent();
+      fittedHistoryKeyRef.current = `${symbol}:${timeframe}`;
+    }
+  }, [displayBars, mode, formatTime, isIntraday, fitHistoryOnLoad, replayActive, symbol, timeframe]);
 
   // Apply log/linear scale change without full re-init
   useEffect(() => {
