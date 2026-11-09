@@ -1,4 +1,3 @@
-from datetime import timedelta
 from django import forms
 from django.contrib import admin
 from unfold.admin import ModelAdmin
@@ -73,10 +72,6 @@ class RobotScheduleForm(forms.ModelForm):
         if when is not None and when <= timezone.now():
             raise forms.ValidationError('A data de finalização deve estar no futuro.')
         if when is not None and percent is not None:
-            changed = self.instance.pk and (when != self.instance.scheduled_end_at or percent != self.instance.scheduled_pnl_percent)
-            start = timezone.now() if changed else (self.instance.simulation_started_at if self.instance.pk and self.instance.simulation_started_at else timezone.now())
-            if when < start + timedelta(minutes=10):
-                raise forms.ValidationError('A simulação deve durar pelo menos 10 minutos para executar as três primeiras operações.')
             if percent > self.instance.take_profit or percent < -self.instance.stop_loss:
                 raise forms.ValidationError('O resultado final precisa respeitar o take profit e o stop loss do robô.')
         if self.instance.pk and self.instance.status == 'CLOSED' and (when is not None or percent is not None):
