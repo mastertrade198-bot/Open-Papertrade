@@ -179,6 +179,18 @@ FINNHUB_API_KEY = os.getenv('FINNHUB_API_KEY', '')
 OPEN_EXCHANGE_API_KEY = os.getenv('OPEN_EXCHANGE_API_KEY', '')
 EXCHANGERATE_API_KEY = os.getenv('EXCHANGERATE_API_KEY', '')
 
+# Shared on-disk cache for local Codespaces and single-host deployments.
+# All Django workers on the same host must use the same directory.
+# For multi-host production, configure a networked cache (e.g. Redis).
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": os.getenv("MARKET_CACHE_DIR", str(BASE_DIR / ".market-cache")),
+        "TIMEOUT": 300,
+        "OPTIONS": {"MAX_ENTRIES": 5000},
+    }
+}
+
 # Cache settings for stock prices (in seconds)
 STOCK_CACHE_TTL = 60  # 1 minute cache
 
