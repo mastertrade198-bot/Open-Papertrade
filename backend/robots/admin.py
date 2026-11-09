@@ -15,7 +15,6 @@ class RobotScheduleForm(forms.ModelForm):
             format='%Y-%m-%dT%H:%M',
             attrs={
                 'type': 'datetime-local',
-                'class': 'vDateTimeField',
                 'step': '60',
                 'style': 'width:100%;max-width:440px;min-height:44px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;background:transparent;',
             },
