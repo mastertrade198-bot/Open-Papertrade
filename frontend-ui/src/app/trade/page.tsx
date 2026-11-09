@@ -142,6 +142,7 @@ function TradePageContent() {
 
   const [marketCategory, setMarketCategory] = useState("Todos");
   const [showMarketCategories, setShowMarketCategories] = useState(true);
+  const [mobileAssetsOpen, setMobileAssetsOpen] = useState(false);
   // Single source of truth: the account watchlist shared with Markets and Favorites.
   const favoriteSymbols = useMemo(() => watchlist.map(item => item.symbol.toUpperCase()), [watchlist]);
   const toggleFavorite = useCallback((symbol: string) => {
@@ -506,7 +507,7 @@ function TradePageContent() {
     <div className="trade-terminal flex h-full bg-[var(--bg-primary)]">
       <Sidebar />
       <main className="trade-workspace flex-1 min-w-0 flex flex-col gap-2 py-2 px-2 sm:px-3 overflow-auto">
-        <div className="trade-terminal-heading flex flex-wrap items-center justify-between gap-2 py-1">
+        <div className="trade-terminal-heading hidden lg:flex flex-wrap items-center justify-between gap-2 py-1">
           <div>
             <p className="trade-eyebrow flex items-center gap-2"><Activity size={13} /> TERMINAL / MERCADOS</p>
             <h1 className="mt-1 text-lg font-bold tracking-tight text-[var(--text-primary)]">Mesa de negociação</h1>
@@ -538,9 +539,15 @@ function TradePageContent() {
           </div>
         )}
 
+        <button type="button" onClick={() => setMobileAssetsOpen(open => !open)}
+          aria-expanded={mobileAssetsOpen} aria-controls="mobile-trade-assets"
+          className="lg:hidden flex w-full items-center justify-between gap-3 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-3 text-left">
+          <span className="min-w-0"><span className="block text-[10px] font-semibold uppercase text-[var(--text-muted)]">Ativo selecionado</span><span className="block truncate text-sm font-bold text-[var(--text-primary)]">{selectedAssetName} · {selectedSymbol}</span></span>
+          <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--accent-primary)]">{mobileAssetsOpen ? "Fechar" : "Trocar ativo"}<ChevronDown size={15} className={mobileAssetsOpen ? "rotate-180" : ""}/></span>
+        </button>
         {/* Main Trade Area */}
         <div className="trade-workspace-grid grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[265px_minmax(0,1fr)_295px] gap-0 items-stretch min-w-0 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card-inner)] overflow-hidden">
-          <aside aria-label="Lista de mercados" className="min-w-0 border-b lg:border-b-0 lg:border-r border-[var(--border-primary)] bg-[var(--bg-card-inner)] flex flex-col">
+          <aside id="mobile-trade-assets" aria-label="Lista de mercados" className={`${mobileAssetsOpen ? "flex" : "hidden"} lg:flex min-w-0 border-b lg:border-b-0 lg:border-r border-[var(--border-primary)] bg-[var(--bg-card-inner)] flex flex-col">
             <div className="p-3 border-b border-[var(--border-primary)]">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold text-[var(--text-primary)]">Mercados</h2>
@@ -568,7 +575,7 @@ function TradePageContent() {
                     return (
                       <div key={symbol} className={`flex items-center gap-1 border-t border-[var(--border-primary)]/40 hover:bg-[var(--bg-hover)] ${selectedSymbol === symbol ? "bg-[var(--accent-primary)]/10" : ""}`}>
                         <button type="button" onClick={() => toggleFavorite(symbol)} aria-label={`Remover ${symbol} dos favoritos`} className="shrink-0 px-2 py-2 text-[var(--accent-primary)]"><Star size={13} fill="currentColor"/></button>
-                        <button type="button" onClick={() => selectStock({symbol,name:asset?.name || favorite.name || symbol,provider:"catalog"})}
+                        <button type="button" onClick={() => { selectStock({symbol,name:asset?.name || favorite.name || symbol,provider:"catalog"}); setMobileAssetsOpen(false); }}
                           className="flex min-w-0 flex-1 items-center justify-between gap-2 py-2 pr-3 text-left">
                           <span className="min-w-0"><span className="block truncate text-xs font-semibold text-[var(--text-primary)]">{asset?.name || favorite.name || symbol}</span><span className="block text-[10px] text-[var(--text-muted)]">{asset?.displaySymbol || symbol}</span></span>
                           <span className="shrink-0 text-right text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">{typeof price === "number" && Number.isFinite(price) ? price.toLocaleString("en-US",{maximumFractionDigits:2}) : "—"}</span>
@@ -608,7 +615,7 @@ function TradePageContent() {
               {visibleMarketAssets.map(asset => {
                 const item = marketCategory === "Favoritos" ? (marketQuotes[asset.symbol.toUpperCase()] || getStockBySymbol(asset.symbol)) : undefined;
                 const change = item?.changePercent;
-                return <div key={asset.symbol} className={`flex items-center border-b border-[var(--border-primary)]/40 hover:bg-[var(--bg-hover)] transition-colors ${selectedSymbol === asset.symbol ? "bg-[var(--accent-primary)]/10 border-l-2 border-l-[var(--accent-primary)]" : ""}`}><button type="button" onClick={() => toggleFavorite(asset.symbol)} title={favoriteSymbols.includes(asset.symbol) ? "Remover dos favoritos" : "Adicionar aos favoritos"} aria-label={`Favoritar ${asset.symbol}`} className="shrink-0 pl-2 py-3 text-[var(--accent-primary)]"><Star size={15} fill={favoriteSymbols.includes(asset.symbol) ? "currentColor" : "none"}/></button><button type="button" onClick={() => selectStock({symbol:asset.symbol,name:asset.name,provider:"catalog"})} aria-pressed={selectedSymbol === asset.symbol} className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2 py-2.5 text-left">
+                return <div key={asset.symbol} className={`flex items-center border-b border-[var(--border-primary)]/40 hover:bg-[var(--bg-hover)] transition-colors ${selectedSymbol === asset.symbol ? "bg-[var(--accent-primary)]/10 border-l-2 border-l-[var(--accent-primary)]" : ""}`}><button type="button" onClick={() => toggleFavorite(asset.symbol)} title={favoriteSymbols.includes(asset.symbol) ? "Remover dos favoritos" : "Adicionar aos favoritos"} aria-label={`Favoritar ${asset.symbol}`} className="shrink-0 pl-2 py-3 text-[var(--accent-primary)]"><Star size={15} fill={favoriteSymbols.includes(asset.symbol) ? "currentColor" : "none"}/></button><button type="button" onClick={() => { selectStock({symbol:asset.symbol,name:asset.name,provider:"catalog"}); setMobileAssetsOpen(false); }} aria-pressed={selectedSymbol === asset.symbol} className="flex min-w-0 flex-1 items-center justify-between gap-2 px-2 py-2.5 text-left">
                   <span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold text-[var(--text-primary)]" title={asset.name}>{asset.name && asset.name !== asset.symbol ? asset.name : (item?.name || asset.symbol)}</span><span className="block text-[10px] font-medium text-[var(--text-muted)]">{asset.displaySymbol || asset.symbol}</span></span>
                   {marketCategory === "Favoritos" && <span className="w-[68px] shrink-0 text-right text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">{item && Number.isFinite(item.price) ? Number(item.price).toFixed(2) : "—"}</span>}{marketCategory === "Favoritos" && <span className={`w-[82px] shrink-0 text-right text-[11px] tabular-nums ${typeof change === "number" && change >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{typeof change === "number" && Number.isFinite(change) ? `${change > 0 ? "+" : ""}${change.toFixed(2)}%` : "—"}</span>}
                 </button></div>;
