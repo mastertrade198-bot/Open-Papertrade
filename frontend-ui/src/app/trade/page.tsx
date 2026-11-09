@@ -1,3 +1,4 @@
+import { resolveAssetDisplayName } from "@/lib/assetDisplayName";
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, useRef, Suspense } from "react";
@@ -139,7 +140,7 @@ function TradePageContent() {
         bySymbol.set(asset.symbol, { symbol: asset.symbol, name: asset.name || asset.symbol, category: "Criptomoedas", currency: "USD" });
       }
     }
-    return Array.from(bySymbol.values()).map(asset => asset.category === "Criptomoedas" ? { ...asset, name: resolveCryptoName(asset.symbol, asset.name) } : asset).sort((a, b) => a.category.localeCompare(b.category, "pt-BR") || a.symbol.localeCompare(b.symbol));
+    return Array.from(bySymbol.values()).map(asset => ({ ...asset, name: asset.category === "Criptomoedas" ? resolveCryptoName(asset.symbol, asset.name) : resolveAssetDisplayName(asset.symbol, asset.name) })).sort((a, b) => a.category.localeCompare(b.category, "pt-BR") || a.symbol.localeCompare(b.symbol));
   }, [catalogAssets, stocks, crypto]);
 
   const displaySymbol = (symbol: string) =>
@@ -590,7 +591,7 @@ function TradePageContent() {
                     return (
                       <div key={symbol} className={`flex items-center gap-1 border-t border-[var(--border-primary)]/40 hover:bg-[var(--bg-hover)] ${selectedSymbol === symbol ? "bg-[var(--accent-primary)]/10" : ""}`}>
                         <button type="button" onClick={() => toggleFavorite(symbol)} aria-label={`Remover ${symbol} dos favoritos`} className="shrink-0 px-2 py-2 text-[var(--accent-primary)]"><Star size={13} fill="currentColor"/></button>
-                        <button type="button" onClick={() => { selectStock({symbol,name:asset?.name || favorite.name || symbol,provider:"catalog"}); setMobileAssetsOpen(false); }}
+                        <button type="button" onClick={() => { selectStock({symbol,name:resolveAssetDisplayName(symbol, asset?.name || favorite.name),provider:"catalog"}); setMobileAssetsOpen(false); }}
                           className="flex min-w-0 flex-1 items-center justify-between gap-2 py-2 pr-3 text-left">
                           <span className="min-w-0"><span className="block truncate text-xs font-semibold text-[var(--text-primary)]">{asset?.name || favorite.name || symbol}</span><span className="block text-[10px] text-[var(--text-muted)]">{asset?.displaySymbol || symbol}</span></span>
                           <span className="shrink-0 text-right text-[11px] font-semibold tabular-nums text-[var(--text-primary)]">{typeof price === "number" && Number.isFinite(price) ? price.toLocaleString("en-US",{maximumFractionDigits:2}) : "—"}</span>
