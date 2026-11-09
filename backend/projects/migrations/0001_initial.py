@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(name='Participation', fields=[
             ('id', models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, serialize=False)),
             ('principal', models.DecimalField(max_digits=18, decimal_places=2, verbose_name='Capital fictício reservado')),
-            ('current_percent', models.DecimalField(max_digits=9, decimal_places=3, default=0, verbose_name='Resultado simulado (%)')),
+            ('current_percent', models.DecimalField(max_digits=9, decimal_places=3, default=0, verbose_name='Ajuste individual sobre a curva (%)')),
             ('started_at', models.DateTimeField(default=django.utils.timezone.now)),
             ('status', models.CharField(max_length=12, default='ACTIVE', choices=[('ACTIVE', 'Ativa'), ('CLOSED', 'Encerrada')])),
             ('updated_at', models.DateTimeField(auto_now=True)),
