@@ -174,6 +174,7 @@ function TradePageContent() {
     (!searchQuery.trim() || `${asset.symbol} ${asset.displaySymbol || ""} ${asset.name}`.toLocaleLowerCase("pt-BR").includes(searchQuery.trim().toLocaleLowerCase("pt-BR")))
   ), [availableAssets, marketCategory, searchQuery, favoriteSymbols]);
 
+  const [positions, setPositions] = useState<SimulatedPosition[]>([]);
   const [marketQuotes, setMarketQuotes] = useState<Record<string, StockQuote>>({});
   const [marketQuotesLoading, setMarketQuotesLoading] = useState(false);
   const marketSymbols = useMemo(() => {
@@ -276,7 +277,6 @@ function TradePageContent() {
   const [takeProfitInput, setTakeProfitInput] = useState("");
   const [leverage, setLeverage] = useState(10);
   const [marginBalance, setMarginBalance] = useState<number | null>(null);
-  const [positions, setPositions] = useState<SimulatedPosition[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
