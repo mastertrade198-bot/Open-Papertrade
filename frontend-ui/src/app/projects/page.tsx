@@ -65,6 +65,10 @@ export default function ProjectsPage() {
   const visible = useMemo(() => projects.filter(p => category === "ALL" || p.category === category), [projects, category]);
   const active = participations.filter(p => p.status === "ACTIVE");
   const invested = active.reduce((sum, p) => sum + p.principal, 0);
+  // Average accrued synthetic gain per active participation; not settled cash.
+  const averageSimulatedGain = active.length
+    ? active.reduce((sum, p) => sum + (p.simulatedValue - p.principal), 0) / active.length
+    : 0;
   const previewAmount = selected ? Number(amounts[selected.id] || 0) : 0;
   const validAmount = selected && Number.isFinite(previewAmount) && previewAmount >= selected.minimumAmount && hasValidCents(previewAmount);
   const previewGain = selected && validAmount ? previewAmount * selected.expectedReturnPercent / 100 : 0;
@@ -95,10 +99,11 @@ export default function ProjectsPage() {
           <p className="mt-2 max-w-2xl text-sm text-[var(--text-muted)]">Conheça os projetos disponíveis, compare características e acompanhe suas participações em um só lugar.</p></div>
         <button type="button" onClick={() => void load()} className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] px-3 py-2 text-xs font-semibold"><RefreshCw size={15}/> Atualizar</button>
       </header>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5"><p className="text-xs text-[var(--text-muted)]">Projetos disponíveis</p><p className="mt-2 text-2xl font-bold tabular-nums">{projects.filter(p => p.isActive).length}</p></div>
         <div className="rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5"><p className="text-xs text-[var(--text-muted)]">Participações ativas</p><p className="mt-2 text-2xl font-bold tabular-nums">{active.length}</p></div>
         <div className="rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5"><p className="text-xs text-[var(--text-muted)]">Capital aplicado</p><p className="mt-2 text-2xl font-bold tabular-nums">{money(invested)}</p></div>
+        <div className="rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5"><p className="text-xs text-[var(--text-muted)]">Lucro médio acumulado (simulado)</p><p className={`mt-2 text-2xl font-bold tabular-nums ${averageSimulatedGain >= 0 ? "text-[var(--accent-green)]" : "text-[var(--accent-red)]"}`}>{money(averageSimulatedGain)}</p><p className="mt-1 text-[11px] text-[var(--text-muted)]">Média por participação ativa; não é lucro realizado ou disponível para saque.</p></div>
       </div>
       {error && <p role="alert" className="rounded-xl border border-red-400/40 bg-red-500/5 p-4 text-sm text-red-500">{error}</p>}
       <section className="space-y-4">
