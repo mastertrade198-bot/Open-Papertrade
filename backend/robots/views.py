@@ -127,23 +127,6 @@ class RobotDetailView(APIView):
 
 class RobotCloseView(APIView):
     def post(self, request, robot_id):
-        user = get_user(request)
-        with transaction.atomic():
-            robot = get_object_or_404(TradingRobot.objects.select_for_update(), pk=robot_id, user=user)
-            if robot.status == 'CLOSED':
-                return Response({'error':'Robô já encerrado'}, status=409)
-            if robot.operations.filter(status='OPEN').exists():
-                return Response({'error':'Há operações abertas. Liquide-as antes de encerrar.'}, status=409)
-            locked = UserProfile.objects.select_for_update().get(pk=user.pk)
-            before = locked.buying_power
-            locked.buying_power = before + robot.equity
-            locked.save(update_fields=['buying_power'])
-            robot.status = 'CLOSED'
-            robot.closed_reason = 'USER'
-            robot.closed_at = timezone.now()
-            robot.save(update_fields=['status','closed_reason','closed_at'])
-            BalanceTransaction.objects.create(user=locked, amount=robot.equity, balance_before=before,
-                balance_after=locked.buying_power, category='ROBOT_RELEASE', description=f'Capital simulado devolvido · {robot.pk}')
-            RobotAudit.objects.create(robot=robot, actor=str(user.pk), action='CLOSE',
-                after={'status':'CLOSED','released':str(robot.equity)})
-        return Response(serialize(robot))
+        # Encerramento manual disponível somente no Django Admin.
+        get_object_or_404(TradingRobot, pk=robot_id, user=get_user(request))
+        return Response({'error': 'Encerramento manual disponível apenas no painel administrativo.'}, status=403)
