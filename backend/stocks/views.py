@@ -362,7 +362,7 @@ class PopularStocksView(APIView):
         symbols = self.US_SYMBOLS
 
         from django.core.cache import cache
-        cache_key = "market:popular:us:v1"
+        cache_key = f"market:popular:{market.lower()}:v1"
         cached = cache.get(cache_key)
         if cached is not None:
             return Response(cached)
@@ -412,7 +412,7 @@ class CryptoQuotesView(APIView):
         market = market or 'US'
 
         from django.core.cache import cache
-        cache_key = "market:crypto:us:v1"
+        cache_key = f"market:crypto:{market.lower()}:v1"
         cached = cache.get(cache_key)
         if cached is not None:
             return Response(cached)
