@@ -3,6 +3,10 @@ from django import forms
 from django.contrib import messages
 from .settlement import settle_robot
 from django.contrib import admin
+from django.urls import path, reverse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.core.exceptions import PermissionDenied
+from django.views.decorators.csrf import csrf_protect
 from unfold.admin import ModelAdmin
 from django.db import transaction
 from django.db.models import Q, Sum
@@ -38,7 +42,6 @@ class EasyScheduleWidget(forms.SplitDateTimeWidget):
 
 
 class RobotScheduleForm(forms.ModelForm):
-    close_now = forms.BooleanField(label='Encerrar com o resultado atual', required=False, help_text='Ao salvar, encerra e devolve o patrimônio simulado à carteira.')
     scheduled_end_at = forms.SplitDateTimeField(
         label='Finalização programada',
         required=False,
@@ -73,14 +76,12 @@ class RobotScheduleForm(forms.ModelForm):
             raise forms.ValidationError('Informe a data e o percentual juntos, ou deixe ambos vazios.')
         if percent is not None and percent < -100:
             raise forms.ValidationError('O prejuízo não pode superar 100% do capital.')
-        closing = data.get('close_now', False)
+        closing = False
         if when is not None and when <= timezone.now() and not closing:
             raise forms.ValidationError('A data de finalização deve estar no futuro.')
         if when is not None and percent is not None and not closing:
             if percent > self.instance.take_profit or percent < -self.instance.stop_loss:
                 raise forms.ValidationError('O resultado final precisa respeitar o take profit e o stop loss do robô.')
-        if self.instance.pk and self.instance.status == 'CLOSED' and closing:
-            raise forms.ValidationError('Este robô já está encerrado.')
         if self.instance.pk and self.instance.status == 'CLOSED' and (when is not None or percent is not None):
             raise forms.ValidationError('Não é possível programar um robô encerrado.')
         return data
@@ -128,8 +129,8 @@ class TradingRobotAdmin(ModelAdmin):
                 ('scheduled_end_at', 'scheduled_pnl_percent'),
             ),
         }),
-        ('Finalizar agora', {
-            'fields': ('close_now',),
+        ('Encerramento independente', {
+            'fields': ('close_robot_action',),
         }),
         ('Dados adicionais', {
             'fields': (
@@ -140,9 +141,70 @@ class TradingRobotAdmin(ModelAdmin):
             ),
         }),
     )
-    readonly_fields = ('asset_display', 'invested_amount', 'current_pnl', 'current_equity', 'robot_number', 'status_summary', 'user', 'symbol', 'asset_name',
+    readonly_fields = ('asset_display', 'invested_amount', 'current_pnl', 'current_equity', 'robot_number', 'status_summary', 'close_robot_action', 'user', 'symbol', 'asset_name',
                        'capital', 'equity', 'take_profit', 'stop_loss', 'indicators',
                        'created_at', 'closed_at', 'closed_reason')
+
+    def get_urls(self):
+        custom = [
+            path('<path:object_id>/finalizar/', self.admin_site.admin_view(self.close_robot_view),
+                 name='robots_tradingrobot_finalizar'),
+        ]
+        return custom + super().get_urls()
+
+    @admin.display(description='Finalizar agora')
+    def close_robot_action(self, obj):
+        if not obj or not obj.pk:
+            return '—'
+        if obj.status == 'CLOSED':
+            return 'Robô já encerrado'
+        url = reverse('admin:robots_tradingrobot_finalizar', args=[str(obj.pk)])
+        return format_html(
+            '<a href="{}" style="display:inline-block;padding:10px 16px;background:#b42318;color:white;'
+            'border-radius:8px;font-weight:600;text-decoration:none">Finalizar com resultado atual</a>',
+            url,
+        )
+
+    def close_robot_view(self, request, object_id):
+        robot = get_object_or_404(TradingRobot, pk=object_id)
+        if not self.has_change_permission(request, robot):
+            raise PermissionDenied
+        if request.method == 'POST':
+            with transaction.atomic():
+                locked = TradingRobot.objects.select_for_update().get(pk=robot.pk)
+                if locked.status == 'CLOSED':
+                    self.message_user(request, 'Este robô já está encerrado.', level=messages.WARNING)
+                else:
+                    before = {'status': locked.status, 'equity': str(locked.equity),
+                              'pnl': str(locked.pnl), 'pnl_percent': str(locked.pnl_percent)}
+                    locked.status = 'CLOSED'
+                    locked.closed_at = timezone.now()
+                    locked.closed_reason = 'Encerramento manual do cenário simulado pelo administrador'
+                    locked.save(update_fields=['status', 'closed_at', 'closed_reason'])
+                    RobotAudit.objects.create(
+                        robot=locked, actor=request.user.get_username(),
+                        action='ADMIN_CLOSE_CURRENT', before=before,
+                        after={'status': 'CLOSED', 'equity': str(locked.equity), 'simulated': True},
+                        reason='Encerrado pelo administrador com o resultado atual',
+                    )
+                    settle_robot(locked)
+                    self.message_user(
+                        request, 'Robô encerrado e patrimônio simulado devolvido à carteira.',
+                        level=messages.SUCCESS,
+                    )
+            return redirect(reverse('admin:robots_tradingrobot_change', args=[str(robot.pk)]))
+        manual = robot.operations.filter(source='MANUAL', status='CLOSED').aggregate(
+            total=Sum('pnl'))['total'] or Decimal('0.00')
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'Confirmar encerramento imediato',
+            'robot': robot,
+            'total_equity': robot.equity + manual,
+            'total_pnl': robot.equity + manual - robot.capital,
+            'opts': self.model._meta,
+            'cancel_url': reverse('admin:robots_tradingrobot_change', args=[str(robot.pk)]),
+        }
+        return render(request, 'admin/robots/tradingrobot/confirm_close.html', context)
 
     @admin.display(description='Ativo')
     def asset_display(self, obj):
@@ -228,26 +290,6 @@ class TradingRobotAdmin(ModelAdmin):
             return
         with transaction.atomic():
             previous = TradingRobot.objects.select_for_update().get(pk=obj.pk)
-            if form.cleaned_data.get('close_now'):
-                if previous.status == 'CLOSED':
-                    self.message_user(request, 'Este robô já foi encerrado.', level=messages.WARNING)
-                    return
-                before = {'status': previous.status, 'equity': str(previous.equity),
-                          'pnl': str(previous.pnl), 'pnl_percent': str(previous.pnl_percent)}
-                previous.status = 'CLOSED'
-                previous.closed_at = timezone.now()
-                previous.closed_reason = 'Encerramento manual do cenário simulado pelo administrador'
-                previous.save(update_fields=['status', 'closed_at', 'closed_reason'])
-                RobotAudit.objects.create(
-                    robot=previous, actor=request.user.get_username(), action='ADMIN_CLOSE_CURRENT',
-                    before=before, after={'status': 'CLOSED', 'equity': str(previous.equity), 'simulated': True},
-                    reason='Encerrado pelo administrador com o resultado atual, sem alterar operações',
-                )
-                settle_robot(previous)
-                self.message_user(request, 'Robô encerrado com o resultado atual. Patrimônio simulado devolvido à carteira.', level=messages.SUCCESS)
-                return
-            if previous.status == 'CLOSED':
-                return
             changed_schedule = (previous.scheduled_end_at != obj.scheduled_end_at or
                                 previous.scheduled_pnl_percent != obj.scheduled_pnl_percent)
             if not changed_schedule:
