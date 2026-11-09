@@ -1186,10 +1186,12 @@ export default function AdvancedChart({
   // Group indicators by category for the menu
   const indicatorsByCategory = useMemo(() => {
     const groups: Record<string, IndicatorId[]> = {};
-    Object.values(INDICATOR_CATALOG).forEach((m) => {
-      if (!groups[m.category]) groups[m.category] = [];
-      groups[m.category].push(m.id);
-    });
+    const essentials: { title: string; ids: IndicatorId[] }[] = [
+      { title: "Tendência", ids: ["ma20", "ma50", "ma200", "ema9", "ema21", "bollinger"] },
+      { title: "Osciladores", ids: ["rsi", "macd"] },
+      { title: "Volume", ids: ["volume", "vwap"] },
+    ];
+    essentials.forEach(group => { groups[group.title] = group.ids; });
     return groups;
   }, []);
 
@@ -1300,8 +1302,8 @@ export default function AdvancedChart({
         <div className="w-px h-8 bg-[var(--border-primary)]" />
 
         <div className="flex items-center gap-1 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-muted)] p-1">
-          <span className="px-2 text-[10px] font-bold uppercase tracking-wide text-[var(--text-muted)]">Médias</span>
-          {(["ma20", "ma50", "ma200", "ema9", "ema21"] as IndicatorId[]).map(id => {
+          <span className="px-2 text-[10px] font-bold uppercase tracking-wide text-[var(--text-muted)]">Médias móveis</span>
+          {(["ma20", "ma50", "ema9", "ema21"] as IndicatorId[]).map(id => {
             const meta = INDICATOR_CATALOG[id];
             const active = activeIndicators.has(id);
             const available = normalisedBars.length >= meta.minBars;
@@ -1339,7 +1341,7 @@ export default function AdvancedChart({
                         title={
                           available
                             ? meta.description
-                            : `Needs ${meta.minBars} bars — you have ${normalisedBars.length}. Switch to a longer timeframe.`
+                            : `São necessários ${meta.minBars} candles; disponíveis: ${normalisedBars.length}. Amplie o histórico.`
                         }
                         className={`flex items-start justify-between w-full px-3 py-2 text-left transition-colors ${
                           !available
@@ -1357,7 +1359,7 @@ export default function AdvancedChart({
                               {meta.label}
                               {!available && (
                                 <span className="text-[9px] font-bold uppercase px-1 py-px rounded bg-[var(--accent-red)]/20 text-[var(--accent-red)]">
-                                  ≥{meta.minBars} bars
+                                  Mín. {meta.minBars} candles
                                 </span>
                               )}
                             </div>
@@ -1387,7 +1389,7 @@ export default function AdvancedChart({
         <div className="ml-auto flex items-center gap-1">
           <button
             onClick={() => setLogScale((v) => !v)}
-            title={logScale ? "Linear scale" : "Log scale"}
+            title={logScale ? "Escala linear" : "Escala logarítmica"}
             className={`px-2.5 py-1.5 rounded text-[10px] font-bold transition-all ${
               logScale
                 ? "bg-[var(--accent-primary)] text-black"
