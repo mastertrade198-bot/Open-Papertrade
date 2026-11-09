@@ -3,8 +3,6 @@ from django.db import transaction
 from django.db.models import F
 from decimal import Decimal
 from django import forms
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect
 from django.core.exceptions import PermissionDenied
 from django.contrib import messages
@@ -138,17 +136,13 @@ class UserProfileAdminForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        if self.instance._state.adding:
-            password = cleaned.get("password1")
-            if not password:
-                self.add_error("password1", "Informe uma senha.")
-            elif password != cleaned.get("password2"):
+        password = cleaned.get("password1")
+        confirmation = cleaned.get("password2")
+        if self.instance._state.adding and not password:
+            self.add_error("password1", "Informe uma senha.")
+        if password or confirmation:
+            if password != confirmation:
                 self.add_error("password2", "As senhas não coincidem.")
-            else:
-                try:
-                    validate_password(password, user=self.instance)
-                except ValidationError as error:
-                    self.add_error("password1", error)
         return cleaned
 
 
@@ -164,7 +158,7 @@ class UserProfileAdmin(ModelAdmin):
         ("Email Verification", {"classes": ("collapse",), "fields": ["is_email_verified"]}),
         ("Account", {"fields": ["buying_power", "initial_balance"]}),
         ("Admin", {"classes": ("collapse",), "fields": ["is_admin"]}),
-        ("Security", {"classes": ("collapse",), "fields": ["password_changed_at", "is_2fa_enabled"]}),
+        ("Security", {"classes": ("collapse",), "fields": ["password1", "password2", "password_changed_at", "is_2fa_enabled"]}),
         ("Timestamps", {"classes": ("collapse",), "fields": ["created_at", "updated_at"]}),
     ]
 
@@ -190,6 +184,10 @@ class UserProfileAdmin(ModelAdmin):
             obj.is_admin = False
             obj.set_password(form.cleaned_data["password1"])
         super().save_model(request, obj, form, change)
+        if change and form.cleaned_data.get("password1"):
+            obj.set_password(form.cleaned_data["password1"])
+            obj.password_changed_at = timezone.now()
+            obj.save(update_fields=["password", "password_changed_at"])
         if not change:
             UserSettings.objects.get_or_create(user=obj)
 
