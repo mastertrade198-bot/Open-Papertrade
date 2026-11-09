@@ -79,7 +79,7 @@ class StockService:
         self.provider = YahooFinanceProvider()
         self._finnhub = FinnhubProvider()  # only for market status
         self._cache: dict[str, tuple[StockQuote, datetime]] = {}
-        self._cache_ttl = timedelta(minutes=5)
+        self._cache_ttl = timedelta(seconds=45)
         self._history_cache: dict[str, tuple[list[HistoricalBar], datetime]] = {}
         self._history_cache_ttl = timedelta(minutes=5)
         self._market_status_cache: dict[str, tuple[dict, datetime]] = {}
