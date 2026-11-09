@@ -132,7 +132,7 @@ export default function Home() {
           <div><h3 className="text-sm font-semibold text-white">Informações importantes</h3><div className="mt-5 space-y-3 text-sm leading-6"><p>Negociação demonstrativa, sem envio de ordens a bolsas de valores.</p><p>Cotações sujeitas a atrasos e disponibilidade das fontes integradas.</p><p>O conteúdo da plataforma não constitui recomendação individual de investimento.</p></div></div>
         </div>
         <div className="border-b border-white/10 py-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-7">
+          <div className="flex flex-col items-start gap-3">
             <h3 className="shrink-0 text-xs font-semibold text-white">Políticas Legais</h3>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-[#9BB1C6]">
               <a href="/documents/compliance-master-trade.html" target="_blank" rel="noopener noreferrer" title="Abrir minuta do Programa de Compliance da Master Trade" className="font-medium text-[#64D9C2] transition-colors hover:text-white">Compliance</a>{[
