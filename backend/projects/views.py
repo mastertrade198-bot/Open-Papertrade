@@ -69,34 +69,7 @@ class MyProjectsView(APIView):
 
 class JoinProjectView(APIView):
     def post(self, request, project_id):
-        user = get_user(request)
-        try:
-            amount = Decimal(str(request.data.get('amount', '')))
-            if not amount.is_finite() or amount.as_tuple().exponent < -2:
-                raise InvalidOperation
-        except (InvalidOperation, TypeError, ValueError):
-            raise ValidationError({'amount': 'Informe um valor válido com até duas casas decimais.'})
-        with transaction.atomic():
-            project = get_object_or_404(Project.objects.select_for_update(), pk=project_id)
-            if not project.is_active:
-                raise ValidationError({'project': 'Projeto não está aceitando participações.'})
-            if amount < project.minimum_amount or amount <= 0:
-                raise ValidationError({'amount': 'Valor abaixo da aplicação mínima.'})
-            updated = UserProfile.objects.filter(pk=user.pk, buying_power__gte=amount).update(
-                buying_power=F('buying_power') - amount
-            )
-            if not updated:
-                raise ValidationError({'amount': 'Saldo fictício insuficiente.'})
-            participation = Participation.objects.create(project=project, user=user, principal=amount)
-            ParticipationPoint.objects.create(participation=participation, percent=Decimal('0'))
-            # QuerySet.update bypasses balance signals: create a dedicated journal entry.
-            from users.models import BalanceTransaction
-            balance_after = UserProfile.objects.get(pk=user.pk).buying_power
-            BalanceTransaction.objects.create(
-                user=user, amount=-amount, balance_before=balance_after + amount,
-                balance_after=balance_after, category='BALANCE_ADJUSTMENT',
-                description=f'Participação simulada no projeto {project.name}',
-            )
-        return Response({'participation': serialize_participation(
-            Participation.objects.select_related('project').prefetch_related('points').get(pk=participation.pk)
-        )}, status=201)
+        get_user(request)
+        return Response({
+            'detail': 'Aplicações com capital real indisponíveis até integração de custódia, saldo real e confirmação de liquidação. O saldo de demonstração não será utilizado.'
+        }, status=503)
