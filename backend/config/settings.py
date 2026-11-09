@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'users',
     'withdrawals',
     'robots',
+    'projects',
     'filings',
 ]
 
