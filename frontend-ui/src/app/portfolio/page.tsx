@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 import WalletActions from "@/components/WalletActions";
-import LeveragedTradeHistory from "@/components/LeveragedTradeHistory";
+import PortfolioOperationsStatement from "@/components/PortfolioOperationsStatement";
 import PageHeader from "@/components/PageHeader";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { formatCurrency, formatPercent } from "@/lib/utils";
@@ -171,7 +171,7 @@ export default function PortfolioPage() {
             </button>
           </div>
 
-          <LeveragedTradeHistory />
+          <PortfolioOperationsStatement />
 
           {/* Error Banner */}
           {error && (
@@ -181,46 +181,7 @@ export default function PortfolioPage() {
             </div>
           )}
 
-          <div className="flex-1 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-6 text-center max-w-md">
-              <div className="w-20 h-20 rounded-full bg-[var(--bg-card)] border border-[var(--border-primary)] flex items-center justify-center">
-                {isLoading ? (
-                  <Loader2 size={32} className="text-[var(--accent-primary)] animate-spin" />
-                ) : (
-                  <PieChart size={32} className="text-[var(--text-muted)]" />
-                )}
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-2">
-                  {isLoading ? "Loading your portfolio..." : "No holdings yet"}
-                </h2>
-                <p className="text-sm text-[var(--text-muted)]">
-                  {isLoading
-                    ? "Fetching your holdings and current prices from the market."
-                    : "Start building your portfolio by buying your first stock or crypto. Your holdings will appear here."}
-                </p>
-              </div>
-              {!isLoading && (
-                <>
-                  <div className="flex gap-3">
-                    <Link
-                      href="/trade"
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[var(--accent-primary)] text-black text-sm font-semibold hover:brightness-110 transition-all"
-                    >
-                      <Plus size={16} />
-                      Faça sua primeira operação
-                    </Link>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
-                    <Wallet size={14} />
-                    <span>
-                      Saldo disponível: <span className="text-[var(--text-primary)] font-mono">{formatCurrency(buyingPower, false, { convertFromUSD: false })}</span>
-                    </span>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+
         </main>
       </div>
     );
@@ -243,6 +204,8 @@ export default function PortfolioPage() {
             <span className="text-sm text-[var(--accent-red)]">{error}</span>
           </div>
         )}
+
+        <PortfolioOperationsStatement />
 
         {/* Summary Cards Row */}
         <div className="grid grid-cols-4 gap-4">
