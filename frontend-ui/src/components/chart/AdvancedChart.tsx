@@ -1356,7 +1356,7 @@ export default function AdvancedChart({
 
       {!disableDrawings && activeTool !== "cursor" && <div className="flex items-center gap-2 border-b border-[var(--border-primary)] bg-[var(--bg-muted)]/30 px-3 py-1.5 text-[10px]">
         <span className="font-semibold text-[var(--text-primary)]">Desenho:</span>
-        <span className="text-[var(--text-muted)]">{activeTool === "cursor" ? "Selecione uma ferramenta na barra lateral" : activeTool === "horizontalLine" ? "Clique uma vez no preço para criar a linha horizontal" : activeTool === "trendline" ? "Clique em dois pontos para traçar a tendência" : activeTool === "fibonacci" ? "Marque o início e o fim do movimento" : activeTool === "rectangle" ? "Marque dois cantos da área" : "Clique no local desejado"}</span>
+        <span className="text-[var(--text-muted)]">{activeTool === "horizontalLine" ? "Clique uma vez no preço para criar a linha horizontal" : activeTool === "trendline" ? "Clique em dois pontos para traçar a tendência" : activeTool === "fibonacci" ? "Marque o início e o fim do movimento" : activeTool === "rectangle" ? "Marque dois cantos da área" : "Clique no local desejado"}</span>
         {activeTool !== "cursor" && <button type="button" onClick={() => setActiveTool("cursor")} className="ml-auto rounded border border-[var(--border-primary)] px-2 py-1 text-[var(--text-primary)]">Cancelar (Esc)</button>}
       </div>}
       {/* --- Body: left toolbar + chart area --- */}
