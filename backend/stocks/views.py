@@ -361,6 +361,11 @@ class PopularStocksView(APIView):
         market = market or 'US'
         symbols = self.US_SYMBOLS
 
+        from django.core.cache import cache
+        cache_key = "market:popular:us:v1"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
         service = get_stock_service()
         results = service.get_quotes(symbols)
 
@@ -370,11 +375,10 @@ class PopularStocksView(APIView):
             if result and result.success and result.quote:
                 quotes.append(result.quote.to_dict())
 
-        return Response({
-            "stocks": quotes,
-            "count": len(quotes),
-            "market": market,
-        })
+        payload = {"stocks": quotes, "count": len(quotes), "market": market}
+        if quotes:
+            cache.set(cache_key, payload, timeout=300)
+        return Response(payload)
 
 
 class CryptoQuotesView(APIView):
@@ -407,6 +411,11 @@ class CryptoQuotesView(APIView):
 
         market = market or 'US'
 
+        from django.core.cache import cache
+        cache_key = "market:crypto:us:v1"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
         service = get_stock_service()
         results = service.get_quotes(self.CRYPTO_SYMBOLS)
 
@@ -419,11 +428,10 @@ class CryptoQuotesView(APIView):
                 quote_dict['symbol'] = symbol.replace('-USD', '')
                 quotes.append(quote_dict)
 
-        return Response({
-            "crypto": quotes,
-            "count": len(quotes),
-            "market": market,
-        })
+        payload = {"crypto": quotes, "count": len(quotes), "market": market}
+        if quotes:
+            cache.set(cache_key, payload, timeout=300)
+        return Response(payload)
 
 
 class IndianStocksView(APIView):
