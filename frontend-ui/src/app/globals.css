@@ -285,3 +285,15 @@ div:has(> .master-topnav) > main {
 @media (max-width: 1023px) {
   body:has(.master-mobile-nav) { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
 }
+
+/* Mobile trading: chart first, no desktop-sized gutters or horizontal overflow. */
+@media (max-width: 1023px) {
+  .trade-terminal { min-width: 0; overflow-x: clip; }
+  .trade-terminal .trade-workspace { padding: 8px 8px 14px; overflow-x: clip; }
+  .trade-terminal .trade-workspace-grid { display: flex; flex-direction: column; border-radius: 12px; overflow: visible; }
+  .trade-terminal .trade-workspace-grid > * { min-width: 0; width: 100%; }
+  .trade-terminal .trade-order-panel { padding: 8px 0; border-left: 0; }
+  .trade-terminal .trade-ticket { border-radius: 12px; padding: 12px; }
+  .trade-terminal .trade-chart-shell { min-width: 0; max-width: 100%; overflow: hidden; }
+  .trade-terminal .trade-quickbar { max-width: 100%; overflow-x: auto; }
+}
