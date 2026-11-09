@@ -214,11 +214,12 @@ from django.urls import reverse_lazy
 
 UNFOLD = {
     "SITE_TITLE": "Master Trade",
-    "SITE_HEADER": "Master Trade · Administração",
-    "SITE_SUBHEADER": "Painel de gestão",
+    "SITE_HEADER": "Master Trade",
+    "SITE_SUBHEADER": "Central administrativa · Simulação",
     "SITE_LOGO": lambda request: "/static/img/logo.png",
     "SHOW_HISTORY": True,
     "SHOW_VIEW_ON_SITE": False,
+    "STYLES": [lambda request: "/static/admin/mastertrade-admin.css"],
     "COLORS": {
         "primary": {
             "50": "#eff6ff",
@@ -239,33 +240,33 @@ UNFOLD = {
         "show_all_applications": False,
         "navigation": [
             {
-                "title": "Administração",
+                "title": "VISÃO GERAL",
                 "separator": True,
                 "items": [
-                    {"title": "Painel", "icon": "dashboard", "link": reverse_lazy("admin:index")},
-                    {"title": "Clientes", "icon": "groups", "link": reverse_lazy("admin:users_userprofile_changelist")},
+                    {"title": "Visão geral", "icon": "dashboard", "link": reverse_lazy("admin:index")},
+                    {"title": "Usuários e saldos", "icon": "groups", "link": reverse_lazy("admin:users_userprofile_changelist")},
                 ],
             },
             {
-                "title": "Trading",
+                "title": "OPERAÇÕES SIMULADAS",
                 "separator": True,
                 "items": [
-                    {"title": "Robôs", "icon": "smart_toy", "link": reverse_lazy("admin:robots_tradingrobot_changelist")},
-                    {"title": "Projetos", "icon": "account_tree", "link": reverse_lazy("admin:projects_project_changelist")},
-                    {"title": "Participações em projetos", "icon": "trending_up", "link": reverse_lazy("admin:projects_participation_changelist")},
-                    {"title": "Auditoria de projetos", "icon": "fact_check", "link": reverse_lazy("admin:projects_participationaudit_changelist")},
-                    {"title": "Operações", "icon": "candlestick_chart", "link": reverse_lazy("admin:users_position_changelist")},
-                    {"title": "Financeiro", "icon": "account_balance_wallet", "link": reverse_lazy("admin:users_balancetransaction_changelist")},
-                    {"title": "Auditoria", "icon": "history", "link": reverse_lazy("admin:users_positionauditlog_changelist")},
-                    {"title": "Saques", "icon": "payments", "link": reverse_lazy("admin:withdrawals_withdrawalrequest_changelist")},
+                    {"title": "Gestão de robôs", "icon": "smart_toy", "link": reverse_lazy("admin:robots_tradingrobot_changelist")},
+                    {"title": "Projetos disponíveis", "icon": "account_tree", "link": reverse_lazy("admin:projects_project_changelist")},
+                    {"title": "Aplicações em projetos", "icon": "trending_up", "link": reverse_lazy("admin:projects_participation_changelist")},
+                    {"title": "Histórico de projetos", "icon": "fact_check", "link": reverse_lazy("admin:projects_participationaudit_changelist")},
+                    {"title": "Posições de negociação", "icon": "candlestick_chart", "link": reverse_lazy("admin:users_position_changelist")},
+                    {"title": "Movimentações financeiras", "icon": "account_balance_wallet", "link": reverse_lazy("admin:users_balancetransaction_changelist")},
+                    {"title": "Histórico de alterações", "icon": "history", "link": reverse_lazy("admin:users_positionauditlog_changelist")},
+                    {"title": "Solicitações de saque", "icon": "payments", "link": reverse_lazy("admin:withdrawals_withdrawalrequest_changelist")},
                 ],
             },
             {
-                "title": "Configurações",
+                "title": "SISTEMA",
                 "separator": True,
                 "items": [
-                    {"title": "Configurações do site", "icon": "settings", "link": reverse_lazy("admin:users_sitesettings_changelist")},
-                    {"title": "Usuários do Admin", "icon": "admin_panel_settings", "link": reverse_lazy("admin:auth_user_changelist")},
+                    {"title": "Preferências da plataforma", "icon": "settings", "link": reverse_lazy("admin:users_sitesettings_changelist")},
+                    {"title": "Acesso administrativo", "icon": "admin_panel_settings", "link": reverse_lazy("admin:auth_user_changelist")},
                 ],
             },
         ],
