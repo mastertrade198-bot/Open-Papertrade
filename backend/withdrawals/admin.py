@@ -1,4 +1,5 @@
 from decimal import Decimal
+from django import forms
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
@@ -113,13 +114,40 @@ class WithdrawalRequestAdmin(ModelAdmin):
         self._review(request, queryset, 'REJECTED')
 
 
+class AdminDepositForm(forms.ModelForm):
+    class Meta:
+        model = AdminDeposit
+        fields = ("user", "amount", "reference")
+        labels = {
+            "user": "Conta do cliente",
+            "amount": "Valor do crédito simulado (USD)",
+            "reference": "Referência ou justificativa",
+        }
+        widgets = {
+            "amount": forms.NumberInput(attrs={"min": "0.01", "step": "0.01", "placeholder": "0,00"}),
+            "reference": forms.TextInput(attrs={"placeholder": "Identificação interna do lançamento"}),
+        }
+
+    def clean_amount(self):
+        amount = self.cleaned_data["amount"]
+        if amount is None or amount <= 0:
+            raise forms.ValidationError("Informe um valor maior que zero.")
+        return amount
+
+
 @admin.register(AdminDeposit)
 class AdminDepositAdmin(ModelAdmin):
+    form = AdminDepositForm
     list_display = ('user', 'amount', 'reference', 'created_by', 'created_at')
     search_fields = ('user__name', 'user__email', 'reference')
     list_filter = ('created_at',)
     readonly_fields = ('id', 'created_by', 'created_at')
     fields = ('user', 'amount', 'reference', 'created_by', 'created_at')
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj is not None:
+            return ('id', 'user', 'amount', 'reference', 'created_by', 'created_at')
+        return ('id', 'created_by', 'created_at')
 
     def has_add_permission(self, request):
         return request.user.is_active and request.user.is_superuser
