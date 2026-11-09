@@ -171,6 +171,8 @@ export default function PortfolioPage() {
             </button>
           </div>
 
+          <LeveragedTradeHistory />
+
           {/* Error Banner */}
           {error && (
             <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-[var(--accent-red)]/10 border border-[var(--accent-red)]/20">
@@ -658,7 +660,7 @@ export default function PortfolioPage() {
             </div>
           </div>
         </div>
-      <div className="mt-6"><LeveragedTradeHistory /></div>
+
       </main>
     </div>
   );
