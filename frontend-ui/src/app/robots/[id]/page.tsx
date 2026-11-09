@@ -42,7 +42,7 @@ export default function RobotDetail({params}:{params:Promise<{id:string}>}){
  <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_350px]">
  <div className="min-w-0 overflow-hidden rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] shadow-sm">
  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--border-primary)] px-5 py-4"><h2 className="flex items-center gap-2 text-sm font-semibold"><Activity size={16}/> Histórico de preços</h2><span className="flex items-center gap-1 text-xs text-[var(--text-secondary)]"><Clock3 size={13}/> Mais antigo → mais recente</span></div>
- <div className="robot-chart-no-drawings min-w-0"><AdvancedChart symbol={robot.symbol} symbolName={robotAssetLabel(robot.assetName,robot.symbol)} height={610} disableDrawings minimalHeader fitHistoryOnLoad initialState={{timeframe:"1M",indicators:[]}}/></div>
+ <div className="robot-chart-no-drawings min-w-0"><AdvancedChart symbol={robot.symbol} symbolName={robotAssetLabel(robot.assetName,robot.symbol)} height={390} disableDrawings minimalHeader fitHistoryOnLoad initialState={{timeframe:"1M",indicators:[]}}/></div>
  <p className="border-t border-[var(--border-primary)] px-5 py-3 text-xs text-[var(--text-secondary)]">Arraste para navegar pelo histórico. Use o zoom para aproximar ou afastar. A extensão depende dos dados disponíveis.</p>
  </div>
  <aside className="min-w-0 overflow-hidden rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)]">
