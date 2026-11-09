@@ -50,7 +50,7 @@ def tick(robot_id, now):
             return 0
         timeline = slots(start, end)
         # Count only operations in the current schedule revision; preserve earlier history.
-        count = robot.operations.filter(closed_at__gte=start).count()
+        count = robot.operations.filter(source='AUTO', closed_at__gte=start).count()
         due = sum(when <= now for when in timeline)
         target = (robot.capital * robot.scheduled_pnl_percent / Decimal("100")).quantize(CENT, rounding=ROUND_HALF_UP)
         created = 0
@@ -81,7 +81,7 @@ def tick(robot_id, now):
             delta = change / (quantity * PRICE) if quantity else Decimal("0")
             exit_price = (PRICE * (Decimal("1") + (delta if side == "LONG" else -delta))).quantize(Decimal("0.00000001"))
             RobotOperation.objects.create(
-                robot=robot, side=side, entry_price=PRICE, exit_price=exit_price,
+                robot=robot, source="AUTO", side=side, entry_price=PRICE, exit_price=exit_price,
                 quantity=quantity, allocated_capital=allocated, pnl=change,
                 status="CLOSED", opened_at=when - timedelta(seconds=30), closed_at=when,
             )
