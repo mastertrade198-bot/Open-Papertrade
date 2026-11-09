@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 from django.db import transaction
 from django.utils import timezone
 from django.utils.html import format_html
@@ -14,8 +15,9 @@ class RobotScheduleForm(forms.ModelForm):
             format='%Y-%m-%dT%H:%M',
             attrs={
                 'type': 'datetime-local',
+                'class': 'vDateTimeField',
                 'step': '60',
-                'style': 'display:block;width:100%;max-width:340px;min-height:40px;padding:8px 12px;box-sizing:border-box;',
+                'style': 'width:100%;max-width:440px;min-height:44px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;background:transparent;',
             },
         ),
         help_text='Selecione a data e o horário de encerramento.',
@@ -28,8 +30,8 @@ class RobotScheduleForm(forms.ModelForm):
         min_value=-100,
         widget=forms.NumberInput(attrs={
             'step': '0.01',
-            'placeholder': 'Ex.: 5,00 ou -3,00',
-            'style': 'display:block;width:100%;max-width:340px;min-height:40px;padding:8px 12px;box-sizing:border-box;',
+            'placeholder': 'Ex.: 5.00 ou -3.00',
+            'style': 'width:100%;max-width:440px;min-height:44px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;background:transparent;',
         }),
         help_text='Use um número positivo para lucro ou negativo para prejuízo.',
     )
@@ -53,7 +55,7 @@ class RobotScheduleForm(forms.ModelForm):
         return data
 
 @admin.register(TradingRobot)
-class TradingRobotAdmin(admin.ModelAdmin):
+class TradingRobotAdmin(ModelAdmin):
     form = RobotScheduleForm
     list_display = ('robot_label', 'user', 'symbol', 'status_badge', 'capital', 'created_at')
     list_display_links = ('robot_label',)
@@ -66,7 +68,7 @@ class TradingRobotAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Programação do resultado', {
             'description': 'Defina quando o robô será finalizado e o resultado percentual demonstrativo. Ambos os campos são opcionais, mas devem ser preenchidos juntos.',
-            'fields': ('scheduled_end_at', 'scheduled_pnl_percent'),
+            'fields': (('scheduled_end_at', 'scheduled_pnl_percent'),),
         }),
         ('Identificação e situação', {
             'fields': ('id', 'user', 'asset_name', 'symbol', 'status', 'capital', 'equity'),
@@ -115,7 +117,7 @@ class TradingRobotAdmin(admin.ModelAdmin):
                                       reason='Programação administrativa do resultado demonstrativo')
 
 @admin.register(RobotOperation)
-class RobotOperationAdmin(admin.ModelAdmin):
+class RobotOperationAdmin(ModelAdmin):
     list_display = ('robot', 'side', 'status', 'pnl', 'opened_at')
     list_filter = ('status',)
     list_per_page = 20
@@ -129,7 +131,7 @@ class RobotOperationAdmin(admin.ModelAdmin):
         return False
 
 @admin.register(RobotAudit)
-class RobotAuditAdmin(admin.ModelAdmin):
+class RobotAuditAdmin(ModelAdmin):
     list_display = ('robot', 'action', 'actor', 'created_at')
     list_filter = ('action',)
     list_per_page = 20
