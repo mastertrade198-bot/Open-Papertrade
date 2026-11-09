@@ -368,9 +368,9 @@ export default function Dashboard() {
         })()}
 
         {/* Content Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-5 items-start">
           {/* Left Column - Holdings & Performance */}
-          <div className="lg:col-span-2 min-w-0 flex flex-col gap-4">
+          <div className="lg:col-span-3 min-w-0 flex flex-col gap-4">
             {/* Active simulated projects */}
             <section className="rounded-xl border border-[var(--border-primary)] bg-[var(--bg-card)] overflow-hidden">
               <div className="flex items-center justify-between border-b border-[var(--border-primary)] px-5 py-4">
@@ -542,11 +542,10 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
-            <LeveragedTradeHistory />
           </div>
 
           {/* Right Column - Allocation, Watchlist, Recent */}
-          <div className="flex flex-col gap-5">
+          <div className="lg:col-span-2 min-w-0 flex flex-col gap-4">
             {/* Portfolio Allocation */}
             <div className="bg-[var(--bg-card)] rounded-2xl p-5 border border-[var(--border-primary)] shadow-[0_6px_24px_rgba(15,35,60,0.045)]">
               <div className="flex items-center gap-2 mb-4">
@@ -638,6 +637,9 @@ export default function Dashboard() {
 
           </div>
         </div>
+
+        {/* Recent leveraged operations across full dashboard width */}
+        <LeveragedTradeHistory />
 
         {/* Quick Actions */}
         <div className="hidden lg:grid grid-cols-4 gap-4">
