@@ -39,7 +39,8 @@ def tick(robot_id, now):
         if end <= start:
             return 0
         timeline = slots(start, end)
-        count = robot.operations.count()
+        # Count only operations in the current schedule revision; preserve earlier history.
+        count = robot.operations.filter(closed_at__gte=start).count()
         due = sum(when <= now for when in timeline)
         target = (robot.capital * robot.scheduled_pnl_percent / Decimal("100")).quantize(CENT, rounding=ROUND_HALF_UP)
         created = 0
