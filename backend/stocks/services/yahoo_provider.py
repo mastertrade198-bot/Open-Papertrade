@@ -112,6 +112,34 @@ class YahooFinanceProvider(BaseStockProvider):
         """
         try:
             ticker = yf.Ticker(yahoo_symbol)
+            # Fast quote endpoint first: ticker.info fetches a large company
+            # profile and can take much longer or be rate limited.
+            display_symbol = self._get_display_symbol(yahoo_symbol)
+            currency = self._get_currency_for_symbol(yahoo_symbol)
+            try:
+                fast = ticker.fast_info
+                price = float(fast.last_price)
+                if price > 0:
+                    previous = float(fast.previous_close or price)
+                    change = price - previous
+                    return StockQuote(
+                        symbol=display_symbol,
+                        price=price,
+                        change=change,
+                        change_percent=change / previous * 100 if previous else 0,
+                        high=float(fast.day_high or price),
+                        low=float(fast.day_low or price),
+                        open=float(fast.open or price),
+                        previous_close=previous,
+                        volume=int(fast.last_volume) if fast.last_volume else None,
+                        timestamp=datetime.now(),
+                        name=display_symbol,
+                        provider=self.name,
+                        currency=str(fast.currency or currency),
+                    )
+            except (AttributeError, TypeError, ValueError, KeyError, ZeroDivisionError) as exc:
+                logger.debug("Fast quote unavailable for %s: %s", yahoo_symbol, exc)
+
             info = ticker.info
             display_symbol = self._get_display_symbol(yahoo_symbol)
             currency = self._get_currency_for_symbol(yahoo_symbol)
