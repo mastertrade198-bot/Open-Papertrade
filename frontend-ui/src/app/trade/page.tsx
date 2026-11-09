@@ -707,32 +707,43 @@ function TradePageContent() {
               )}
 
               <div className="trade-form-divider flex items-center justify-between"><span className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--text-muted)]">Ordem</span><span className="text-[10px] text-[var(--text-muted)]">USD</span></div>
-              {/* Exact margin, leverage and optional exit price levels */}
+              {/* Margem, alavancagem e níveis de saída da posição simulada */}
               <div className="flex flex-col gap-2.5">
                 <label className="flex flex-col gap-1 text-xs text-[var(--text-muted)]">
-                  Margem (USD)
+                  Margem da posição (USD)
                   <input type="number" min="0.01" step="0.01" placeholder="Informe o valor" value={marginInput} onChange={(e) => setMarginInput(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-md border border-[var(--border-muted)] bg-[var(--bg-card-inner)] font-primary tabular-nums text-base font-semibold text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
                 </label>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <label htmlFor="trade-leverage" className="text-xs font-medium text-[var(--text-secondary)]">Alavancagem</label>
+                    <span className="rounded-md border border-[var(--accent-primary)]/40 bg-[var(--accent-primary)]/10 px-2.5 py-1 text-sm font-bold tabular-nums text-[var(--accent-primary)]">{leverage}x</span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-1.5" aria-label="Alavancagem rápida">
+                    {[1, 2, 5, 10, 20].map(value => <button key={value} type="button" onClick={() => setLeverage(value)} aria-pressed={leverage === value}
+                      className={`min-h-9 rounded-lg border px-1.5 text-xs font-semibold transition-colors ${leverage === value ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]" : "border-[var(--border-primary)] bg-[var(--bg-card-inner)] text-[var(--text-secondary)] hover:border-[var(--accent-primary)]/50"}`}>{value}x</button>)}
+                  </div>
+                  <select id="trade-leverage" aria-label="Selecionar alavancagem" value={leverage} onChange={e => setLeverage(Number(e.target.value))}
+                    className="w-full rounded-lg border border-[var(--border-primary)] bg-[var(--bg-card-inner)] px-3 py-2 text-xs text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]">
+                    {[1, 2, 5, 10, 20, 25, 50, 100].map(value => <option key={value} value={value}>{value}x {value > 20 ? "· avançada" : ""}</option>)}
+                  </select>
+                  <p className="text-[10px] leading-relaxed text-[var(--text-muted)]">Alavancagens maiores ampliam tanto ganhos quanto perdas e podem provocar liquidação.</p>
+                </div>
                 <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between"><span className="text-xs text-[var(--text-muted)]">Alavancagem</span><span className="text-xs font-semibold text-[var(--text-primary)]">{leverage}x</span></div>
-                  <div className="grid grid-cols-4 gap-1" aria-label="Alavancagem">
-                    {[1, 2, 5, 10, 20, 25, 50, 100].map(value => <button key={value} type="button" onClick={() => setLeverage(value)} aria-pressed={leverage === value}
-                      className={`rounded-md border px-1 py-2 text-xs font-semibold ${leverage === value ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]" : "border-[var(--border-primary)] bg-[var(--bg-card-inner)] text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]"}`}>{value}x</button>)}
+                  <div className="flex items-center justify-between"><span className="text-[11px] text-[var(--text-muted)]">Utilizar do saldo disponível</span><span className="text-[10px] text-[var(--text-muted)]">Margem</span></div>
+                  <div className="grid grid-cols-4 gap-1.5" aria-label="Percentual do saldo disponível">
+                    {[0.25, 0.5, 0.75, 1].map(pct => <button key={pct} type="button" onClick={() => setMarginPercent(pct)}
+                      className={`min-h-9 rounded-lg border text-xs font-semibold transition-colors ${marginBalance !== null && Math.abs(margin - marginBalance * pct) < 0.01 && margin > 0 ? "border-[var(--accent-primary)] bg-[var(--accent-primary)]/15 text-[var(--accent-primary)]" : "border-[var(--border-primary)] bg-[var(--bg-card-inner)] text-[var(--text-secondary)] hover:bg-[var(--bg-muted)]"}`}>{pct * 100}%</button>)}
                   </div>
                 </div>
-                <div className="grid grid-cols-4 gap-1.5" aria-label="Porcentagem do saldo disponível">
-                  {[0.25, 0.5, 0.75, 1].map(pct => <button key={pct} type="button" onClick={() => setMarginPercent(pct)}
-                    className="py-2 rounded-md border border-[var(--border-primary)] text-[11px] font-semibold bg-[var(--bg-card-inner)] text-[var(--text-muted)] hover:bg-[var(--bg-muted)]">{pct * 100}%</button>)}
-                </div>
-                <div className="grid grid-cols-2 gap-2 border-t border-[var(--border-primary)] pt-2">
-                  <label className="flex min-w-0 flex-col gap-1 text-xs text-[var(--text-muted)]">Stop (%) · opcional
-                    <input type="number" min="0.01" step="0.01" placeholder="—" value={stopLossInput} onChange={e => setStopLossInput(e.target.value)}
-                      className="w-full min-w-0 rounded-md border border-[var(--border-muted)] bg-[var(--bg-card-inner)] px-2 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
+                <div className="grid grid-cols-2 gap-2 border-t border-[var(--border-primary)] pt-3">
+                  <label className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-[var(--text-secondary)]">Stop Loss (%)
+                    <input type="number" min="0.01" step="0.01" placeholder="Ex.: 1,00" value={stopLossInput} onChange={e => setStopLossInput(e.target.value)}
+                      className="w-full min-w-0 rounded-lg border border-[var(--border-muted)] bg-[var(--bg-card-inner)] px-3 py-2.5 text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent-red)]" />
                   </label>
-                  <label className="flex min-w-0 flex-col gap-1 text-xs text-[var(--text-muted)]">Alvo (%) · opcional
-                    <input type="number" min="0.01" step="0.01" placeholder="—" value={takeProfitInput} onChange={e => setTakeProfitInput(e.target.value)}
-                      className="w-full min-w-0 rounded-md border border-[var(--border-muted)] bg-[var(--bg-card-inner)] px-2 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--accent-primary)]" />
+                  <label className="flex min-w-0 flex-col gap-1.5 text-xs font-medium text-[var(--text-secondary)]">Take Profit (%)
+                    <input type="number" min="0.01" step="0.01" placeholder="Ex.: 2,00" value={takeProfitInput} onChange={e => setTakeProfitInput(e.target.value)}
+                      className="w-full min-w-0 rounded-lg border border-[var(--border-muted)] bg-[var(--bg-card-inner)] px-3 py-2.5 text-sm tabular-nums text-[var(--text-primary)] outline-none focus:border-[var(--accent-green)]" />
                   </label>
                 </div>
                 {(stopLoss !== null || takeProfit !== null) && currentPrice > 0 && (
@@ -746,9 +757,9 @@ function TradePageContent() {
               </div>
 
               <div className="flex flex-col gap-1.5 border-t border-[var(--border-primary)] pt-2 text-xs">
-                <div className="flex items-center justify-between gap-2"><span className="text-[var(--text-muted)]">Preço atual</span><span className="tabular-nums text-[var(--text-primary)]">{formatCurrency(effectivePrice, false, { sourceCurrency })}</span></div>
+                <div className="flex items-center justify-between gap-2"><span className="text-[var(--text-muted)]">Preço de referência</span><span className="tabular-nums text-[var(--text-primary)]">{formatCurrency(effectivePrice, false, { sourceCurrency })}</span></div>
                 <div className="flex items-center justify-between gap-2"><span className="text-[var(--text-muted)]">Quantidade</span><span className="tabular-nums text-[var(--text-primary)]">{quantity > 0 ? quantity.toFixed(8) : "—"}</span></div>
-                <div className="flex items-center justify-between gap-2"><span className="text-[var(--text-muted)]">Total da posição</span><span className="tabular-nums font-semibold text-[var(--text-primary)]">{margin > 0 ? formatCurrency(estimatedTotal, false, { sourceCurrency }) : "—"}</span></div>
+                <div className="flex items-center justify-between gap-2"><span className="text-[var(--text-muted)]">Exposição estimada</span><span className="tabular-nums font-semibold text-[var(--text-primary)]">{margin > 0 ? formatCurrency(estimatedTotal, false, { sourceCurrency }) : "—"}</span></div>
               </div>
 
               {/* Available Balance */}
@@ -877,7 +888,7 @@ function TradePageContent() {
                 <span className="text-sm text-[var(--text-muted)]">Quantidade estimada</span>
                 <span className="font-mono text-sm text-[var(--text-primary)]">{quantity.toFixed(8)}</span>
               </div>
-              <div className="flex items-center justify-between"><span className="text-sm text-[var(--text-muted)]">Stop Loss / Take Profit</span><span className="font-mono text-xs text-[var(--text-primary)]">{stopLossInput || "—"} / {takeProfitInput || "—"}</span></div>
+              <div className="flex items-center justify-between"><span className="text-sm text-[var(--text-muted)]">Stop Loss / Take Profit (%)</span><span className="font-mono text-xs text-[var(--text-primary)]">{stopLossInput || "—"} / {takeProfitInput || "—"}</span></div>
               <div className="flex items-center justify-between gap-3 text-sm"><span className="text-[var(--text-muted)]">Possível lucro ({hasProjectedProfitTarget ? "TP" : "1%"} )</span><span className="font-mono text-[var(--accent-green)]">+{formatCurrency(projectedProfit, false, { convertFromUSD: false })}</span></div>
               <div className="flex items-center justify-between gap-3 text-sm"><span className="text-[var(--text-muted)]">Possível prejuízo ({hasProjectedLossTarget ? "SL" : "1%"})</span><span className="font-mono text-[var(--accent-red)]">-{formatCurrency(projectedLoss, false, { convertFromUSD: false })}</span></div>
               <div className="h-px bg-[var(--border-primary)]" />
