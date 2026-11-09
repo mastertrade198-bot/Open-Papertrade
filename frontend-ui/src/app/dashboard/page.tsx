@@ -658,7 +658,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="hidden lg:grid grid-cols-4 gap-4">
           <Link
             href="/trade"
             className="flex items-center gap-4 p-4 bg-[var(--bg-card)] rounded-xl border border-[var(--border-primary)] hover:border-[var(--accent-primary)] transition-all group"
