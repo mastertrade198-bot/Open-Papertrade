@@ -1,10 +1,11 @@
+from decimal import Decimal
 from django import forms
 from django.contrib import messages
 from .settlement import settle_robot
 from django.contrib import admin
 from unfold.admin import ModelAdmin
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.utils import timezone
 from django.utils.html import format_html
 from .models import TradingRobot, RobotOperation, RobotAudit
@@ -175,13 +176,17 @@ class TradingRobotAdmin(ModelAdmin):
     def current_pnl(self, obj):
         if not obj or not obj.pk:
             return '—'
-        value = obj.equity - obj.capital
+        manual = obj.operations.filter(source='MANUAL', status='CLOSED').aggregate(total=Sum('pnl'))['total'] or Decimal('0.00')
+        value = obj.equity - obj.capital + manual
         color = '#16734a' if value > 0 else '#b42318' if value < 0 else '#667085'
-        return format_html('<span style="font-weight:600;color:{}">{} USD ({}%)</span>', color, value, round(obj.pnl_percent, 2))
+        return format_html('<span style="font-weight:600;color:{}">{} USD ({}%)</span>', color, value, round(value / obj.capital * 100, 2) if obj.capital else 0)
 
     @admin.display(description='Patrimônio atual (simulado)')
     def current_equity(self, obj):
-        return f'{obj.equity} USD' if obj and obj.pk else '—'
+        if not obj or not obj.pk:
+            return '—'
+        manual = obj.operations.filter(source='MANUAL', status='CLOSED').aggregate(total=Sum('pnl'))['total'] or Decimal('0.00')
+        return f'{obj.equity + manual} USD'
 
     @admin.display(description='Percentual configurado', ordering='scheduled_pnl_percent')
     def configured_percent(self, obj):
@@ -255,19 +260,85 @@ class TradingRobotAdmin(ModelAdmin):
                                       action='ADMIN_SCHEDULE', before=before, after=after,
                                       reason='Reprogramação administrativa do cenário demonstrativo')
 
+class ManualRobotOperationForm(forms.ModelForm):
+    class Meta:
+        model = RobotOperation
+        fields = ('robot', 'side', 'allocated_capital', 'pnl')
+
+    def clean(self):
+        data = super().clean()
+        robot = data.get('robot')
+        if robot and robot.status != 'ACTIVE':
+            raise forms.ValidationError('Só é possível adicionar operações a robôs ativos.')
+        amount = data.get('allocated_capital')
+        if amount is not None and amount <= 0:
+            raise forms.ValidationError('O valor utilizado deve ser positivo.')
+        if data.get('pnl') is None:
+            raise forms.ValidationError('Informe o lucro ou prejuízo simulado.')
+        return data
+
+
 @admin.register(RobotOperation)
 class RobotOperationAdmin(ModelAdmin):
-    list_display = ('robot', 'side', 'status', 'pnl', 'opened_at')
-    list_filter = ('status',)
+    form = ManualRobotOperationForm
+    list_display = ('robot', 'source', 'side', 'status', 'pnl', 'opened_at')
+    list_filter = ('source', 'status')
     list_per_page = 20
     show_full_result_count = False
-    fieldsets = (('Operação', {'fields': ('robot', 'side', 'status', 'pnl', 'opened_at', 'closed_at')}),
-                 ('Detalhes técnicos', {'fields': ('id', 'entry_price', 'exit_price', 'quantity', 'allocated_capital'), 'classes': ('collapse',)}))
+    fieldsets = (
+        ('Adicionar operação manual simulada', {
+            'description': 'O resultado é somado ao lucro/prejuízo exibido e à devolução final. Não modifica o patrimônio usado pelo motor automático nem sua meta programada.',
+            'fields': ('robot', 'side', 'allocated_capital', 'pnl'),
+        }),
+    )
     readonly_fields = [f.name for f in RobotOperation._meta.fields]
-    def has_add_permission(self, request):
-        return False
+
+    def get_fieldsets(self, request, obj=None):
+        if obj is not None:
+            return (('Operação registrada', {'fields': tuple(f.name for f in RobotOperation._meta.fields)}),)
+        return super().get_fieldsets(request, obj)
+
+    def get_readonly_fields(self, request, obj=None):
+        return tuple(f.name for f in RobotOperation._meta.fields) if obj else ()
+
+    def get_form(self, request, obj=None, **kwargs):
+        if obj is not None:
+            kwargs['form'] = forms.modelform_factory(RobotOperation, fields=[])
+        return super().get_form(request, obj, **kwargs)
+
+    def save_model(self, request, obj, form, change):
+        if change:
+            return
+        with transaction.atomic():
+            robot = TradingRobot.objects.select_for_update().get(pk=obj.robot_id)
+            if robot.status != 'ACTIVE':
+                raise forms.ValidationError('O robô precisa estar ativo para registrar uma operação manual.')
+            now = timezone.now()
+            obj.source = 'MANUAL'
+            obj.status = 'CLOSED'
+            obj.opened_at = now
+            obj.closed_at = now
+            obj.entry_price = Decimal('100.00000000')
+            obj.quantity = (obj.allocated_capital / obj.entry_price).quantize(Decimal('0.00000001'))
+            if obj.quantity <= 0:
+                raise forms.ValidationError('Valor utilizado muito baixo para calcular a quantidade.')
+            signed = obj.pnl / (obj.quantity * obj.entry_price)
+            multiplier = Decimal('1') + (signed if obj.side == 'LONG' else -signed)
+            if multiplier <= 0:
+                raise forms.ValidationError('Resultado incompatível com o preço de saída sintético.')
+            obj.exit_price = (obj.entry_price * multiplier).quantize(Decimal('0.00000001'))
+            obj.save()
+            RobotAudit.objects.create(
+                robot=robot, actor=request.user.get_username(), action='ADMIN_MANUAL_OPERATION',
+                before={'automatic_equity': str(robot.equity)},
+                after={'operation_id': str(obj.pk), 'manual_pnl': str(obj.pnl),
+                       'automatic_equity': str(robot.equity), 'simulated': True},
+                reason='Operação demonstrativa adicionada sem alterar a meta do motor automático',
+            )
+
     def has_delete_permission(self, request, obj=None):
         return False
+
 
 @admin.register(RobotAudit)
 class RobotAuditAdmin(ModelAdmin):
