@@ -25,8 +25,8 @@ class ParticipationAdminForm(forms.ModelForm):
         cleaned = super().clean()
         if self.instance.pk and 'current_percent' in self.changed_data and not cleaned.get('adjustment_reason', '').strip():
             self.add_error('adjustment_reason', 'Informe a justificativa para alterar o resultado.')
-        if self.instance.pk and any(field in self.changed_data for field in ('principal', 'user', 'project', 'started_at')):
-            raise forms.ValidationError('Capital, usuário, projeto e início não podem ser editados pelo admin.')
+        if self.instance.pk and any(field in self.changed_data for field in ('principal', 'user', 'project', 'started_at', 'status')):
+            raise forms.ValidationError('Capital, usuário, projeto, início e status não podem ser editados pelo admin.')
         return cleaned
 
 
@@ -36,7 +36,7 @@ class ParticipationAdmin(ModelAdmin):
     list_display = ('user', 'project', 'principal', 'current_percent', 'status', 'updated_at')
     list_filter = ('project', 'status')
     search_fields = ('user__email', 'project__name')
-    readonly_fields = ('id', 'principal', 'user', 'project', 'started_at', 'updated_at')
+    readonly_fields = ('id', 'principal', 'user', 'project', 'started_at', 'updated_at', 'status')
     fields = ('id', 'user', 'project', 'principal', 'started_at', 'status', 'current_percent', 'adjustment_reason', 'updated_at')
 
     def has_add_permission(self, request):
