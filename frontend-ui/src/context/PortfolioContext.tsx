@@ -687,32 +687,33 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
 
   const addToWatchlist = useCallback(
     async (symbol: string, name?: string) => {
-      if (watchlist.find((w) => w.symbol === symbol)) return;
+      const normalizedSymbol = symbol.trim().toUpperCase();
+      if (watchlist.some((w) => w.symbol.toUpperCase() === normalizedSymbol)) return;
 
-      const stock = getStockBySymbol(symbol);
-      const stockName = name || stock?.name || symbol;
+      const stock = getStockBySymbol(normalizedSymbol);
+      const stockName = name || stock?.name || normalizedSymbol;
 
       try {
-        const result = await userAPI.addToWatchlist(symbol, stockName);
+        const result = await userAPI.addToWatchlist(normalizedSymbol, stockName);
 
         // Show achievement toasts if any
         if (result.newAchievements && result.newAchievements.length > 0) {
           showAchievements(result.newAchievements);
         }
 
-        setWatchlist((prev) => [
+        setWatchlist((prev) => prev.some(w => w.symbol.toUpperCase() === normalizedSymbol) ? prev : [
           ...prev,
           {
-            symbol,
+            symbol: normalizedSymbol,
             name: stockName,
             price: stock?.price || 0,
             change: stock?.change || 0,
             changePercent: stock?.changePercent || 0,
-            starred: false,
+            starred: result.starred ?? false,
           },
         ]);
       } catch (err) {
-        console.error("Failed to add to watchlist:", err);
+        console.error("Falha ao adicionar aos favoritos:", err);
       }
     },
     [watchlist, getStockBySymbol, showAchievements]
