@@ -69,19 +69,38 @@ class PositionsView(APIView):
 
     def get(self, request):
         user = get_user(request)
-        positions = Position.objects.filter(user=user).order_by("-opened_at")
-        data = []
+        positions = list(Position.objects.filter(user=user).order_by("-opened_at"))
+        # Reuse the centralized market cache. Fetch each open symbol only once
+        # instead of bypassing the cache for every position every 15 seconds.
+        open_symbols = list(dict.fromkeys(
+            position.symbol.upper() for position in positions
+            if position.status == Position.Status.OPEN
+        ))
+        market_prices = {}
+        if open_symbols:
+            try:
+                quotes = get_stock_service().get_quotes(open_symbols)
+                for symbol, result in quotes.items():
+                    quote = result.quote if result and result.success else None
+                    if quote and str(getattr(quote, "currency", "")).upper() == "USD":
+                        try:
+                            price = Decimal(str(quote.price))
+                            if price.is_finite() and price > 0:
+                                market_prices[symbol.upper()] = price
+                        except (InvalidOperation, ValueError, TypeError):
+                            pass
+            except Exception:
+                # Market feed outages must not prevent access to open positions.
+                import logging
+                logging.getLogger(__name__).exception("Unable to refresh position quotes")
 
-        for position in positions:
-            market_price = None
-            if position.status == Position.Status.OPEN:
-                try:
-                    _, market_price = get_usd_quote(position.symbol)
-                except (ValueError, Exception):
-                    market_price = None
-
-            data.append(position.to_dict(market_price))
-
+        data = [
+            position.to_dict(
+                market_prices.get(position.symbol.upper())
+                if position.status == Position.Status.OPEN else None
+            )
+            for position in positions
+        ]
         return Response({
             "positions": data,
             "buyingPower": float(user.buying_power),
