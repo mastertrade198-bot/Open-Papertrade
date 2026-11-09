@@ -115,7 +115,7 @@ class RobotListView(APIView):
             robot = TradingRobot.objects.create(user=locked, symbol=symbol, asset_name=name, capital=amount,
                 equity=amount, take_profit=tp, stop_loss=sl, indicators=indicators)
             BalanceTransaction.objects.create(user=locked, amount=-amount, balance_before=before,
-                balance_after=locked.buying_power, category='ROBOT_RESERVE', description=f'Capital simulado reservado · {robot.pk}')
+                balance_after=locked.buying_power, category='ROBOT_RESERVE', description=f'Valor reservado para robô — {name}')
             RobotAudit.objects.create(robot=robot, actor=str(user.pk), action='CREATE',
                 after={'capital':str(amount),'tp':str(tp),'sl':str(sl),'indicators':indicators})
         return Response(serialize(robot), status=201)
