@@ -9,8 +9,8 @@ from .models import Project, Participation, ParticipationPoint, ParticipationAud
 
 @admin.register(Project)
 class ProjectAdmin(ModelAdmin):
-    list_display = ('name', 'asset', 'duration_days', 'expected_return_percent', 'is_active')
-    list_filter = ('is_active',)
+    list_display = ('name', 'category', 'asset', 'duration_days', 'expected_return_percent', 'is_active')
+    list_filter = ('category', 'is_active')
     search_fields = ('name', 'asset')
 
 
