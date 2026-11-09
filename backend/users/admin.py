@@ -434,24 +434,32 @@ class AdminPositionForm(forms.ModelForm):
         margin = data.get("margin")
         leverage = data.get("leverage")
         price = data.get("entry_price")
-        symbol = (data.get("symbol") or "").strip().upper()
+        symbol = (data.get("symbol") or (self.instance.symbol if self.instance.pk else "")).strip().upper()
         if margin is not None and margin <= 0:
             self.add_error("margin", "A margem deve ser positiva.")
         if leverage is not None and not (Decimal("1") <= leverage <= Decimal("100")):
             self.add_error("leverage", "Alavancagem permitida: 1x a 100x.")
         if price is not None and price <= 0:
-            self.add_error("entry_price", "Informe um preço de referência positivo.")
+            self.add_error("entry_price", "Informe um preço de entrada positivo.")
         if not symbol:
-            self.add_error("symbol", "Informe o símbolo.")
-        account = data.get("user")
-        if account is not None and margin is not None and margin > 0:
-            if account.buying_power < margin:
-                self.add_error("margin", "Saldo disponível insuficiente para reservar a margem.")
-        if symbol:
-            data["name"] = dict(self.fields["symbol"].choices).get(symbol, symbol).split(" · ")[0]
+            self.add_error("symbol", "Selecione um ativo.")
+        if self.instance.pk:
+            if self.instance.status != Position.Status.OPEN:
+                raise forms.ValidationError("Somente operações em andamento podem ser alteradas.")
+            # Account and asset are fixed for existing positions.
+            account = self.instance.user
+            old_margin = Position.objects.filter(pk=self.instance.pk).values_list("margin", flat=True).first()
+            additional_margin = (margin - old_margin) if margin is not None and old_margin is not None else Decimal("0")
+            if additional_margin > account.buying_power:
+                self.add_error("margin", "Saldo insuficiente para aumentar a margem.")
+        else:
+            account = data.get("user")
+            if account is not None and margin is not None and margin > account.buying_power:
+                self.add_error("margin", "Saldo insuficiente para reservar a margem.")
+            if symbol:
+                data["name"] = dict(self.fields["symbol"].choices).get(symbol, symbol).split(" · ")[0]
         data["symbol"] = symbol
         return data
-
 
 @admin.register(Position)
 class PositionAdmin(ModelAdmin):
@@ -464,64 +472,98 @@ class PositionAdmin(ModelAdmin):
     readonly_fields = ("id", "quantity", "notional_value", "status", "exit_price",
                        "realized_pnl", "opened_at", "closed_at", "updated_at")
     fieldsets = (
-        ("Nova operação simulada", {
+        ("Dados da operação simulada", {
             "fields": ("user", "symbol", "side", "margin", "leverage",
                        "entry_price", "stop_loss", "take_profit"),
-            "description": "Selecione a conta, o ativo e os parâmetros da operação. "
-                           "O preço de entrada é definido pelo administrador para fins de simulação.",
+            "description": "Os valores desta posição são demonstrativos. Alterações administrativas "
+                           "são registradas em auditoria e podem modificar o saldo simulado.",
         }),
-        ("Detalhes da posição", {
+        ("Detalhes e acompanhamento", {
             "fields": ("id", "quantity", "notional_value", "status", "exit_price",
                        "realized_pnl", "opened_at", "closed_at", "updated_at"),
         }),
     )
 
-    def has_change_permission(self, request, obj=None):
-        # Existing positions cannot be silently edited.
+    def get_readonly_fields(self, request, obj=None):
+        base = tuple(super().get_readonly_fields(request, obj))
         if obj is not None:
-            return False
+            # Preserve the account and asset to prevent transferring a position.
+            return base + ("user", "symbol")
+        return base
+
+    def has_change_permission(self, request, obj=None):
+        if obj is not None:
+            return bool(request.user.is_active and request.user.is_superuser)
         return super().has_change_permission(request, obj)
 
     def has_delete_permission(self, request, obj=None):
         return False
 
     def save_model(self, request, obj, form, change):
-        if change:
-            raise PermissionDenied("Posições existentes não podem ser alteradas por este formulário.")
         from decimal import ROUND_HALF_UP
         from .balance_journal import balance_context
         from .position_views import money, QTY_STEP
+        if not request.user.is_superuser:
+            raise PermissionDenied("Somente superusuários podem gerenciar posições simuladas.")
         with transaction.atomic():
-            account = UserProfile.objects.select_for_update().get(pk=obj.user_id)
-            if account.buying_power < obj.margin:
-                raise forms.ValidationError("Saldo insuficiente para reservar a margem.")
+            if change:
+                previous = Position.objects.select_for_update().get(pk=obj.pk)
+                if previous.status != Position.Status.OPEN:
+                    raise PermissionDenied("Uma posição encerrada não pode ser editada.")
+                account = UserProfile.objects.select_for_update().get(pk=previous.user_id)
+                # Never allow reassignment of an existing position.
+                obj.user_id = previous.user_id
+                obj.symbol = previous.symbol
+                obj.name = previous.name
+                old_values = {
+                    key: str(getattr(previous, key)) if getattr(previous, key) is not None else None
+                    for key in ("side", "entry_price", "leverage", "margin",
+                                "quantity", "notional_value", "stop_loss", "take_profit")
+                }
+                margin_delta = obj.margin - previous.margin
+                if margin_delta > account.buying_power:
+                    raise PermissionDenied("Saldo insuficiente para aumentar a margem.")
+            else:
+                account = UserProfile.objects.select_for_update().get(pk=obj.user_id)
+                margin_delta = obj.margin
+                old_values = {"balance": str(account.buying_power)}
+                obj.name = form.cleaned_data.get("name", obj.symbol)
+
             obj.notional_value = money(obj.margin * obj.leverage)
             obj.quantity = (obj.notional_value / obj.entry_price).quantize(
                 QTY_STEP, rounding=ROUND_HALF_UP)
             if obj.quantity <= 0:
-                raise forms.ValidationError("Quantidade calculada inválida.")
+                raise PermissionDenied("A quantidade calculada deve ser positiva.")
             obj.status = Position.Status.OPEN
-            obj.name = form.cleaned_data.get("name", obj.symbol)
             obj.save()
+
             before = account.buying_power
-            account.buying_power = money(before - obj.margin)
-            token = balance_context.set({
-                "category": "POSITION_MARGIN",
-                "description": f"Margem de posição simulada registrada pelo admin: {obj.symbol}",
+            if margin_delta:
+                account.buying_power = money(before - margin_delta)
+                token = balance_context.set({
+                    "category": "POSITION_MARGIN",
+                    "description": ("Ajuste administrativo de margem simulada: " if change
+                                    else "Margem de posição simulada registrada pelo admin: ") + obj.symbol,
+                })
+                try:
+                    account.save(update_fields=["buying_power", "updated_at"])
+                finally:
+                    balance_context.reset(token)
+
+            new_values = {
+                key: str(getattr(obj, key)) if getattr(obj, key) is not None else None
+                for key in ("side", "entry_price", "leverage", "margin",
+                            "quantity", "notional_value", "stop_loss", "take_profit")
+            }
+            new_values.update({
+                "balance": str(account.buying_power),
+                "admin_user": request.user.get_username(),
+                "simulation": True,
             })
-            try:
-                account.save(update_fields=["buying_power", "updated_at"])
-            finally:
-                balance_context.reset(token)
             PositionAuditLog.objects.create(
-                position=obj, actor=None, action="ADMIN_CREATE",
-                old_values={"balance": str(before)},
-                new_values={"balance": str(account.buying_power),
-                            "entry_price": str(obj.entry_price),
-                            "margin": str(obj.margin),
-                            "leverage": str(obj.leverage),
-                            "admin_user": request.user.get_username(),
-                            "simulation": True},
+                position=obj, actor=None,
+                action="ADMIN_EDIT" if change else "ADMIN_CREATE",
+                old_values=old_values, new_values=new_values,
             )
 
     @admin.action(description="Encerrar posições simuladas selecionadas (preço de referência)")
