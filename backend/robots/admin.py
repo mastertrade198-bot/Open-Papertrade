@@ -1,5 +1,4 @@
 from datetime import timedelta
-from decimal import Decimal
 from django import forms
 from django.contrib import admin
 from unfold.admin import ModelAdmin
@@ -79,10 +78,6 @@ class RobotScheduleForm(forms.ModelForm):
             start = self.instance.simulation_started_at if self.instance.pk and self.instance.simulation_started_at else timezone.now()
             if when < start + timedelta(minutes=10):
                 raise forms.ValidationError('A simulação deve durar pelo menos 10 minutos para executar as três primeiras operações.')
-            from robots.management.commands.run_robot_simulations import slots
-            count = len(slots(start, when))
-            if abs(percent) > Decimal('0.03') * count:
-                raise forms.ValidationError(f'O resultado escolhido exige mais do que {count} microoperações de até 0,03%. Amplie o prazo ou reduza o resultado.')
             if percent > self.instance.take_profit or percent < -self.instance.stop_loss:
                 raise forms.ValidationError('O resultado final precisa respeitar o take profit e o stop loss do robô.')
         if self.instance.pk and self.instance.status == 'CLOSED' and (when is not None or percent is not None):
