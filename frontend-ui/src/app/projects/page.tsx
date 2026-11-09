@@ -5,9 +5,9 @@ import Sidebar from "@/components/Sidebar";
 import { usePortfolio } from "@/context/PortfolioContext";
 import { RefreshCw, TrendingUp, Clock3, ShieldCheck, ArrowRight } from "lucide-react";
 
-type Project = { id: string; name: string; asset: string; description: string; durationDays: number; expectedReturnPercent: number; minimumAmount: number; isActive: boolean };
+type Project = { id: string; name: string; category: string; categoryLabel: string; asset: string; description: string; durationDays: number; expectedReturnPercent: number; minimumAmount: number; isActive: boolean };
 type Point = { percent: number; at: string };
-type Participation = { id: string; projectId: string; projectName: string; principal: number; percent: number; simulatedValue: number; status: string; startedAt: string; points: Point[] };
+type Participation = { id: string; projectId: string; projectName: string; category: string; categoryLabel: string; principal: number; percent: number; simulatedValue: number; status: string; startedAt: string; points: Point[] };
 const money = (value: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
 const BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -36,6 +36,7 @@ function Curve({ points }: { points: Point[] }) {
 export default function ProjectsPage() {
   const { refreshUserData } = usePortfolio();
   const [projects, setProjects] = useState<Project[]>([]);
+  const [category, setCategory] = useState('ALL');
   const [participations, setParticipations] = useState<Participation[]>([]);
   const [amounts, setAmounts] = useState<Record<string,string>>({});
   const [busy, setBusy] = useState<string | null>(null);
@@ -80,9 +81,14 @@ export default function ProjectsPage() {
       </div>
       {error && <p role="alert" className="rounded-lg border border-red-400/40 p-3 text-sm text-red-500">{error}</p>}
       <section><h2 className="mb-3 text-lg font-semibold">Projetos disponíveis</h2>
+        <div className="mb-4 flex flex-wrap gap-2" aria-label="Filtrar categoria">
+          {[["ALL", "Todos"], ["REAL_ESTATE", "Fundos Imobiliários"], ["FIXED_INCOME", "Renda Fixa"], ["STOCKS", "Ações"], ["ETF", "ETF"]].map(([key, label]) =>
+            <button key={key} type="button" onClick={() => setCategory(key)} aria-pressed={category === key}
+              className={`rounded-lg border px-3 py-2 text-xs font-semibold ${category === key ? "border-[var(--accent-primary)] text-[var(--accent-primary)]" : "border-[var(--border-primary)] text-[var(--text-muted)]"}`}>{label}</button>)}
+        </div>
         {loading ? <p>Carregando...</p> : projects.length === 0 ? <p className="text-sm text-[var(--text-muted)]">Nenhum projeto cadastrado. Adicione um projeto no Django Admin.</p> :
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{projects.map(project => <article key={project.id} className="min-w-0 space-y-4 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5">
-          <div><p className="text-xs font-semibold uppercase text-[var(--accent-primary)]">{project.asset}</p><h3 className="mt-1 text-lg font-bold">{project.name}</h3><p className="mt-2 text-sm text-[var(--text-muted)]">{project.description || "Projeto de investimento simulado."}</p></div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{projects.filter(project => category === 'ALL' || project.category === category).map(project => <article key={project.id} className="min-w-0 space-y-4 rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5">
+          <div><p className="text-xs font-semibold uppercase text-[var(--accent-primary)]">{project.categoryLabel} · {project.asset}</p><h3 className="mt-1 text-lg font-bold">{project.name}</h3><p className="mt-2 text-sm text-[var(--text-muted)]">{project.description || "Projeto de investimento simulado."}</p></div>
           <div className="grid grid-cols-2 gap-3"><div><p className="text-xs text-[var(--text-muted)]">Prazo</p><p className="flex items-center gap-1 font-semibold"><Clock3 size={14}/>{project.durationDays} dias</p></div>
           <div><p className="text-xs text-[var(--text-muted)]">Expectativa simulada</p><p className="flex items-center gap-1 font-semibold text-[var(--accent-primary)]"><TrendingUp size={14}/>{project.expectedReturnPercent.toFixed(2)}%</p></div></div>
           <p className="text-xs text-[var(--text-muted)]">Aplicação mínima: {money(project.minimumAmount)}</p>
@@ -93,7 +99,7 @@ export default function ProjectsPage() {
       <section><h2 className="mb-3 text-lg font-semibold">Minhas participações</h2>
         {!participations.length ? <p className="text-sm text-[var(--text-muted)]">Você ainda não participa de projetos simulados.</p> :
         <div className="grid gap-4 md:grid-cols-2">{participations.map(item => <article key={item.id} className="rounded-2xl border border-[var(--border-primary)] bg-[var(--bg-card)] p-5">
-          <div className="flex items-center justify-between gap-2"><h3 className="font-semibold">{item.projectName}</h3><span className="text-xs text-[var(--text-muted)]">{item.status === "ACTIVE" ? "Em andamento" : "Encerrado"}</span></div>
+          <div className="flex items-center justify-between gap-2"><div><h3 className="font-semibold">{item.projectName}</h3><p className="text-xs text-[var(--text-muted)]">{item.categoryLabel}</p></div><span className="text-xs text-[var(--text-muted)]">{item.status === "ACTIVE" ? "Em andamento" : "Encerrado"}</span></div>
           <div className="mt-3 grid grid-cols-3 gap-2 text-sm"><div><p className="text-xs text-[var(--text-muted)]">Aplicado</p><strong>{money(item.principal)}</strong></div><div><p className="text-xs text-[var(--text-muted)]">Resultado</p><strong>{item.percent >= 0 ? "+" : ""}{item.percent.toFixed(2)}%</strong></div><div><p className="text-xs text-[var(--text-muted)]">Valor simulado</p><strong>{money(item.simulatedValue)}</strong></div></div>
           <Curve points={item.points}/><p className="text-xs text-[var(--text-muted)]">Curva individual ilustrativa, sujeita a ajustes administrativos auditados.</p>
         </article>)}</div>}
